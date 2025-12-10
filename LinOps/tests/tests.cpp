@@ -126,13 +126,13 @@ TEST(DiscretizationSuite1d, Disc1DSetByCallable)
 
   ASSERT_EQ(my_vals.at(0), my_lambda(my_mesh->at(0))); 
   ASSERT_EQ(my_vals.at(n_steps/2), my_lambda(my_mesh->at(n_steps/2))); 
-  ASSERT_EQ(my_vals.at(n_steps), my_lambda(my_mesh->at(n_steps))); 
+  ASSERT_EQ(my_vals.at(n_steps-1), my_lambda(my_mesh->at(n_steps-1))); 
 
   my_vals.set_init(my_callable);
 
   ASSERT_EQ(my_vals.at(0), my_callable(my_mesh->at(0))); 
   ASSERT_EQ(my_vals.at(n_steps/2), my_callable(my_mesh->at(n_steps/2))); 
-  ASSERT_EQ(my_vals.at(n_steps), my_callable(my_mesh->at(n_steps))); 
+  ASSERT_EQ(my_vals.at(n_steps-1), my_callable(my_mesh->at(n_steps-1))); 
 
 }
 
