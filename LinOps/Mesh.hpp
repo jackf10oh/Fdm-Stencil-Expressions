@@ -22,7 +22,8 @@ class Mesh1D
     Mesh1D(double x1=0.0, double x2=1.0, std::size_t n_steps=11)
       : m_vals(n_steps)
     {
-      assert(n_steps >= 2);
+      if(n_steps < 2) throw std::invalid_argument("must have # of steps >= 2 in mesh");
+      if(x1 >= x2) throw std::invalid_argument("must have x1 < x2 in mesh");
       double dx = (x2 - x1) / (n_steps-1); 
       for(std::size_t i=0; i<n_steps-1; i++) m_vals[i] = x1 + i*dx; 
       m_vals[n_steps-1] = x2; 

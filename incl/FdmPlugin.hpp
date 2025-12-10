@@ -85,8 +85,8 @@ class FdmPlugin
       result = GetMat() * d.values();
 
       // fix the boundary conditions 
-      lbc_ptr->SetSolL(result, d.mesh());
-      lbc_ptr->SetSolR(result, d.mesh());
+      lbc_ptr->SetSolL(result);
+      lbc_ptr->SetSolR(result);
 
       return result; 
     };
@@ -115,8 +115,8 @@ class FdmPlugin
       rbc_ptr->SetStencilR(m_stencil, d.mesh());  
       // copy construct a new Discretization
       Discretization1D imp_sol = d; 
-      lbc_ptr->SetImpSolL(imp_sol, d.mesh());
-      lbc_ptr->SetImpSolR(imp_sol, d.mesh());
+      lbc_ptr->SetImpSolL(imp_sol);
+      lbc_ptr->SetImpSolR(imp_sol);
       
       // now we have the expression A*x = b
       // where x is the solution at timestep n+1 

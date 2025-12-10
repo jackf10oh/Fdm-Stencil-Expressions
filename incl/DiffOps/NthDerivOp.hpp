@@ -27,7 +27,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       : m_order(order)
     {set_mesh(m);};
     NthDerivOp(std::size_t order=1, MeshPtr_t m=nullptr)
-      : m_order(order), LinOpBase<NthDerivOp>(m)
+      : m_order(order)
     {set_mesh(m);};
     
     // Destructors -----------------------------------
@@ -46,6 +46,8 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       if(m==m_mesh_ptr) return;  
       // resize 0 on nullptr
       if(m==nullptr){m_stencil.resize(0,0); return;};
+      
+      m_mesh_ptr = m; 
 
       // resize matrix to fit
       m_stencil.resize(m->size(),m->size());

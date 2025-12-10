@@ -34,12 +34,12 @@ class BoundaryCond
     virtual void SetStencilR(Eigen::MatrixXd& Mat, const MeshPtr_t& mesh)const{};
     
     // change the first/last entries in an impicit solution vector 
-    virtual void SetImpSolL(Discretization1D& Sol, const MeshPtr_t& mesh)const{};
-    virtual void SetImpSolR(Discretization1D& Sol, const MeshPtr_t& mesh)const{};
+    virtual void SetImpSolL(Discretization1D& Sol)const{};
+    virtual void SetImpSolR(Discretization1D& Sol)const{};
 
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(Discretization1D& Sol, const MeshPtr_t& mesh)const{};
-    virtual void SetSolR(Discretization1D& Sol, const MeshPtr_t& mesh)const{};
+    virtual void SetSolL(Discretization1D& Sol)const{};
+    virtual void SetSolR(Discretization1D& Sol)const{};
 };
 
 #endif // BoundaryCond.hpp

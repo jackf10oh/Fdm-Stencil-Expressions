@@ -8,6 +8,7 @@
 #define IDENTITYOP_H
 
 #include<eigen3/Eigen/Core>
+#include<eigen3/Eigen/Sparse>
 
 #include "../LinearOpBase.hpp"
 
@@ -15,41 +16,45 @@ class IOp : public LinOpBase<IOp>
 {
   using MeshPtr_t = std::shared_ptr<Mesh1D>;
   private:
-    Eigen::MatrixXd m_Mat; 
+    Eigen::SparseMatrix<double> m_Mat; 
   public: 
     // Constructors --------------------------
-    IOp(std::size_t s=1)
+    IOp(MeshPtr_t m=nullptr)
     {
-      m_Mat = Eigen::MatrixXd::Identity(s,s); 
-    }
-    IOp(MeshPtr_t m)
-      : LinOpBase(m) 
-    {
-      set_mesh(m);  
-    }
+      set_mesh(m);
+    } 
     // Destructors ----------------------------
     ~IOp()=default;
     // member funcs
-    Eigen::MatrixXd& GetMat() { return m_Mat; };
-    const Eigen::MatrixXd& GetMat() const { return m_Mat; };
+    auto GetMat() { return m_Mat; };
+    const auto& GetMat() const { return m_Mat; };
     Discretization1D apply(const Discretization1D& d_arr) const 
     { 
-      Discretization1D result(d_arr.mesh()); 
-      result = m_Mat * d_arr.values(); 
-      return result; 
+      return d_arr;
     }; 
     void set_mesh(MeshPtr_t m)
     {
-      m_Mat = Eigen::MatrixXd::Identity(m->size(),m->size()); 
+      // store m into inherited m_mesh_ptr data member
+      // checks null type
+      LinOpBase::set_mesh(m);
+
+      // check null type
+      if(m_mesh_ptr==nullptr) return;
+      
+      // pointer isn't null -> resize m_Mat
+      m_Mat.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
+      m_Mat.setIdentity(); 
     };
-    void resize(std::size_t s)
+    void resize(std::size_t s=0)
     {
-      m_Mat = Eigen::MatrixXd::Identity(s,s);
+      m_Mat.resize(s, s); 
+      m_Mat.setIdentity(); 
     };
-    void resize(std::size_t s1, std::size_t s2)
+    void resize(std::size_t s1,std::size_t s2) 
     {
-      m_Mat = Eigen::MatrixXd::Identity(s1,s2);
-    }
+      m_Mat.resize(s1,s2); 
+      m_Mat.setIdentity(); 
+    };
 };
 
 #endif

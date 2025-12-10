@@ -32,8 +32,8 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     
   public:
     // Constructors 
-    LinOpExpr(LStorage_t&& A, RStorage_t&& B, BinaryOp_t bin_op)
-      : m_Lhs(std::forward<LStorage_t>(A)), m_Rhs(std::forward<RStorage_t>(B)), m_BinOp(bin_op)
+    LinOpExpr(LStorage_t A, RStorage_t B, BinaryOp_t bin_op)
+      : m_Lhs(A), m_Rhs(B), m_BinOp(bin_op)
     {};
 
     // destructors
@@ -75,6 +75,18 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
       if constexpr(is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
       if constexpr(is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
     }; 
+    const MeshPtr_t& mesh() const 
+    {
+      // if we are a scalar multiply expression
+      if constexpr(is_scalar_multiply_expr<LinOpExpr>::value)
+      {
+        return m_Rhs().mesh();
+      }
+      else
+      {
+        return m_Lhs.mesh() ? m_Lhs.mesh() : m_Rhs.mesh();
+      }
+    }
 };
 
 // operator to add linops L1+L2 
@@ -95,6 +107,33 @@ auto operator+(DerivedL&& Lhs, DerivedR&& Rhs)
   using RStorage_t = typename Storage_t<DerivedR>::type;
 
   auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()+B.GetMat(); };
+  using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
+
+  return LinOpExpr<DerivedL, DerivedR, Op_t>(
+    std::forward<DerivedL>(Lhs),
+    std::forward<DerivedR>(Rhs),
+    static_cast<Op_t>(bin_op)
+  );
+};
+
+// operator to difference linops L1-L2 
+template<
+  typename DerivedL, 
+  typename DerivedR,
+  std::enable_if_t<
+    std::conjunction_v<
+      is_linop_crtp<DerivedL>,
+      is_linop_crtp<DerivedR>
+    >,
+    int 
+  > = 0
+>
+auto operator-(DerivedL&& Lhs, DerivedR&& Rhs)
+{
+  using LStorage_t = typename Storage_t<DerivedL>::type;
+  using RStorage_t = typename Storage_t<DerivedR>::type;
+
+  auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()-B.GetMat(); };
   using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
 
   return LinOpExpr<DerivedL, DerivedR, Op_t>(

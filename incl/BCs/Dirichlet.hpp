@@ -31,15 +31,15 @@ class DirichletBC : public BoundaryCond
       Mat.row(Mat.rows()-1).setZero(); Mat(Mat.rows()-1,Mat.cols()-1)=1; 
     };
 
-    virtual void SetImpSolL(Discretization1D& Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolL(Discretization1D& Sol) const override
     {Sol.at(0) = boundary_val;};
-    virtual void SetImpSolR(Discretization1D& Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolR(Discretization1D& Sol) const override
     {Sol.at(Sol.size()-1) = boundary_val;};
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(Discretization1D& Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolL(Discretization1D& Sol) const override 
     { Sol.at(0) = boundary_val;};
-    virtual void SetSolR(Discretization1D& Sol, const MeshPtr_t& mesh)const override 
+    virtual void SetSolR(Discretization1D& Sol)const override 
     {Sol.at(Sol.size()-1) = boundary_val;};
 };
 

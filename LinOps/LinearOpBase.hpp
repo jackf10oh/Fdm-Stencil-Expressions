@@ -16,8 +16,9 @@
 #include "LinOpTraits.hpp"
 
 #ifndef LINOP_PLUGIN
+struct empty_struct{}; 
 template<typename T>
-using LinOpMixIn = std::null_t; 
+using LinOpMixIn = empty_struct; 
 #else
 template<typename T>
 using LinOpMixIn = LINOP_PLUGIN<T>; 
@@ -71,6 +72,10 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       m_mesh_ptr = m; // take shared ownership of mesh
       static_cast<Derived*>(this)->set_mesh(m);
     };
+    const MeshPtr_t& mesh() const 
+    { 
+      return m_mesh_ptr; 
+    } 
 
     // operators ---------------------------------------------------
     // composition of linear of L1(L2( . ))

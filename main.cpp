@@ -26,14 +26,12 @@ int main()
   // auto func = [](double x){return x*x;}; // x^2 
   auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);}; // - x(x-10) / 10 
   my_vals.set_init(my_mesh, func); 
-  print_vec(my_vals.begin(),my_vals.end(), "t=t0");
-
-
+  print_vec(my_vals.begin(),my_vals.end(), "t=t0");  
 
   NthDerivOp D(1); // 1st order derivative 
   auto left = std::make_shared<DirichletBC>(0.0);
   auto right = left; 
-  
+
   double dt = 0.01;
   auto DeltaX = -0.2*D.compose(D) + 0.5*D; 
   auto Explicit_Step = IOp(my_mesh) + (dt) * DeltaX;
