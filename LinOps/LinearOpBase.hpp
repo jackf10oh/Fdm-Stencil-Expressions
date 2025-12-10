@@ -60,7 +60,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
       else
       {
-        return static_cast<Derived*>(this)->apply(d);
+        return static_cast<const Derived*>(this)->apply(d);
       }
     };
 

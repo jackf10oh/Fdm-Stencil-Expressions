@@ -39,11 +39,12 @@ int main()
   Explicit_Step.rbc_ptr = right; 
   Explicit_Step.set_mesh(my_mesh);
 
-  double T = 10;
+  double T = 0.5;
   int NSteps = T/dt; 
   // cout << Explicit_Step.Rhs().GetMat() << endl;
   for(int n=0; n<NSteps; n++)
   {
+    // my_vals = Explicit_Step.apply(my_vals); 
     my_vals = Explicit_Step.solve_implicit(my_vals); 
   }
 

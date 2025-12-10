@@ -58,16 +58,9 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
       // we might constexpr branch this to L.apply(R.apply(d.values())) later ...
       // potentially introduces bug if 
       // R(.) maps boundaries -> L(.) uses boundaries 
-      if constexpr(has_apply<LinOpMixIn<LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>>>::value)
-      {
-        return LinOpMixIn<LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>>::apply(d_arr);
-      }
-      else
-      {
       Discretization1D result(d_arr.mesh()); 
       result = GetMat()*d_arr.values(); 
       return result; 
-      }
     };
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshPtr_t m)

@@ -37,7 +37,12 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     std::size_t Order() const {return m_order; };
     Eigen::MatrixXd& GetMat(){ return m_stencil; }; 
     const Eigen::MatrixXd& GetMat() const { return m_stencil; }; 
-    using LinOpBase<NthDerivOp>::apply; 
+    Discretization1D apply(const Discretization1D& d) const
+    {
+      Discretization1D result(d.mesh()); 
+      result = m_stencil*d.values(); 
+      return result; 
+    }
     
     // set the mesh the derivative operator works on 
     void set_mesh(MeshPtr_t m)

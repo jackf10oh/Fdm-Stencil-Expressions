@@ -82,7 +82,8 @@ class FdmPlugin
 
       // temp store of result 
       Discretization1D result(d.mesh()); 
-      result = GetMat() * d.values();
+      // result = GetMat() * d.values();
+      result = static_cast<const typename BaseDerived::Derived_t*>(this)->apply(d);
 
       // fix the boundary conditions 
       lbc_ptr->SetSolL(result);

@@ -61,9 +61,12 @@ int main()
   auto Explicit_Op = IOp() + 0.1 * D.compose(D); 
   Explicit_Op.set_mesh(my_mesh); 
 
+  cout << Explicit_Op.Lhs().GetMat() << endl; 
   cout << Explicit_Op.GetMat() << endl; 
 
+  // auto c = Explicit_Op.Lhs().apply(my_vals);
   auto c = Explicit_Op.apply(my_vals);
+  // auto c = D.apply(my_vals);
 
   std::cout << "result" << c.values() << endl; 
 
