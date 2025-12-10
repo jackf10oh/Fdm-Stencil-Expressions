@@ -229,11 +229,6 @@ TEST(LinearOperatorSuite, RandLinOpApply)
 };
 
 // Using LinOpExpr. 
-TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
-{
-
-}
-
 TEST(LinearOperatorSuite, BasicAddition)
 {
   auto my_mesh = make_mesh(); 
@@ -262,24 +257,102 @@ TEST(LinearOperatorSuite, BasicAddition)
     ASSERT_EQ(Mat.coeff(s,0),0); 
   };
 
-  // check_lambda(sum01); 
-  // check_lambda(sum02); 
-  // check_lambda(sum03); 
-  // check_lambda(sum04); 
+  check_lambda(sum01); 
+  check_lambda(sum02); 
+  check_lambda(sum03); 
+  check_lambda(sum04); 
 
-  // auto to_dense = [](auto expr) -> Eigen::MatrixXd {
-  //   Eigen::MatrixXd result;
-  //   result = expr.GetMat();
-  //   return result; 
-  // };
+  // eigen sparse matrices have no operator==() .... 
+  auto to_dense = [](auto expr) -> Eigen::MatrixXd {
+    Eigen::MatrixXd result;
+    result = expr.GetMat();
+    return result; 
+  };
 
-  // // compar 1=2, 1=3, 1=4
-  // ASSERT_EQ(to_dense(sum01),to_dense(sum02));
-  // ASSERT_EQ(to_dense(sum01),to_dense(sum03));
-  // ASSERT_EQ(to_dense(sum01),to_dense(sum04));
+  // compar expr 1=2, 1=3, 1=4
+  ASSERT_EQ(to_dense(sum01),to_dense(sum02));
+  ASSERT_EQ(to_dense(sum01),to_dense(sum03));
+  ASSERT_EQ(to_dense(sum01),to_dense(sum04));
 };
 
-// Testing Traits. 
+TEST(LinearOperatorSuite, ScalarMultiplication)
+{
+  auto my_mesh = make_mesh(); 
+  RandLinOp L1(my_mesh);
+
+  // test multiplication with rvals
+  2.0* RandLinOp(my_mesh);
+
+  // multiply by scalar 
+  double c = 3.0; 
+  auto Expr = c * L1; 
+
+  // evalues the expression object to a dense matrix
+  auto to_dense = [](auto& expr) -> Eigen::MatrixXd {
+    Eigen::MatrixXd result;
+    result = expr.GetMat().eval();
+    return result; 
+  };
+
+  // compar expr 1=2, 1=3, 1=4
+  ASSERT_EQ(to_dense(Expr), (c*to_dense(L1)).eval());
+};
+
+TEST(LinearOperatorSuite, Composition)
+{
+  // get a mesh
+  auto my_mesh = make_mesh(); 
+
+  // vector of [1,1,...,1]
+  Discretization1D my_vals(my_mesh); 
+  my_vals.set_init(1.0);
+
+  // construct without ptr arg
+  RandLinOp L1(my_mesh), L2(my_mesh);
+
+  // composition L1( L2(.) ) 
+  auto Expr = L1.compose(L2); 
+
+  // get underlying Eigen::VectorXd results of .apply() 
+  auto expression_result = Expr.apply(my_vals).values(); 
+  auto manual_result = L1.apply(L2.apply(my_vals)).values(); 
+
+  ASSERT_EQ(expression_result.size(), manual_result.size()); 
+  for(int i=0; i< expression_result.size(); i++){
+    ASSERT_NEAR(expression_result[i], manual_result[i], 1e-4);
+  }
+};
+
+TEST(LinearOperatorSuite, ExpressionChaining)
+{
+  auto my_mesh = make_mesh(); 
+  // just a messy expression 
+  auto my_expr = (2.0*(2.0*(2.0*(2.0*IOp())))).compose(50*IOp(my_mesh) + RandLinOp() + IOp() - RandLinOp(my_mesh).compose(IOp(my_mesh)));
+  // not all lhs/rhs had a mesh in expression construction 
+  my_expr.set_mesh(my_mesh); 
+  // we should be able to make into eigen Matrix no matter what
+  Eigen::MatrixXd resulting_mat = my_expr.GetMat(); 
+}
+
+TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
+{
+  // Calling set_mesh on an expression E = L1 + L2 
+  // should pass the mesh to L1.set_mesh() and L2.set_mesh() 
+   
+  // construct without mesh ptrs 
+  IOp I_lval(nullptr);
+  auto Expr = I_lval + IOp(nullptr);
+
+  // make mesh and give it to expression
+  auto my_mesh = make_mesh();
+  Expr.set_mesh(my_mesh); 
+
+  // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
+  ASSERT_EQ(Expr.Lhs().mesh(), my_mesh);
+  ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
+
+}
+
 TEST(LinearOperatorSuite, LinOpTraits)
 {
   struct foo {
@@ -296,5 +369,4 @@ TEST(LinearOperatorSuite, LinOpTraits)
   ASSERT_FALSE(is_linop_crtp<int>::value); 
 }
 
-// Expressions Suite ---------------------------------------------
 

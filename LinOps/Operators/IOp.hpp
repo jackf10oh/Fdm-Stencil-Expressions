@@ -38,7 +38,7 @@ class IOp : public LinOpBase<IOp>
       LinOpBase::set_mesh(m);
 
       // check null type
-      if(m_mesh_ptr==nullptr) {std::cout << "mesh not set" << std::endl; return;};
+      if(m_mesh_ptr==nullptr) return;
       
       // pointer isn't null -> resize m_Mat
       m_Mat.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
