@@ -19,8 +19,9 @@ int main()
 {
   std::cout << std::setprecision(2); 
   auto r = 10.0; 
-  auto my_mesh = std::make_shared<Mesh1D>(0.0,r,101); 
-
+  int n_gridpoints = 101;
+  MeshPtr_t my_mesh = make_mesh(0.0,r,n_gridpoints); 
+  
   Discretization1D my_vals;
   // auto func = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // 2x^3 - 5x^2 + 3x -1 
   // auto func = [](double x){return x*x;}; // x^2 

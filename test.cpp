@@ -26,7 +26,7 @@ struct bar{};
 int main()
 {
   std::cout << std::setprecision(2); 
-  auto my_mesh = std::make_shared<Mesh1D>(0.0,4.0,5); 
+  auto my_mesh = make_mesh(0.0,4.0,5); 
 
   Discretization1D my_vals;
   // auto func = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // 2x^3 - 5x^2 + 3x -1 

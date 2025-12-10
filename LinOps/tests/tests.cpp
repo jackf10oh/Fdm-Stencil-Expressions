@@ -77,7 +77,7 @@ TEST(DiscretizationSuite1d, Disc1DConstructible)
 TEST(DiscretizationSuite1d, Disc1DMovable)
 {
   int n_steps=11; 
-  auto my_mesh = std::make_shared<Mesh1D>(0.0,10.0, n_steps); 
+  auto my_mesh = make_mesh(0.0,10.0,n_steps); 
   Discretization1D moved_from(my_mesh);
   Discretization1D moved_to(std::move(moved_from));  
   ASSERT_EQ(moved_from.mesh(), nullptr); 
@@ -88,7 +88,7 @@ TEST(DiscretizationSuite1d, Disc1DMovable)
 
 TEST(DiscretizationSuite1d, Disc1DSetMesh)
 {
-  auto my_mesh = std::make_shared<Mesh1D>(); 
+  auto my_mesh = make_mesh(); 
   Discretization1D my_vals; 
   ASSERT_EQ(my_vals.mesh(), nullptr); 
   Discretization1D discretization_w_stored_mesh(my_mesh); 
@@ -97,7 +97,7 @@ TEST(DiscretizationSuite1d, Disc1DSetMesh)
 
 TEST(DiscretizationSuite1d, Disc1DSetCosntant)
 {
-  auto my_mesh = std::make_shared<Mesh1D>(); 
+  auto my_mesh = make_mesh(); 
   Discretization1D my_vals(my_mesh); 
 
   double val_set = 0.0; 
@@ -118,7 +118,7 @@ TEST(DiscretizationSuite1d, Disc1DSetByCallable)
 
   int n_steps = 101; 
   double left=0, right=100; 
-  auto my_mesh = std::make_shared<Mesh1D>(left,right,n_steps); 
+  auto my_mesh = make_mesh(left,right,n_steps); 
   Discretization1D my_vals; 
 
   // with lambda 
@@ -140,7 +140,7 @@ TEST(DiscretizationSuite1d, Disc1DIterators)
 {
     // simply make a mesh and do nothing with it
   int n_steps = 11;
-  auto my_mesh = std::make_shared<Mesh1D>(0.0,10.0,n_steps);
+  auto my_mesh = make_mesh(0.0,10.0,n_steps);
 
   Discretization1D my_vals(my_mesh); 
 

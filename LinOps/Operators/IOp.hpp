@@ -14,7 +14,6 @@
 
 class IOp : public LinOpBase<IOp>
 {
-  using MeshPtr_t = std::shared_ptr<Mesh1D>;
   private:
     Eigen::SparseMatrix<double> m_Mat; 
   public: 

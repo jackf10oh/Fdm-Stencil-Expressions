@@ -13,7 +13,6 @@
 
 class RandLinOp : public LinOpBase<RandLinOp>
 {
-  using MeshPtr_t = std::shared_ptr<Mesh1D>;
   private:
     Eigen::MatrixXd m_Mat; 
   public: 

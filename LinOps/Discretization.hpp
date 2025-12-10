@@ -36,7 +36,7 @@ class Discretization1D
     // Move 
     Discretization1D(Discretization1D&& other)
       : m_mesh_ptr(std::move(other.m_mesh_ptr)), m_vals(std::move(other.m_vals))
-    {};
+    {other.m_mesh_ptr=nullptr;};
 
     // destructors ------------------------------------------
     virtual ~Discretization1D()=default; 
@@ -114,9 +114,9 @@ class Discretization1D
 
     // Operators ----------------------------------------------------
     Discretization1D& operator=(const Discretization1D& other) = default;
-    Discretization1D& operator=(Discretization1D&& other) = default; 
+    Discretization1D& operator=(Discretization1D&& other){m_mesh_ptr = other.m_mesh_ptr; other.m_mesh_ptr=nullptr; m_vals=std::move(other.m_vals); m_vals.resize(size());return *this;}; 
     Discretization1D& operator=(const Eigen::VectorXd& other){ m_vals=other; m_vals.resize(size()); return *this;}
-    Discretization1D& operator=(Eigen::VectorXd&& other){ m_vals=std::move(other); m_vals.resize(size()); return *this;}
+    Discretization1D& operator=(Eigen::VectorXd&& other){ m_vals=std::move(other); m_vals.resize(size());return *this;}
 }; // end Discretization1D 
 
 #endif // Discretization.hpp
