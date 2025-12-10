@@ -18,9 +18,6 @@
 template<typename BaseDerived>
 class FdmPlugin
 {
-  // type aliases 
-  using BcPtr_t = std::shared_ptr<BoundaryCond>; 
-
   public:
     // member data 
     BcPtr_t lbc_ptr; // ptr to left bc

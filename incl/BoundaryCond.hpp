@@ -11,6 +11,11 @@
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/Mesh.hpp"
 
+// forward declaration -> type alias 
+class BoundaryCond; 
+using BcPtr_t = std::shared_ptr<BoundaryCond>; 
+// using BcPtr_t = BoundaryCond*; // unlikely to use. Only going to assign to boundary conditions once 
+
 // Base Class for Boundary Conditions. All operators make no changes to stencil / solution 
 class BoundaryCond
 {
