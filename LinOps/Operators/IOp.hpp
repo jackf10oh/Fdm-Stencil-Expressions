@@ -25,8 +25,8 @@ class IOp : public LinOpBase<IOp>
     // Destructors ----------------------------
     ~IOp()=default;
     // member funcs
-    auto GetMat() { return m_Mat; };
-    const auto& GetMat() const { return m_Mat; };
+    Eigen::SparseMatrix<double>& GetMat() { return m_Mat; };
+    const Eigen::SparseMatrix<double>& GetMat() const { return m_Mat; };
     Discretization1D apply(const Discretization1D& d_arr) const 
     { 
       return d_arr;
@@ -38,7 +38,7 @@ class IOp : public LinOpBase<IOp>
       LinOpBase::set_mesh(m);
 
       // check null type
-      if(m_mesh_ptr==nullptr) return;
+      if(m_mesh_ptr==nullptr) {std::cout << "mesh not set" << std::endl; return;};
       
       // pointer isn't null -> resize m_Mat
       m_Mat.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
