@@ -47,7 +47,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     };
     decltype(auto) GetMat() const
     {
-      return static_cast<Derived*>(this)->GetMat(); 
+      return static_cast<const Derived*>(this)->GetMat(); 
     };
 
     // multiply the underlying expression with Discretization's underlying vecXd
