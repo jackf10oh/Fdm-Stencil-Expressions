@@ -1,6 +1,6 @@
 // Mesh.hpp
 //
-// 1D and XD Mesh classes for rectangular domains
+// 1D Mesh classes for rectangular domains
 //
 // JAF 12/5/2025
 
@@ -10,6 +10,11 @@
 #include <cassert>
 #include<cstdint>
 #include<vector>
+#include<memory> 
+
+// forward declaration -> aliases
+class Mesh1D; 
+using MeshPtr_t = std::shared_ptr<Mesh1D>;
 
 class Mesh1D
 {

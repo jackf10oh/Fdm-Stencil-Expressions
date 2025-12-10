@@ -28,7 +28,6 @@ using LinOpMixIn = LINOP_PLUGIN<T>;
 template<typename Derived>
 class LinOpBase : public LinOpMixIn<LinOpBase<Derived>> 
 {
-  using MeshPtr_t = std::shared_ptr<Mesh1D>;
   public:
     using Derived_t = Derived; 
 

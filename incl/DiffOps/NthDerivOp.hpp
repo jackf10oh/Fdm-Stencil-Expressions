@@ -16,8 +16,6 @@
 
 class NthDerivOp : public LinOpBase<NthDerivOp>
 {
-  // type aliases
-  using MeshPtr_t = std::shared_ptr<Mesh1D>; 
   private:
     // member data 
     std::size_t m_order; 

@@ -17,7 +17,6 @@
 
 class Discretization1D
 {
-  using MeshPtr_t = std::shared_ptr<Mesh1D>;
   private:
     // member data 
     MeshPtr_t m_mesh_ptr; // shared pointer to mesh the function "maps" into the reals

@@ -19,7 +19,6 @@ template<typename BaseDerived>
 class FdmPlugin
 {
   // type aliases 
-  // using MeshPtr_t = std::shared_ptr<Mesh1D>; 
   using BcPtr_t = std::shared_ptr<BoundaryCond>; 
 
   public:

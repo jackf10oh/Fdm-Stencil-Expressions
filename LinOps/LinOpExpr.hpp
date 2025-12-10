@@ -19,7 +19,6 @@
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
 class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
 {
-  using MeshPtr_t = std::shared_ptr<Mesh1D>;
   public:
     // types and constexpr flags
     using LStorage_t = typename Storage_t<Lhs_t>::type;

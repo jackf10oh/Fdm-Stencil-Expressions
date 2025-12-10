@@ -14,9 +14,6 @@
 // Base Class for Boundary Conditions. All operators make no changes to stencil / solution 
 class BoundaryCond
 {
-  protected:
-    // types
-    using MeshPtr_t = std::shared_ptr<Mesh1D>; 
   protected:  
     // member data 
     double m_current_time;

@@ -14,8 +14,6 @@
 
 class CoeffOp : public LinOpBase<CoeffOp>
 {
-  // types 
-  using MeshPtr_t = std::shared_ptr<Mesh1D>; 
   public:
     CoeffOp(MeshPtr_t m=nullptr){set_mesh(m);};
     void SetTime(double t)
