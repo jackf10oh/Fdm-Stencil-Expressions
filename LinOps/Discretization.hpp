@@ -63,7 +63,7 @@ class Discretization1D
     // set vector to same size as mesh
     void match_mesh(MeshPtr_t m) { m_mesh_ptr=m; m_vals.resize(m->size()); }
     // set vector to a constant
-    void set_constant(double val){ m_vals.setConstant(val);}
+    void set_init(double val){ m_vals.setConstant(val);}
     // set vector to match a mesh size and set it constant 
     void match_mesh(MeshPtr_t m, double val){ match_mesh(m), set_constant(val); }
 
