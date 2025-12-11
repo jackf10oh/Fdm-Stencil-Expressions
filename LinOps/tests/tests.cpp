@@ -236,8 +236,6 @@ TEST(LinearOperatorSuite, BasicAddition)
   auto make_I_rval = [my_mesh](){return IOp(my_mesh);}; 
   IOp I_lval(my_mesh);
 
-  // std::cout << (I_lval+I_lval).GetMat() << std::endl; 
-
   auto sum01 = I_lval + I_lval;  
   auto sum02 = I_lval + make_I_rval();
   auto sum03 = make_I_rval() + I_lval;
@@ -374,7 +372,6 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   ASSERT_EQ(I3_lval.mesh(), my_mesh);
   ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
   ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
-
 }
 
 TEST(LinearOperatorSuite, LinOpTraits)
@@ -392,5 +389,4 @@ TEST(LinearOperatorSuite, LinOpTraits)
   ASSERT_TRUE(is_linop_crtp<RandLinOp>::value);
   ASSERT_FALSE(is_linop_crtp<int>::value); 
 }
-
 

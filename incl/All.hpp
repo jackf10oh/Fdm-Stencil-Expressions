@@ -11,7 +11,7 @@
 #include "BoundaryCond.hpp" 
 
 #include "DiffOps/NthDerivOp.hpp"
-#include "CoeffOps/CoeffOp.hpp"
+#include "CoeffOps/CoeffOpBase.hpp"
 #include "CoeffOps/TOp.hpp"
 
 #include "BCs/Dirichlet.hpp"

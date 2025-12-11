@@ -38,6 +38,7 @@ class FdmPlugin
 
     // Member Funcs -------------------------------------------------------
     // set the time of L/R BCs to t 
+    void SetTime_impl(double t){}; 
     void SetTime(double t)
     {
       // if we are an expression 
@@ -58,10 +59,12 @@ class FdmPlugin
         std::cout << std::endl; 
       }
       // set current time, update time in boundary conditions as well 
-      // std::cout << "Leaf hit" << std::endl; 
       m_current_time = t; 
       lbc_ptr->SetTime(t); 
       rbc_ptr->SetTime(t); 
+
+      // we aren't an expression call the actual implementor 
+      static_cast<typename BaseDerived::Derived_t*>(this)->SetTime_impl(t);
     }
     // get the time this operator is set to
     auto Time() const {return m_current_time;}; 

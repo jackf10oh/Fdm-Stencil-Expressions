@@ -8,20 +8,20 @@
 #define CURRENTTIMEOP_H
 
 #include "../FdmPlugin.hpp"
-#include "CoeffOp.hpp"
+#include "CoeffOpBase.hpp"
 
 class TOp : public CoeffOpBase<TOp>
 {
   public:
     // constructors 
     TOp(MeshPtr_t m=nullptr)
+      :CoeffOpBase()
     {
       set_mesh(m);
     }
     // member functions  
-    void SetTime(double t)
+    void SetTime_impl(double t)
     {
-      FdmPlugin::SetTime(t);
       m_stencil.setIdentity(); 
       m_stencil = m_current_time * m_stencil;  
     };

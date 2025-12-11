@@ -45,8 +45,8 @@ int main()
   // cout << Explicit_Step.Rhs().GetMat() << endl;
   for(int n=0; n<NSteps; n++)
   {
-    // my_vals = Explicit_Step.apply(my_vals); 
-    my_vals = Explicit_Step.solve_implicit(my_vals); 
+    my_vals = Explicit_Step.apply(my_vals); 
+    // my_vals = Explicit_Step.solve_implicit(my_vals); 
   }
 
   print_vec(my_vals.begin(),my_vals.end(), "t=T");

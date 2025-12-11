@@ -29,6 +29,7 @@ template<typename Derived>
 class LinOpBase : public LinOpMixIn<LinOpBase<Derived>> 
 {
   public:
+    using is_linop_tag = void; 
     using Derived_t = Derived; 
 
   protected:
@@ -79,34 +80,55 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // operators ---------------------------------------------------
     // composition of linear of L1(L2( . ))
     template<typename DerivedInner> 
-    auto compose(DerivedInner&& InnerOp)
+    auto compose(DerivedInner&& InnerOp) &
     {
-      static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!");
-      
+      static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      return compose_impl<DerivedInner,Derived_t&>(std::forward<DerivedInner>(InnerOp)); 
+    }; // end .compose(other) & lvalue overload 
+
+    // // composition of linear of L1(L2( . ))
+    template<typename DerivedInner> 
+    auto compose(DerivedInner&& InnerOp) && 
+    {
+      static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      return compose_impl<DerivedInner,Derived_t&&>(std::forward<DerivedInner>(InnerOp)); 
+    }; // end .compose(other) && rvalue overload  
+
+  private:
+    // not accessibles --------------------------------------------------------------------------------------------
+    // composition of linear of L1(L2( . ))
+    template<typename DerivedInner, typename Lhs_t = Derived_t> 
+    auto compose_impl(DerivedInner&& InnerOp)
+    {
+      static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      using Rhs_t = std::remove_reference_t<DerivedInner>;
+      using LStorage_t = typename Storage_t<Lhs_t>::type;
+      using RStorage_t = typename Storage_t<Rhs_t>::type;
       if constexpr(is_add_expr<std::remove_reference_t<DerivedInner>>::value){
-        // std::cout << "composing L(L1+L2)" << std::endl;
         return compose(InnerOp.Lhs())+compose(InnerOp.Rhs());
       }
       else if constexpr(is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
-        // std::cout << "composing L(c*L) = c*L(L)" << std::endl;
         return InnerOp.Lhs() * compose(InnerOp.Rhs()); 
       }
       else{
-        // std::cout << "some other composition..." << std::endl;
-        using Lhs_t = Derived_t;
-        using Rhs_t = std::remove_reference_t<DerivedInner>;
-        using LStorage_t = typename Storage_t<Lhs_t>::type;
-        using RStorage_t = typename Storage_t<Rhs_t>::type;
-
         auto bin_op = [](const LStorage_t& A, const RStorage_t& B){return A.GetMat()*B.GetMat(); };
         using Op_t = make_flagged_t<decltype(bin_op), OperatorComposition_t>;
-        return LinOpExpr<Lhs_t, Rhs_t, Op_t>(
-          *static_cast<Derived*>(this), 
+        if constexpr(std::is_lvalue_reference<Lhs_t>::value){
+          return LinOpExpr<Lhs_t, Rhs_t, Op_t>(
+          std::forward<Lhs_t>(static_cast<Lhs_t&>(*this)), 
           std::forward<DerivedInner>(InnerOp), 
           static_cast<Op_t>(bin_op)
-        );
+          ); 
+        }
+        else{
+          return LinOpExpr<Lhs_t, Rhs_t, Op_t>(
+          std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), 
+          std::forward<DerivedInner>(InnerOp), 
+          static_cast<Op_t>(bin_op)
+          ); 
+        }
       } // end else 
-    }; // end .compose(other) 
+    }; // end .compose_impl(other) 
 
 }; // end LinOpBase
 

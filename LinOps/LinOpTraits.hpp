@@ -34,18 +34,12 @@ struct OperatorAddition_t{};
 struct ScalarMultiply_t{}; 
 
 // Traits ---------------------------------------------------------------
-// template <typename T>
-// struct is_linop_crtp : public std::is_base_of< LinOpBase<std::remove_reference_t<T>>, std::remove_reference_t<T>> {};
-
-// primary template: default false
+// given a type, detect if it is derived from linopbase<> 
 template<typename T, typename = void>
 struct is_linop_crtp : std::false_type {};
 
-// specialization when T derives from LinOpBase<T>
 template<typename T>
-struct is_linop_crtp<T, std::enable_if_t<
-    std::is_base_of_v<LinOpBase<std::remove_cv_t<std::remove_reference_t<T>>>, std::remove_cv_t<std::remove_reference_t<T>>>
->> : std::true_type {};
+struct is_linop_crtp<T, std::void_t<typename std::remove_cv_t<std::remove_reference_t<T>>::is_linop_tag>> : std::true_type {};
 
 // given a linop expression. detect if it is a composition L1( L2( . ))
 template<typename T>
@@ -74,7 +68,6 @@ template<typename L, typename R, typename OP>
 struct is_scalar_multiply_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<ScalarMultiply_t, std::remove_reference_t<OP>>
 {};
 
-
 // given a base class and flags, attach flags to base class
 template<typename Base, typename... Flags>
 struct make_flagged
@@ -91,7 +84,7 @@ struct make_flagged
 template<typename Base, typename... Flags>
 using make_flagged_t = typename make_flagged<Base, Flags...>::type; 
 
-// given a type T we may need to store it as a reference or a value
+// given a type T we may need to store it as a reference or a value in a binary expression
 template<typename T>
 struct Storage_t
 {
@@ -119,11 +112,10 @@ template<typename T>
 struct is_expr_crtp 
   : is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>> {};
 
-// given a type T that will be a mixin, see if it has .apply() method 
+// given a type T that will be a mixin, see if it has .apply() const method 
 template<typename T, typename = void>
 struct has_apply : public std::false_type {};
 
-// detect apply() const 
 template<typename T>
 struct has_apply<T, std::void_t<decltype(std::declval<const T>().apply(std::declval<const Discretization1D&>()))>> : public std::true_type{};
 

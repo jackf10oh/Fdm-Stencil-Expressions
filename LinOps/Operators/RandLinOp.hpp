@@ -34,7 +34,6 @@ class RandLinOp : public LinOpBase<RandLinOp>
     Discretization1D apply(const Discretization1D& d_arr) const 
     { 
       Discretization1D result(d_arr.mesh()); 
-      std::cout << result.size() << ": " << result.at(0) << std::endl;
       result = m_Mat * d_arr.values(); 
       return result; 
     }; 
