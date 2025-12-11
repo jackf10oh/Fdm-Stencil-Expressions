@@ -348,8 +348,32 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   Expr.set_mesh(my_mesh); 
 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(Expr.Lhs().mesh(), my_mesh);
+  ASSERT_EQ(I_lval.mesh(), my_mesh);
   ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
+
+  // test again for scalar multiply  // construct without mesh ptrs 
+  IOp I2_lval(nullptr);
+  double c=2.0; 
+  auto Expr2 = 2.0* I2_lval;
+  auto Expr3 = c*IOp(nullptr);
+  Expr2.set_mesh(my_mesh); 
+  Expr3.set_mesh(my_mesh); 
+  // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
+  ASSERT_EQ(I2_lval.mesh(), my_mesh);
+  ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
+
+  // test again for composition 
+  RandLinOp I3_lval(nullptr); 
+  IOp I4_lval(nullptr);
+  auto Expr4 = I3_lval.compose(I3_lval); 
+  auto Expr5 = I3_lval.compose(IOp(nullptr));
+  Expr4.set_mesh(my_mesh); 
+  Expr5.set_mesh(my_mesh); 
+  // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
+  ASSERT_EQ(I3_lval.mesh(), my_mesh);
+  ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
 
 }
 

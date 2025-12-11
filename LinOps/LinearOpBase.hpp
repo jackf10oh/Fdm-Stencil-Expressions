@@ -93,7 +93,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
       else{
         // std::cout << "some other composition..." << std::endl;
-        using Lhs_t = Derived;
+        using Lhs_t = Derived_t;
         using Rhs_t = std::remove_reference_t<DerivedInner>;
         using LStorage_t = typename Storage_t<Lhs_t>::type;
         using RStorage_t = typename Storage_t<Rhs_t>::type;

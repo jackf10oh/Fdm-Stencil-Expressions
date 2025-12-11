@@ -64,8 +64,18 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshPtr_t m)
     {
-      if constexpr(is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
-      if constexpr(is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
+      std::cout << "expr.set_mesh() :"; 
+      if constexpr(is_linop_crtp<Lhs_t>::value)
+      {
+        std::cout << "L "; 
+        m_Lhs.set_mesh(m);
+      } 
+      if constexpr(is_linop_crtp<Rhs_t>::value) 
+      {
+        std::cout << "R"; 
+        m_Rhs.set_mesh(m);
+      }
+      std::cout << std::endl; 
     }; 
     const MeshPtr_t& mesh() const 
     {

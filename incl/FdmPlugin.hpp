@@ -42,14 +42,23 @@ class FdmPlugin
     {
       // if we are an expression 
       if constexpr (is_expr_crtp<typename BaseDerived::Derived_t>::value){
-        std::cout << "Branch hit" << std::endl; 
+        std::cout << "Branch hit: "; 
         // conditionally call SetTime() on L/R nodes
-        auto expr = static_cast<typename BaseDerived::Derived_t*>(this);
-        if constexpr(is_linop_crtp<typename BaseDerived::Derived_t::LStorage_t>::value) expr->Lhs().SetTime(t);
-        if constexpr(is_linop_crtp<typename BaseDerived::Derived_t::RStorage_t>::value) expr->Rhs().SetTime(t);
+        auto& expr = static_cast<typename BaseDerived::Derived_t&>(*this);
+        if constexpr(is_linop_crtp<typename BaseDerived::Derived_t::LStorage_t>::value) 
+        {
+          std::cout << "L "; 
+          expr.Lhs().SetTime(t);
+        }
+        if constexpr(is_linop_crtp<typename BaseDerived::Derived_t::RStorage_t>::value)
+        {
+          std::cout << "R"; 
+          expr.Rhs().SetTime(t);
+        } 
+        std::cout << std::endl; 
       }
       // set current time, update time in boundary conditions as well 
-      std::cout << "Leaf hit" << std::endl; 
+      // std::cout << "Leaf hit" << std::endl; 
       m_current_time = t; 
       lbc_ptr->SetTime(t); 
       rbc_ptr->SetTime(t); 
