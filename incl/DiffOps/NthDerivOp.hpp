@@ -99,19 +99,38 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
 
     // Operators (overrides LinOpBase)
     // composition of linear of L1(L2( . ))
-    using LinOpBase<NthDerivOp>::compose;
-    auto compose(NthDerivOp& InnerOp)
-    { 
-      auto result =  NthDerivOp(m_order+InnerOp.Order(), m_mesh_ptr); 
-      // if i have left a BC give it to result 
-      if(lbc_ptr) result.lbc_ptr=lbc_ptr; 
-      else result.lbc_ptr = InnerOp.lbc_ptr;
-      // if i have a right BC give it to result 
-      if(rbc_ptr) result.rbc_ptr=rbc_ptr; 
-      else result.rbc_ptr = InnerOp.rbc_ptr;  
-      
-      return result; 
-    };
+    template<typename DerivedInner> 
+    auto compose(DerivedInner&& InnerOp)
+    {
+      // if taking derivative of product u*v
+      if constexpr(is_compose_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
+        decltype(auto) u = InnerOp.Lhs(); 
+        decltype(auto) v = InnerOp.Rhs(); 
+        return compose(u).compose(v) + u.compose(compose(v));
+      }
+      // if taking derivative of scalar multiple c*u 
+      else if constexpr(is_scalar_multiply_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
+        double c = InnerOp.Lhs(); 
+        return c * compose(InnerOp.Rhs()); 
+      }
+      // if taking derivative of another derivative 
+      else if constexpr(std::is_same<std::remove_cv_t<std::remove_reference_t<DerivedInner>>,NthDerivOp>::value){
+        // specialize composing to Derivatives to add order
+        auto result =  NthDerivOp(m_order+InnerOp.Order(), m_mesh_ptr); 
+        // if i have left a BC give it to result 
+        if(lbc_ptr) result.lbc_ptr=lbc_ptr; 
+        else result.lbc_ptr = InnerOp.lbc_ptr;
+        // if i have a right BC give it to result 
+        if(rbc_ptr) result.rbc_ptr=rbc_ptr; 
+        else result.rbc_ptr = InnerOp.rbc_ptr;  
+        // NthDerivOp result fully constructed
+        return result; 
+      }
+      // all other cases use default LinOpBase implementation 
+      else{
+        return LinOpBase::compose(std::forward<DerivedInner>(InnerOp)); 
+      }
+    }; 
 }; 
 
 #endif // NthDerivOp.hpp

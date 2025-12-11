@@ -40,8 +40,8 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
 
     // member funcs
     // getters
-    LStorage_t& Lhs(){ return m_Lhs; }; 
-    RStorage_t& Rhs(){ return m_Rhs; }; 
+    LStorage_t Lhs(){ return m_Lhs; }; 
+    RStorage_t Rhs(){ return m_Rhs; }; 
     // returns combination bin_op(A,B) of 2 stored LinOps----------------
     decltype(auto) GetMat()
     {

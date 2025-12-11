@@ -11,6 +11,8 @@
 
 #include<iostream>
 #include<eigen3/Eigen/Core>
+#include<eigen3/Eigen/LU>
+#include<eigen3/Eigen/SparseLU>
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/LinOpTraits.hpp"
 #include "BoundaryCond.hpp"

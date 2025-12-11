@@ -1,6 +1,6 @@
 // tests.cpp
 //
-// Test suite with GTest
+// LinOps Test suite with GTest
 //
 // JAF 12/5/2025
 

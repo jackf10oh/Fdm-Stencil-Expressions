@@ -25,42 +25,19 @@ int main()
   auto func = [](double x){return x*x;}; // x^2 
   my_vals.set_init(my_mesh, func); 
 
+  TOp t(my_mesh); // TOp inherits from coeffopbase 
+  t.SetTime(104.0);
+  NthDerivOp D(my_mesh,1); // 1st derivative operator
 
-  TOp t(my_mesh), t2(my_mesh); 
+  // cout << D.GetMat() << endl; 
 
-  cout << "--------------" << endl;
-  t.SetTime(15.0);  
-  cout << t.GetMat() << endl; 
-
-  cout << "--------------" << endl; 
-  auto expr = t*t; 
-  expr.SetTime(20.0); 
+  auto expr = D.compose(t.compose(D)); 
   cout << expr.GetMat() << endl; 
 
-  cout << "--------------" << endl; 
-  cout << t.Time() << endl; 
-  t.SetTime(10.0); 
-  cout << t.GetMat() << endl; 
-  cout << t.Time() << endl; 
-  expr.SetTime(1.2);
-  cout << t.GetMat() << endl; 
-  cout << t.Time() << endl; 
+  // auto D2 = D.compose(D); 
+  // cout << D2.GetMat() << endl; 
 
-
-  cout << "--------------" << endl; 
-  NthDerivOp D1(my_mesh), D2(my_mesh); 
-  auto expr3 = D1.compose(D2); 
-  expr3.SetTime(10.0);
-  cout << "expr is expr? " << is_expr_crtp<decltype(expr3)>::value << endl;
-  cout << "L is op? " << is_linop_crtp<decltype(D1)>::value << endl;
-  cout << "R is op? " << is_linop_crtp<decltype(D2)>::value << endl;
-
-  cout << "--------------" << endl; 
-  RandLinOp L1, L2; 
-  auto expr2 = L1.compose(L1); 
-  expr2.SetTime(10.0);
-  cout << "expr is expr? " << is_expr_crtp<decltype(expr2)>::value << endl;
-  cout << "L is op? " << is_linop_crtp<decltype(L1)>::value << endl;
-  cout << "R is op? " << is_linop_crtp<decltype(L2)>::value << endl;
+  auto scaled = 40.0 * D; 
+  cout << D.compose(scaled).GetMat() << endl; 
 
 }

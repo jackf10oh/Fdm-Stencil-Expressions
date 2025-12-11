@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # adding Eigenlib to compiler
 find_package(Eigen3 REQUIRED)
 
-# define the library as fractals2
+# define the library as LinOps
 add_library(LinOps
   INTERFACE
   Mesh.hpp
