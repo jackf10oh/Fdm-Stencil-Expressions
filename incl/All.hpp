@@ -9,8 +9,10 @@
 
 #include "FdmPlugin.hpp"
 #include "BoundaryCond.hpp" 
+#include "Traits.hpp"
 
 #include "DiffOps/NthDerivOp.hpp"
+
 #include "CoeffOps/CoeffOpBase.hpp"
 #include "CoeffOps/TOp.hpp"
 

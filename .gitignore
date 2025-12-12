@@ -12,6 +12,9 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 */build/*
+build/*
+main 
+plots.ipynb 
 
 # CLion
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

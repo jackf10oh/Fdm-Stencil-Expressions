@@ -15,6 +15,7 @@ template<typename Derived>
 class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
 {
   public:
+    using is_coeff_flag = void; 
     // use member types so FdmPlugin can access grandchildren 
     using Derived_t = Derived;
   public:
