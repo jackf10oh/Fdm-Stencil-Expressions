@@ -105,13 +105,6 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp)
     {
-      // if taking derivative of product u*v. BUGGED NEED NEW EXPRESSIONS FOR DERIVATIVE OF COEFFICIENT
-      // if constexpr(is_compose_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
-      //   decltype(auto) u = InnerOp.Lhs(); 
-      //   decltype(auto) v = InnerOp.Rhs(); 
-      //   return compose(u).compose(v) + u.compose(compose(v));
-      // }
-      // if taking derivative of scalar multiple c*u 
       if constexpr(is_scalar_multiply_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
         double c = InnerOp.Lhs(); 
         return c * compose(InnerOp.Rhs()); 
@@ -131,7 +124,8 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       }
       // all other cases use default LinOpBase implementation 
       else{
-        return LinOpBase::compose(std::forward<DerivedInner>(InnerOp)); 
+        static_assert(false, "Derivative only meant to be composed with other derivatives & scalar products"); 
+        // return LinOpBase::compose(std::forward<DerivedInner>(InnerOp)); 
       }
     }; 
 }; 
