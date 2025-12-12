@@ -24,11 +24,11 @@ class DirichletBC : public BoundaryCond
     // change first/last (left/right boundary) row of the fdm stencil matrix
     virtual void SetStencilL(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
     {
-      Mat.row(0).setZero(); Mat(0,0)=1;
+      Mat.topRows(1) *= 0; Mat.coeffRef(0,0)=1;
     }; 
     virtual void SetStencilR(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
     {
-      Mat.row(Mat.rows()-1).setZero(); Mat(Mat.rows()-1,Mat.cols()-1)=1; 
+      Mat.bottomRows(1) *= 0; Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=1;
     };
 
     virtual void SetImpSolL(Discretization1D& Sol) const override

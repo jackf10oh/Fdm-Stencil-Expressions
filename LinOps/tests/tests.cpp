@@ -244,7 +244,7 @@ TEST(LinearOperatorSuite, BasicAddition)
   // lambda to check 4 corners + middle of a matrix expr
   auto check_lambda = [s = my_mesh->size()-1](const auto& expr) -> void
   {
-    Eigen::SparseMatrix<double> Mat = expr.GetMat(); 
+    CustomStorage_t Mat = expr.GetMat(); 
     // Check that entries on diag are 2
     ASSERT_EQ(Mat.coeff(0,0),2); 
     ASSERT_EQ(Mat.coeff(s,s),2); 

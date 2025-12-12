@@ -27,8 +27,8 @@ class TOp : public CoeffOpBase<TOp>
       m_stencil.setIdentity(); 
       m_stencil = m_current_time * m_stencil;  
     };
-    Eigen::MatrixXd& GetMat(){ return m_stencil; }; 
-    const Eigen::MatrixXd& GetMat() const { return m_stencil; };  
+    MatrixStorage_t& GetMat(){ return m_stencil; }; 
+    const MatrixStorage_t& GetMat() const { return m_stencil; };  
     Discretization1D apply(const Discretization1D& d){
       Discretization1D result(d.mesh()); 
       result = m_stencil * d.values(); 
@@ -43,7 +43,7 @@ class TOp : public CoeffOpBase<TOp>
       if(m==nullptr) return; 
       m_stencil.resize(m->size(), m->size()); 
       m_stencil.setIdentity(); 
-      m_stencil = m_current_time * m_stencil; 
+      m_stencil *= m_current_time; 
     }
 };
 

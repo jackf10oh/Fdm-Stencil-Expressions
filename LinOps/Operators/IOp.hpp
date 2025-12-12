@@ -8,6 +8,7 @@
 #define IDENTITYOP_H
 
 #include<eigen3/Eigen/Core>
+#include<eigen3/Eigen/SparseCore>
 #include<eigen3/Eigen/Sparse>
 
 #include "../LinearOpBase.hpp"
@@ -15,7 +16,7 @@
 class IOp : public LinOpBase<IOp>
 {
   private:
-    Eigen::SparseMatrix<double> m_Mat; 
+    CustomStorage_t m_Mat; 
   public: 
     // Constructors --------------------------
     IOp(MeshPtr_t m=nullptr)
@@ -25,8 +26,8 @@ class IOp : public LinOpBase<IOp>
     // Destructors ----------------------------
     ~IOp()=default;
     // member funcs
-    Eigen::SparseMatrix<double>& GetMat() { return m_Mat; };
-    const Eigen::SparseMatrix<double>& GetMat() const { return m_Mat; };
+    CustomStorage_t& GetMat() { return m_Mat; };
+    const CustomStorage_t& GetMat() const { return m_Mat; };
     Discretization1D apply(const Discretization1D& d_arr) const 
     { 
       return d_arr;

@@ -25,7 +25,7 @@ int main()
   Discretization1D my_vals;
   // auto func = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // 2x^3 - 5x^2 + 3x -1 
   // auto func = [](double x){return x*x;}; // x^2 
-  auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);}; // - x(x-10) / 10 
+  auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);}; // Bump centered at r/2. Zero at 0.0 and r 
   my_vals.set_init(my_mesh, func); 
   print_vec(my_vals.begin(),my_vals.end(), "t=t0");  
 
@@ -40,15 +40,15 @@ int main()
   Explicit_Step.rbc_ptr = right; 
   Explicit_Step.set_mesh(my_mesh);
 
-  double T = 0.5;
+  double T = 10.0;
   int NSteps = T/dt; 
   // cout << Explicit_Step.Rhs().GetMat() << endl;
   for(int n=0; n<NSteps; n++)
   {
-    my_vals = Explicit_Step.apply(my_vals); 
-    // my_vals = Explicit_Step.solve_implicit(my_vals); 
+    // my_vals = Explicit_Step.explicit_step(my_vals); 
+    my_vals = Explicit_Step.solve_implicit(my_vals);
   }
 
   print_vec(my_vals.begin(),my_vals.end(), "t=T");
-
+  
 };

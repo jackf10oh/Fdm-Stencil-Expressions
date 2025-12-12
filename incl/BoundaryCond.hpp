@@ -13,10 +13,9 @@
 
 // forward declaration -> type alias 
 class BoundaryCond; 
+using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::ColMajor>; 
 using BcPtr_t = std::shared_ptr<BoundaryCond>; 
 // using BcPtr_t = BoundaryCond*; // unlikely to use. Only going to assign to boundary conditions once 
-using MatrixStorage_t = Eigen::MatrixXd; 
-// using MatrixStorage_t = Eigen::MatrixXd; 
 
 // Base Class for Boundary Conditions. All operators make no changes to stencil / solution 
 class BoundaryCond

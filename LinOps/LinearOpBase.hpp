@@ -24,6 +24,12 @@ template<typename T>
 using LinOpMixIn = LINOP_PLUGIN<T>; 
 #endif
 
+#ifndef CUSTOM_IDENTITY_MATRIX_STORAGE
+using CustomStorage_t = Eigen::MatrixXd;
+#else
+using CustomStorage_t = CUSTOM_IDENTITY_MATRIX_STORAGE;
+#endif
+
 // CTRP base for 1D differential operator -------------------------------
 template<typename Derived>
 class LinOpBase : public LinOpMixIn<LinOpBase<Derived>> 

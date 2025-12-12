@@ -33,8 +33,8 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     
     // Member Funcs ---------------------------------
     std::size_t Order() const {return m_order; };
-    Eigen::MatrixXd& GetMat(){ return m_stencil; }; 
-    const Eigen::MatrixXd& GetMat() const { return m_stencil; };     
+    MatrixStorage_t& GetMat(){ return m_stencil; }; 
+    const MatrixStorage_t& GetMat() const { return m_stencil; };     
     // set the mesh the derivative operator works on 
     void set_mesh(MeshPtr_t m)
     {
@@ -49,6 +49,11 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       m_stencil.resize(m->size(),m->size());
       // set all entries to zero
       m_stencil.setZero(); 
+
+      typedef Eigen::Triplet<double> T;
+      std::vector<T> tripletList;
+      tripletList.reserve(2*m_order*m_stencil.rows());
+
       // first rows with forward stencil 
       int skirt = m_order; 
       int i=0; 
@@ -57,10 +62,10 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       for(int end=(m_order+1)/2; i<end; i++, left++, right++)
       {
         auto weights = FornWeights(m->at(i), m_order, std::vector(left,right)); 
-        std::copy(weights.begin(), 
-                  weights.end(), 
-                  m_stencil.row(i).begin()+i
-        );
+        int offset=0; 
+        for(auto& w : weights){
+          tripletList.push_back(T(i,offset++,w));
+        }
       }
       // middle rows with centered centered stencil  
       skirt = (m_order+1)/2; // num of points to left/right of center for stencil 
@@ -69,11 +74,11 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       right = left+(skirt+1+skirt); 
       for(;i<m->size()-skirt; i++, left++, right++)
       {
-        auto weights = FornWeights(m->at(i),m_order,std::vector(left,right)); 
-        std::copy(weights.begin(),
-                  weights.end(), 
-                  m_stencil.row(i).begin()+(i-skirt)
-        );
+        auto weights = FornWeights(m->at(i),m_order,std::vector(left,right));
+        int offset = -skirt;
+        for(auto& w : weights){
+          tripletList.push_back(T(i,i+offset++,w));
+        };
       }
       // last rows 
       skirt = m_order; 
@@ -83,11 +88,16 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       for(; i>=m->size()-(m_order+1)/2; i--,left--,right--)
       {
         auto weights = FornWeights(m->at(i), m_order, std::vector(left,right)); 
-        std::copy(weights.rbegin(),
-                  weights.rend(),
-                  m_stencil.row(i).reverse().begin()+std::distance(right,m->cend())
-        );
+        int offset=0;
+        for(auto it=weights.rbegin(); it!=weights.rend(); it++){
+          tripletList.push_back(T(i,i-offset++,*it)); 
+        }
+        // std::copy(weights.rbegin(),
+        //           weights.rend(),
+        //           m_stencil.row(i).reverse().begin()+std::distance(right,m->cend())
+        // );
       }
+      m_stencil.setFromTriplets(tripletList.begin(), tripletList.end()); 
     }
 
     // Operators (overrides LinOpBase)
