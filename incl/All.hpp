@@ -15,9 +15,12 @@
 
 #include "CoeffOps/CoeffOpBase.hpp"
 #include "CoeffOps/TOp.hpp"
+#include "CoeffOps/AutonomousCoeff.hpp"
 
 #include "BCs/Dirichlet.hpp"
 
 #include "Utilities/Fornberg.hpp"
+
+#include "../LinOps/All.hpp"
 
 #endif 

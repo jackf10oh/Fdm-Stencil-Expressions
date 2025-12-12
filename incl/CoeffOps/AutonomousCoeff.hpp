@@ -66,10 +66,12 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
       // do nothing on nullptr 
       if(m==nullptr) return; 
       m_stencil.resize(m->size(), m->size()); 
-      m_stencil.setZero(); 
+      using T = Eigen::Triplet<double>; 
+      std::vector<T> triplet_list(m->size());  
       for(int i=0; i<m->size(); i++){
-        m_stencil.coeffRef(i,i) = m_function((*m)[i]); 
+        triplet_list[i] = T(i,i,m_function((*m)[i])); 
       }; 
+      m_stencil.setFromTriplets(triplet_list.begin(), triplet_list.end()); 
     }
     template<
     typename Func_t,

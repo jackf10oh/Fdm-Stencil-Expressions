@@ -33,10 +33,12 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     {
       return static_cast<const Derived*>(this)->GetMat(); 
     };
-    Discretization1D apply(const Discretization1D& d) const
-    {
-      return static_cast<const Derived*>(this)->apply(d); 
-    };
+    // default functionality to cast to Eigen::VectorXd
+    Eigen::VectorXd GetDiag() const {return Eigen::VectorXd(GetMat().diagonal());};
+    // Discretization1D apply(const Discretization1D& d) const
+    // {
+    //   return static_cast<const Derived*>(this)->apply(d); 
+    // };
     // operator for scalar multiplication c*L
     template<typename DerivedR>
     auto operator*(DerivedR&& RHS) &

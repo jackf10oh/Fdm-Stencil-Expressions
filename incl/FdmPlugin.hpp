@@ -51,20 +51,20 @@ class FdmPlugin
     {
       // if we are an expression 
       if constexpr (is_expr_crtp<typename BaseDerived::Derived_t>::value){
-        std::cout << "Branch hit: "; 
+        // std::cout << "Branch hit: "; 
         // conditionally call SetTime() on L/R nodes
         auto& expr = static_cast<typename BaseDerived::Derived_t&>(*this);
         if constexpr(is_linop_crtp<typename BaseDerived::Derived_t::LStorage_t>::value) 
         {
-          std::cout << "L "; 
+          // std::cout << "L "; 
           expr.Lhs().SetTime(t);
         }
         if constexpr(is_linop_crtp<typename BaseDerived::Derived_t::RStorage_t>::value)
         {
-          std::cout << "R"; 
+          // std::cout << "R"; 
           expr.Rhs().SetTime(t);
         } 
-        std::cout << std::endl; 
+        // std::cout << std::endl; 
       }
       // set current time, update time in boundary conditions as well 
       m_current_time = t; 
