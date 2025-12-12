@@ -15,6 +15,7 @@
 class BoundaryCond; 
 using BcPtr_t = std::shared_ptr<BoundaryCond>; 
 // using BcPtr_t = BoundaryCond*; // unlikely to use. Only going to assign to boundary conditions once 
+using MatrixStorage_t = Eigen::MatrixXd; 
 
 // Base Class for Boundary Conditions. All operators make no changes to stencil / solution 
 class BoundaryCond
@@ -32,8 +33,8 @@ class BoundaryCond
     virtual void SetTime(double t){m_current_time=t;};
 
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(Eigen::MatrixXd& Mat, const MeshPtr_t& mesh)const{}; 
-    virtual void SetStencilR(Eigen::MatrixXd& Mat, const MeshPtr_t& mesh)const{};
+    virtual void SetStencilL(MatrixStorage_t& Mat, const MeshPtr_t& mesh)const{}; 
+    virtual void SetStencilR(MatrixStorage_t& Mat, const MeshPtr_t& mesh)const{};
     
     // change the first/last entries in an impicit solution vector 
     virtual void SetImpSolL(Discretization1D& Sol)const{};

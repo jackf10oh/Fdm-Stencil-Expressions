@@ -22,11 +22,11 @@ class DirichletBC : public BoundaryCond
     virtual ~DirichletBC()=default; 
     // Member Funcs ----------------------------------------------
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(Eigen::MatrixXd& Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilL(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
     {
       Mat.row(0).setZero(); Mat(0,0)=1;
     }; 
-    virtual void SetStencilR(Eigen::MatrixXd& Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilR(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
     {
       Mat.row(Mat.rows()-1).setZero(); Mat(Mat.rows()-1,Mat.cols()-1)=1; 
     };

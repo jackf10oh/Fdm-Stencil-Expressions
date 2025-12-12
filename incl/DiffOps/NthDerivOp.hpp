@@ -34,14 +34,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     // Member Funcs ---------------------------------
     std::size_t Order() const {return m_order; };
     Eigen::MatrixXd& GetMat(){ return m_stencil; }; 
-    const Eigen::MatrixXd& GetMat() const { return m_stencil; }; 
-    Discretization1D apply(const Discretization1D& d) const
-    {
-      Discretization1D result(d.mesh()); 
-      result = m_stencil*d.values(); 
-      return result; 
-    }
-    
+    const Eigen::MatrixXd& GetMat() const { return m_stencil; };     
     // set the mesh the derivative operator works on 
     void set_mesh(MeshPtr_t m)
     {
@@ -102,14 +95,14 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp)
     {
-      // if taking derivative of product u*v
-      if constexpr(is_compose_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
-        decltype(auto) u = InnerOp.Lhs(); 
-        decltype(auto) v = InnerOp.Rhs(); 
-        return compose(u).compose(v) + u.compose(compose(v));
-      }
+      // if taking derivative of product u*v. BUGGED NEED NEW EXPRESSIONS FOR DERIVATIVE OF COEFFICIENT
+      // if constexpr(is_compose_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
+      //   decltype(auto) u = InnerOp.Lhs(); 
+      //   decltype(auto) v = InnerOp.Rhs(); 
+      //   return compose(u).compose(v) + u.compose(compose(v));
+      // }
       // if taking derivative of scalar multiple c*u 
-      else if constexpr(is_scalar_multiply_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
+      if constexpr(is_scalar_multiply_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
         double c = InnerOp.Lhs(); 
         return c * compose(InnerOp.Rhs()); 
       }

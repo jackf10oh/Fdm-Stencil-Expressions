@@ -11,11 +11,15 @@
 
 #include<iostream>
 #include<eigen3/Eigen/Core>
+#include<eigen3/Eigen/Dense>
 #include<eigen3/Eigen/LU>
 #include<eigen3/Eigen/SparseLU>
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/LinOpTraits.hpp"
 #include "BoundaryCond.hpp"
+
+using MatrixStorage_t = Eigen::MatrixXd; 
+// using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
 template<typename BaseDerived>
 class FdmPlugin
@@ -26,7 +30,7 @@ class FdmPlugin
     BcPtr_t rbc_ptr; // ptr to right bc
   protected:
     double m_current_time; // current time
-    Eigen::MatrixXd m_stencil; // stencil matrix of FDM scheme // don't need to store? 
+    MatrixStorage_t m_stencil; // stencil matrix of FDM scheme // don't need to store? 
 
   public:
     // constructors ---------------------------------------------------------
@@ -81,19 +85,11 @@ class FdmPlugin
       return static_cast<const typename BaseDerived::Derived_t*>(this)->GetMat(); 
     };
 
-    // Over write the original .apply() in LinOpBase<>
-    Discretization1D apply(const Discretization1D& d) const
+    // Use .apply() from LinOpBase and set BCs afterward 
+    Discretization1D explicit_step(const Discretization1D& d) const
     {
-
-      // debug prints ...
-      // std::cout << "---------------------" << std::endl; 
-      // std::cout << "stencil thats applied" << std::endl << m_stencil << std::endl; 
-      // std::cout << "---------------------" << std::endl; 
-
       // temp store of result 
-      Discretization1D result(d.mesh()); 
-      // result = GetMat() * d.values();
-      result = static_cast<const typename BaseDerived::Derived_t*>(this)->apply(d);
+      Discretization1D result = static_cast<const typename BaseDerived::Derived_t*>(this)->apply(d);
 
       // fix the boundary conditions 
       lbc_ptr->SetSolL(result);
@@ -102,18 +98,11 @@ class FdmPlugin
       return result; 
     };
 
-    Discretization1D apply_no_bc(const Discretization1D& d) const
+    Discretization1D apply(const Discretization1D& d) const
     {
-
-      // debug prints ...
-      // std::cout << "---------------------" << std::endl; 
-      // std::cout << "stencil thats applied" << std::endl << m_stencil << std::endl; 
-      // std::cout << "---------------------" << std::endl; 
-
       // temp store of result 
       Discretization1D result(d.mesh()); 
       result = GetMat() * d.values();
-
       return result; 
     };
 
