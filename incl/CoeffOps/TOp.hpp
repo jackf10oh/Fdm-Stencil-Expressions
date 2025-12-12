@@ -12,21 +12,28 @@
 
 class TOp : public CoeffOpBase<TOp>
 {
+  using Derived_t = TOp; 
   public:
     // constructors 
     TOp(MeshPtr_t m=nullptr)
-      :CoeffOpBase()
+      :CoeffOpBase(m)
     {
       set_mesh(m);
     }
     // member functions  
     void SetTime_impl(double t)
     {
+      if(m_mesh_ptr) m_stencil.resize(m_mesh_ptr->size(), m_mesh_ptr->size());
       m_stencil.setIdentity(); 
       m_stencil = m_current_time * m_stencil;  
     };
     Eigen::MatrixXd& GetMat(){ return m_stencil; }; 
     const Eigen::MatrixXd& GetMat() const { return m_stencil; };  
+    Discretization1D apply(const Discretization1D& d){
+      Discretization1D result(d.mesh()); 
+      result = m_stencil * d.values(); 
+      return result; 
+    }
     void set_mesh(MeshPtr_t m)
     {
       // store m into m_mesh_ptr. checks null 

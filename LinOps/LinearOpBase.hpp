@@ -39,7 +39,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 
   public:
     // Constructors ---------------------------------------------------------- 
-    LinOpBase(MeshPtr_t m=nullptr):m_mesh_ptr(m){}; 
+    LinOpBase(MeshPtr_t m=nullptr): LinOpMixIn<LinOpBase<Derived>>(), m_mesh_ptr(m){}; 
     // member functions -------------------------------------------------------
     // member functions. implemented by derived class -------------------------
     auto& GetMat()
@@ -60,7 +60,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
       else
       {
-        return static_cast<const Derived*>(this)->apply(d);
+        return static_cast<const Derived_t*>(this)->apply(d);
       }
     };
 

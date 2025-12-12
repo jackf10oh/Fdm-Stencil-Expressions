@@ -19,7 +19,7 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     using Derived_t = Derived;
   public:
     // Constructors
-    CoeffOpBase(): LinOpBase<CoeffOpBase<Derived>>(){}; 
+    CoeffOpBase(MeshPtr_t m=nullptr): LinOpBase<CoeffOpBase<Derived>>(m){}; 
     void SetTime_impl(double t)
     {
       static_cast<Derived*>(this)->SetTime_impl(t); 
@@ -31,6 +31,10 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     const auto& GetMat() const
     {
       return static_cast<const Derived*>(this)->GetMat(); 
+    };
+    Discretization1D apply(const Discretization1D& d) const
+    {
+      return static_cast<const Derived*>(this)->apply(d); 
     };
     // operator for scalar multiplication c*L
     template<typename DerivedR>
