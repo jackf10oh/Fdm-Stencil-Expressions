@@ -4,8 +4,8 @@
 //
 // JAF 12/5/2025
 
-#ifndef NTHDERIVOP_H
-#define NTHDERIVOP_H
+#ifndef NthDerivOp_OLDWAY_H
+#define NthDerivOp_OLDWAY_H
 
 #include<eigen3/Eigen/Core>
 
@@ -15,22 +15,22 @@
 #include "../FdmPlugin.hpp"
 #include "../../LinOps/LinearOpBase.hpp"
 
-class NthDerivOp : public LinOpBase<NthDerivOp>
+class NthDerivOp_OLDWAY : public LinOpBase<NthDerivOp_OLDWAY>
 {
   private:
     // member data 
     std::size_t m_order; 
   public:
     // constructors ---------------------------------
-    NthDerivOp(MeshPtr_t m, std::size_t order=1)
+    NthDerivOp_OLDWAY(MeshPtr_t m, std::size_t order=1)
       : m_order(order)
     {set_mesh(m);};
-    NthDerivOp(std::size_t order=1, MeshPtr_t m=nullptr)
+    NthDerivOp_OLDWAY(std::size_t order=1, MeshPtr_t m=nullptr)
       : m_order(order)
     {set_mesh(m);};
     
     // Destructors -----------------------------------
-    ~NthDerivOp()=default; 
+    ~NthDerivOp_OLDWAY()=default; 
     
     // Member Funcs ---------------------------------
     std::size_t Order() const {return m_order; };
@@ -57,7 +57,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       tripletList.reserve(2*m_order*m_stencil.rows()); // not sure if this is correct size of lise...
 
       // instantiate stateful fornberg calculator 
-      FornCalc weight_calc(1+2*((m_order+1)/2),m_order);
+      // FornCalc weight_calc(1+2*((m_order+1)/2),m_order);
 
       // first rows with forward stencil 
       std::size_t skirt = m_order; 
@@ -66,7 +66,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       auto right = left+skirt+1; 
       for(std::size_t end=(m_order+1)/2; i<end; i++, left++, right++)
       {
-        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order); 
+        auto weights = FornWeights(m->at(i),m_order,std::vector<double>(left,right)); 
         std::size_t offset=0; 
         for(auto& w : weights){
           tripletList.push_back(T(i,offset++,w));
@@ -79,7 +79,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       right = left+(skirt+1+skirt); 
       for(;i<m->size()-skirt; i++, left++, right++)
       {
-        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order);
+        auto weights = FornWeights(m->at(i),m_order,std::vector<double>(left,right));
         int offset = -skirt;
         for(auto& w : weights){
           tripletList.push_back(T(i,i+offset++,w));
@@ -92,7 +92,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       left = right-skirt-1; 
       for(; i>m->size()-(m_order+1)/2-1; i--,left--,right--)
       {
-        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order); 
+        auto weights = FornWeights(m->at(i),m_order,std::vector<double>(left,right)); 
         int offset=0;
         for(auto it=weights.rbegin(); it!=weights.rend(); it++){
           tripletList.push_back(T(i,i-offset++,*it)); 
@@ -132,23 +132,3 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
 }; 
 
 #endif // NthDerivOp.hpp
-
-// performance on Uniform mesh first derivative. time in ms 
-// FornWeights() function call -> allocate for each call 
-// ------------
-// Mesh size:1001 time:175
-// ------------
-// Mesh size:10001 time:1650
-// ------------
-// Mesh size:100001 time:15142
-// ------------
-// Mesh size:1000001 time:165686
-// FornCalc class -> once at beginning of set_mesh()  
-// ------------
-// Mesh size:1001 time:544
-// ------------
-// Mesh size:10001 time:3198
-// ------------
-// Mesh size:100001 time:23796
-// ------------
-// Mesh size:1000001 time:248954

@@ -18,6 +18,8 @@
 
 #include "incl/Utilities/FornbergCalc.hpp"
 
+#include "incl/DiffOps/NthDerivOp copy.hpp"
+
 using std::cout, std::endl;
 
 int main()
@@ -36,7 +38,8 @@ int main()
   auto time_lambda = [](const MeshPtr_t& m){
     // TEST 1 
     std::cout << "------------" << std::endl; 
-    NthDerivOp D(1); 
+    // NthDerivOp D(1); 
+    NthDerivOp_OLDWAY D(1); 
     auto start = system_clock::now(); 
     D.set_mesh(m);
     auto end = system_clock::now(); 
