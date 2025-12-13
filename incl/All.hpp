@@ -14,7 +14,7 @@
 #include "DiffOps/NthDerivOp.hpp"
 
 #include "CoeffOps/CoeffOpBase.hpp"
-#include "CoeffOps/TOp.hpp"
+#include "CoeffOps/TCoeff.hpp"
 #include "CoeffOps/AutonomousCoeff.hpp"
 
 #include "BCs/Dirichlet.hpp"

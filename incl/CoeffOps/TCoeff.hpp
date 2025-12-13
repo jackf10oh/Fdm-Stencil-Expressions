@@ -1,4 +1,4 @@
-// TOp.hpp
+// TCoeff.hpp
 //
 //
 //
@@ -10,12 +10,12 @@
 #include "../FdmPlugin.hpp"
 #include "CoeffOpBase.hpp"
 
-class TOp : public CoeffOpBase<TOp>
+class TCoeff : public CoeffOpBase<TCoeff>
 {
-  using Derived_t = TOp; 
+  using Derived_t = TCoeff; 
   public:
     // constructors 
-    TOp(MeshPtr_t m=nullptr)
+    TCoeff(MeshPtr_t m=nullptr)
       :CoeffOpBase(m)
     {
       set_mesh(m);
@@ -47,4 +47,4 @@ class TOp : public CoeffOpBase<TOp>
     }
 };
 
-#endif
+#endif // TCoeff.hpp
