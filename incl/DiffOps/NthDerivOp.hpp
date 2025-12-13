@@ -87,10 +87,12 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       }
       // last rows 
       skirt = m_order; 
-      i = m->size()-1; 
-      right = m->cend(); 
+      // i = m->size()-1; 
+      i = m->size()-(m_order+1)/2; 
+      right = m->cend()-(m_order+1)/2; 
       left = right-skirt-1; 
-      for(; i>m->size()-(m_order+1)/2-1; i--,left--,right--)
+      // for(; i>m->size()-(m_order+1)/2-1; i--,left--,right--)
+      for(; i<m->size(); i++,left++,right++)
       {
         auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order); 
         int offset=0;
@@ -98,6 +100,8 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
           tripletList.push_back(T(i,i-offset++,*it)); 
         }
       }
+      // Eigen 5.0 :( 
+      // m_stencil.insertFromSortedTriplets()(tripletList.begin(), tripletList.end()); 
       m_stencil.setFromTriplets(tripletList.begin(), tripletList.end()); 
     }
 
@@ -132,23 +136,3 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
 }; 
 
 #endif // NthDerivOp.hpp
-
-// performance on Uniform mesh first derivative. time in ms 
-// FornWeights() function call -> allocate for each call 
-// ------------
-// Mesh size:1001 time:175
-// ------------
-// Mesh size:10001 time:1650
-// ------------
-// Mesh size:100001 time:15142
-// ------------
-// Mesh size:1000001 time:165686
-// FornCalc class -> once at beginning of set_mesh()  
-// ------------
-// Mesh size:1001 time:544
-// ------------
-// Mesh size:10001 time:3198
-// ------------
-// Mesh size:100001 time:23796
-// ------------
-// Mesh size:1000001 time:248954

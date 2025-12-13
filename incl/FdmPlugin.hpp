@@ -8,20 +8,21 @@
 #define BVPPLUGIN_H 
 
 #define LINOP_PLUGIN FdmPlugin
-#define CUSTOM_IDENTITY_MATRIX_STORAGE Eigen::SparseMatrix<double,Eigen::ColMajor>
+#define CUSTOM_IDENTITY_MATRIX_STORAGE Eigen::SparseMatrix<double,Eigen::RowMajor>
 
 #include<iostream>
 #include<eigen3/Eigen/Core>
 #include<eigen3/Eigen/Dense>
 #include<eigen3/Eigen/LU>
 #include<eigen3/Eigen/SparseCore>
-#include<eigen3/Eigen/SparseLU>
+#include<eigen3/Eigen/SparseLU> 
+#include<eigen3/Eigen/IterativeLinearSolvers> // BICGSTAB
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/LinOpTraits.hpp"
 #include "BoundaryCond.hpp"
 
 // also declared in BoundaryCond.hpp 
-using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::ColMajor>; 
+using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
 template<typename BaseDerived>
 class FdmPlugin
@@ -125,7 +126,8 @@ class FdmPlugin
       // and the rhs b is the given discretization 
 
       Discretization1D result(d.mesh());
-      Eigen::SparseLU<MatrixStorage_t, Eigen::COLAMDOrdering<int> > solver(m_stencil);
+      // Eigen::SparseLU<MatrixStorage_t, Eigen::COLAMDOrdering<int> > solver(m_stencil);
+      Eigen::BiCGSTAB<MatrixStorage_t> solver(m_stencil);
       result = solver.solve(imp_sol.values());
       return result; 
     }
