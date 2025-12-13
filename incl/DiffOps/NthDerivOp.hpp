@@ -10,6 +10,7 @@
 #include<eigen3/Eigen/Core>
 
 #include "../Utilities/Fornberg.hpp"
+#include "../Utilities/FornbergCalc.hpp"
 #include "../../LinOps/Discretization.hpp"
 #include "../FdmPlugin.hpp"
 #include "../../LinOps/LinearOpBase.hpp"
@@ -43,26 +44,30 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       // resize 0 on nullptr
       if(m==nullptr){m_stencil.resize(0,0); return;};
       
+      // new pointer set. proceed to recalculate Matrix 
       m_mesh_ptr = m; 
 
       // resize matrix to fit
       m_stencil.resize(m->size(),m->size());
       // set all entries to zero
-      m_stencil.setZero(); 
+      // m_stencil.setZero(); // no longer needed since setFromTriples 
 
       typedef Eigen::Triplet<double> T;
       std::vector<T> tripletList;
-      tripletList.reserve(2*m_order*m_stencil.rows());
+      tripletList.reserve(2*m_order*m_stencil.rows()); // not sure if this is correct size of lise...
+
+      // instantiate stateful fornberg calculator 
+      FornCalc weight_calc(1+2*((m_order+1)/2),m_order);
 
       // first rows with forward stencil 
-      int skirt = m_order; 
-      int i=0; 
+      std::size_t skirt = m_order; 
+      std::size_t i=0; 
       auto left = m->cbegin();
       auto right = left+skirt+1; 
-      for(int end=(m_order+1)/2; i<end; i++, left++, right++)
+      for(std::size_t end=(m_order+1)/2; i<end; i++, left++, right++)
       {
-        auto weights = FornWeights(m->at(i), m_order, std::vector(left,right)); 
-        int offset=0; 
+        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order); 
+        std::size_t offset=0; 
         for(auto& w : weights){
           tripletList.push_back(T(i,offset++,w));
         }
@@ -74,7 +79,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       right = left+(skirt+1+skirt); 
       for(;i<m->size()-skirt; i++, left++, right++)
       {
-        auto weights = FornWeights(m->at(i),m_order,std::vector(left,right));
+        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order);
         int offset = -skirt;
         for(auto& w : weights){
           tripletList.push_back(T(i,i+offset++,w));
@@ -85,17 +90,13 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       i = m->size()-1; 
       right = m->cend(); 
       left = right-skirt-1; 
-      for(; i>=m->size()-(m_order+1)/2; i--,left--,right--)
+      for(; i>m->size()-(m_order+1)/2-1; i--,left--,right--)
       {
-        auto weights = FornWeights(m->at(i), m_order, std::vector(left,right)); 
+        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order); 
         int offset=0;
         for(auto it=weights.rbegin(); it!=weights.rend(); it++){
           tripletList.push_back(T(i,i-offset++,*it)); 
         }
-        // std::copy(weights.rbegin(),
-        //           weights.rend(),
-        //           m_stencil.row(i).reverse().begin()+std::distance(right,m->cend())
-        // );
       }
       m_stencil.setFromTriplets(tripletList.begin(), tripletList.end()); 
     }

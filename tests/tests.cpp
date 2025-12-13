@@ -13,20 +13,20 @@
 
 #include "../incl/All.hpp"
 
-// Testing TOp can be constructed
-TEST(CoeffOpTestSuite, TOpConstructible)
+// Testing TCoeff can be constructed
+TEST(CoeffOpTestSuite, TCoeffConstructible)
 {
-  TOp t; 
+  TCoeff t; 
 }
 
-// Testing TOp methods 
-TEST(CoeffOpTestSuite, TOpSettable)
+// Testing TCoeff methods 
+TEST(CoeffOpTestSuite, TCoeffSettable)
 {
   // make a mesh 
   MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
   
-  // make a TOp that acts on functions of mesh
-  TOp t(my_mesh); 
+  // make a TCoeff that acts on functions of mesh
+  TCoeff t(my_mesh); 
 
   // lambda to check 4 corners + middle of a matrix expr
   auto check_lambda = [s = my_mesh->size()-1](const auto& expr, double val) -> void
@@ -64,8 +64,8 @@ TEST(CoeffOpTestSuite, Method_SetTime_Hooking)
   // make a mesh 
   MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
   
-  // make a TOp that acts on functions of mesh
-  TOp t(my_mesh); 
+  // make a TCoeff that acts on functions of mesh
+  TCoeff t(my_mesh); 
 
   // lambda to check 4 corners + middle of a matrix expr
   auto check_lambda = [s = my_mesh->size()-1](const auto& expr, double val) -> void
@@ -115,8 +115,8 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 
   // some lambdas to test out 
   auto lam01 = [](double x){return x*x;}; // x^2
-  auto lam01 = [](double x){return std::sin(x);}; // sin(x)
-  auto lam01 = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // some polynomial in x 
+  auto lam02 = [](double x){return std::sin(x);}; // sin(x)
+  auto lam03 = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // some polynomial in x 
   
   // take two vectors and check each |ui-vi| < eps 
   auto check_lamda = [](Eigen::VectorXd u, Eigen::VectorXd v){
@@ -134,10 +134,28 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
   AutonomousCoeff coeff(lam01,my_mesh); 
 
   // check they have the same values 
+  check_lamda(disc.values(), coeff.GetDiag()); 
 
+  // set to new functions / discretization 
+  disc.set_init(lam02); 
+  coeff = lam02; 
+  // check again
+  check_lamda(disc.values(), coeff.GetDiag()); 
+
+  // set to new functions / discretization 
+  disc.set_init(lam03); 
+  coeff = lam03; 
+  // check again
+  check_lamda(disc.values(), coeff.GetDiag()); 
 
 
 }
+
+// Fornberg tests 
+
+
+
+
 
 
 

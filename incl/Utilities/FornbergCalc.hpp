@@ -42,10 +42,10 @@ class WeightsResult_t{
     const Iter_t& end() const {return m_end_it;};  
     CIter_t cbegin() const {return m_begin_it;};  
     CIter_t cend() const {return m_end_it;};  
-    RIter_t rbegin() const { return std::make_reverse_iterator(std::prev(m_end_it));}; 
-    RIter_t rend() const { return std::make_reverse_iterator(std::prev(m_begin_it));};
-    CRIter_t crbegin() const { return std::make_reverse_iterator(std::prev(m_end_it));}; 
-    CRIter_t crend() const { return std::make_reverse_iterator(std::prev(m_end_it));}; 
+    RIter_t rbegin() const { return std::make_reverse_iterator(m_end_it);}; 
+    RIter_t rend() const { return std::make_reverse_iterator(m_begin_it);};
+    CRIter_t crbegin() const { return std::make_reverse_iterator(m_end_it);}; 
+    CRIter_t crend() const { return std::make_reverse_iterator(m_end_it);}; 
 
     // operators
     double operator[](std::size_t i){return *(m_begin_it+i);}
@@ -76,7 +76,7 @@ class FornCalc
       // Matrix of Order+1 rows, N cols
       // row m from Weights is the coeffs for derivative of order m (m= 0, ... , order)
       // ---> we need atleast Order+1 * N entries in m_arr 
-      if(m_n_nodes*m_order > m_arr.size()) throw std::runtime_error("nodes*(order+1) exceeds size of stored array!"); 
+      if(std::distance(start,end)*(order+1) > m_arr.size()) throw std::runtime_error("nodes*(order+1) exceeds size of stored array!"); 
       // m_arr.resize(m_n_nodes*(order+1));
 
       // utility lambdas 
@@ -85,7 +85,7 @@ class FornCalc
       // number of nodes 
       m_n_nodes = std::distance(start,end); 
       m_order = order;
-      auto nodeRef = [start](std::size_t i)->double& {return *(start+i);};
+      auto nodeRef = [&start](std::size_t i)-> const double& {return *(start+i);};
       
       // zero all stored entries
       for(auto& entry : m_arr) entry=0.0; 
