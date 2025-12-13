@@ -28,11 +28,29 @@ enable_testing()
 
 #find the gtest library 
 find_package(GTest REQUIRED) # will fail if not found
+find_package(benchmark REQUIRED) # Google Benchmark will fail if not found
+
+if(NOT (benchmark_FOUND AND GTest_FOUND))
+  message(WARNING "Google Benchmark not found. Skipping benchmark targets")
+else()
+  message(STATUS "Google Benchmark found. building benchmarks")
+  add_executable(benchmarks
+    benchmarks/benchmarks.cpp
+  ) 
+  target_link_libraries(benchmarks
+    PRIVATE LinOps 
+    PRIVATE benchmark::benchmark
+    PRIVATE GTest::gtest 
+    PRIVATE GTest::gtest_main 
+    PRIVATE pthread # required by GTest
+  )
+endif()
 
 if(NOT GTest_FOUND)
   message(WARNING "GTest not found. Skipping targets.")
 
 else()
+  message(STATUS "GTest found. building tests") 
   add_executable(tests 
     tests/tests.cpp
   )

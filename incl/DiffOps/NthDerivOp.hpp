@@ -22,10 +22,10 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     std::size_t m_order; 
   public:
     // constructors ---------------------------------
-    NthDerivOp(MeshPtr_t m, std::size_t order=1)
+    NthDerivOp(const MeshPtr_t& m, std::size_t order=1)
       : m_order(order)
     {set_mesh(m);};
-    NthDerivOp(std::size_t order=1, MeshPtr_t m=nullptr)
+    NthDerivOp(std::size_t order=1, const MeshPtr_t& m=nullptr)
       : m_order(order)
     {set_mesh(m);};
     

@@ -29,24 +29,25 @@ int main()
   my_vals.set_init(my_mesh, func); 
   print_vec(my_vals.begin(),my_vals.end(), "t=t0");  
 
-  NthDerivOp D(1); // 1st order derivative 
-  auto left = std::make_shared<DirichletBC>(0.0);
-  auto right = left; 
-
+  // assembling scheme
+  using D = NthDerivOp;
   double dt = 0.01;
-  auto DeltaX = -0.2*D.compose(D) + 0.5*D; 
-  auto Explicit_Step = IOp(my_mesh) + (dt) * DeltaX;
-  Explicit_Step.lbc_ptr = left; 
-  Explicit_Step.rbc_ptr = right; 
-  Explicit_Step.set_mesh(my_mesh);
+
+  auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2) + 0.5*D(1));
+
+  // setting boundary condition 
+  auto left = std::make_shared<DirichletBC>(0.0); 
+  auto right = left; 
+  fdm_scheme.lbc_ptr = left; 
+  fdm_scheme.rbc_ptr = right; 
+  fdm_scheme.set_mesh(my_mesh);
 
   double T = 10.0;
   int NSteps = T/dt; 
-  // cout << Explicit_Step.Rhs().GetMat() << endl;
   for(int n=0; n<NSteps; n++)
   {
     // my_vals = Explicit_Step.explicit_step(my_vals); 
-    my_vals = Explicit_Step.solve_implicit(my_vals);
+    my_vals = fdm_scheme.solve_implicit(my_vals);
   }
 
   print_vec(my_vals.begin(),my_vals.end(), "t=T");

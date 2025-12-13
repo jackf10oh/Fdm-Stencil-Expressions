@@ -20,7 +20,7 @@
 #include "../LinOps/LinOpTraits.hpp"
 #include "BoundaryCond.hpp"
 
-// using MatrixStorage_t = Eigen::MatrixXd; 
+// also declared in BoundaryCond.hpp 
 using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::ColMajor>; 
 
 template<typename BaseDerived>
