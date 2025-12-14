@@ -70,7 +70,6 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
         #pragma omp for nowait 
         for(std::size_t i=0; i<centered_skirt; i++)
         {
-          std::cout << "Upper" << std::endl; 
           auto left = m->cbegin()+i;
           auto right = left+one_sided_skirt+1; 
           auto weights = weight_calc.GetWeights(*left, left,right, m_order); 
@@ -83,7 +82,6 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
         #pragma omp for nowait 
         for(std::size_t i=centered_skirt;i<mesh_size-centered_skirt; i++)
         {
-          std::cout << "Mid" << std::endl; 
           auto left = m->cbegin()-centered_skirt+i;  
           auto right = left+(centered_skirt+1+centered_skirt);
           auto weights = weight_calc.GetWeights(m->at(i), left,right, m_order);
@@ -96,7 +94,6 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
         #pragma omp for nowait 
         for(std::size_t i = mesh_size-centered_skirt; i<mesh_size; i++)
         {
-          std::cout << "Lower" << std::endl; 
           auto right = m->cbegin() + i; 
           auto left = right-one_sided_skirt-1; 
           auto weights = weight_calc.GetWeights(*right, left,right, m_order); 

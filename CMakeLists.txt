@@ -6,21 +6,38 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# options 
+option(USE_OPENMP "Enable OpenMP Parallelization" ON) 
+
+# adding OpenMP is enable 
+if(USE_OPENMP)
+  find_package(OpenMP)
+  if(OpenMP_FOUND)
+    message(STATUS "OpenMP found successfully!")
+  endif()
+else()
+  message(STATUS "Cmake args disabling OpenMP...")
+endif()
+
+
 # adding Eigenlib to compiler
 find_package(Eigen3 REQUIRED)
 
 # load subdirector LinOps into current CMakeLists.txt
-add_library(LinOps INTERFACE)
+add_library(LinOps
+  INTERFACE 
+)
 
 # define the library as FdmStencilExressions
-add_library(FdmStencilExpressions
-  INTERFACE
-
-)
+add_library(FdmStencilExpressions INTERFACE)
 
 target_include_directories(FdmStencilExpressions 
   INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(FdmStencilExpressions
+  INTERFACE OpenMP::OpenMP_CXX
 )
 
 # adding  google test
