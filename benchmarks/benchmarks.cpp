@@ -123,9 +123,9 @@ static void BENCHMARK_ConvectionDiffusionExpression_solve_implicit(benchmark::St
   };
 }
 
-BENCHMARK(BENCHMARK_NthDerivOp_set_mesh)->Arg(1e3)->Arg(1e4)->Arg(1e5);
-BENCHMARK(BENCHMARK_ConvectionDiffusionExpression_set_mesh)->Arg(1e3)->Arg(1e4)->Arg(1e5);
-BENCHMARK(BENCHMARK_ConvectionDiffusionExpression_explicit_step)->Arg(1e3)->Arg(1e4)->Arg(1e5);
-BENCHMARK(BENCHMARK_ConvectionDiffusionExpression_solve_implicit)->Arg(1e3)->Arg(1e4)->Arg(1e5);
+BENCHMARK(BENCHMARK_NthDerivOp_set_mesh)->Arg(1e2)->Arg(1e3)->Arg(1e4);
+BENCHMARK(BENCHMARK_ConvectionDiffusionExpression_set_mesh)->Arg(1e2)->Arg(1e3)->Arg(1e4);
+BENCHMARK(BENCHMARK_ConvectionDiffusionExpression_explicit_step)->Arg(1e2)->Arg(1e3)->Arg(1e4);
+BENCHMARK(BENCHMARK_ConvectionDiffusionExpression_solve_implicit)->Arg(1e2)->Arg(1e3)->Arg(1e4);
 
 BENCHMARK_MAIN();

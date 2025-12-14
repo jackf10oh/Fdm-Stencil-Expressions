@@ -46,61 +46,73 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       
       // new pointer set. proceed to recalculate Matrix 
       m_mesh_ptr = m; 
+      const std::size_t mesh_size = m_mesh_ptr->size();
 
       // resize matrix to fit
-      m_stencil.resize(m->size(),m->size());
+      m_stencil.resize(mesh_size,mesh_size);
       // set all entries to zero
       // m_stencil.setZero(); // no longer needed since setFromTriples 
 
       typedef Eigen::Triplet<double> T;
       std::vector<T> tripletList;
-      tripletList.reserve(2*m_order*m_stencil.rows()); // not sure if this is correct size of lise...
+      tripletList.reserve((1+2*((m_order+1)/2))*mesh_size); // not sure if this is correct size of lise...
 
-      // instantiate stateful fornberg calculator 
-      FornCalc weight_calc(1+2*((m_order+1)/2),m_order);
-
-      // first rows with forward stencil 
-      std::size_t skirt = m_order; 
-      std::size_t i=0; 
-      auto left = m->cbegin();
-      auto right = left+skirt+1; 
-      for(std::size_t end=(m_order+1)/2; i<end; i++, left++, right++)
+      // begin OpenMP parallel section
+      #pragma omp parallel 
       {
-        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order); 
-        std::size_t offset=0; 
-        for(auto& w : weights){
-          tripletList.push_back(T(i,offset++,w));
+        // instantiate stateful fornberg calculator. one per thread 
+        std::vector<T> tripletListLocal;
+        tripletListLocal.reserve((1+2*((m_order+1)/2))*mesh_size); // not sure if this is correct size of lise...
+        FornCalc weight_calc(1+2*((m_order+1)/2),m_order);
+        std::size_t one_sided_skirt = m_order;  
+        std::size_t centered_skirt = (m_order+1)/2;  
+        // first rows with forward stencil
+        #pragma omp for nowait 
+        for(std::size_t i=0; i<centered_skirt; i++)
+        {
+          std::cout << "Upper" << std::endl; 
+          auto left = m->cbegin()+i;
+          auto right = left+one_sided_skirt+1; 
+          auto weights = weight_calc.GetWeights(*left, left,right, m_order); 
+          std::size_t offset=i; 
+          for(auto& w : weights){
+            tripletListLocal.push_back(T(i,offset++,w));
+          }
         }
-      }
-      // middle rows with centered centered stencil  
-      skirt = (m_order+1)/2; // num of points to left/right of center for stencil 
-      i=skirt; 
-      left = m->cbegin(); 
-      right = left+(skirt+1+skirt); 
-      for(;i<m->size()-skirt; i++, left++, right++)
-      {
-        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order);
-        int offset = -skirt;
-        for(auto& w : weights){
-          tripletList.push_back(T(i,i+offset++,w));
-        };
-      }
-      // last rows 
-      skirt = m_order; 
-      // i = m->size()-1; 
-      i = m->size()-(m_order+1)/2; 
-      right = m->cend()-(m_order+1)/2; 
-      left = right-skirt-1; 
-      // for(; i>m->size()-(m_order+1)/2-1; i--,left--,right--)
-      for(; i<m->size(); i++,left++,right++)
-      {
-        auto weights = weight_calc.GetWeights(m->at(i),left,right,m_order); 
-        int offset=0;
-        for(auto it=weights.rbegin(); it!=weights.rend(); it++){
-          tripletList.push_back(T(i,i-offset++,*it)); 
+        // middle rows with centered centered stencil  
+        #pragma omp for nowait 
+        for(std::size_t i=centered_skirt;i<mesh_size-centered_skirt; i++)
+        {
+          std::cout << "Mid" << std::endl; 
+          auto left = m->cbegin()-centered_skirt+i;  
+          auto right = left+(centered_skirt+1+centered_skirt);
+          auto weights = weight_calc.GetWeights(m->at(i), left,right, m_order);
+          int offset = -centered_skirt;
+          for(auto& w : weights){
+            tripletListLocal.push_back(T(i,i+offset++,w));
+          };
         }
-      }
-      // Eigen 5.0 :( 
+        // last rows 
+        #pragma omp for nowait 
+        for(std::size_t i = mesh_size-centered_skirt; i<mesh_size; i++)
+        {
+          std::cout << "Lower" << std::endl; 
+          auto right = m->cbegin() + i; 
+          auto left = right-one_sided_skirt-1; 
+          auto weights = weight_calc.GetWeights(*right, left,right, m_order); 
+          int offset=0;
+          for(auto it=weights.rbegin(); it!=weights.rend(); it++){
+            tripletListLocal.push_back(T(i,i-offset++,*it)); 
+          }
+        }
+        // OpenMP Critical section
+        #pragma omp critical 
+        {
+          // Each Thread puts its triples onto master list 
+          tripletList.insert(tripletList.end(), tripletListLocal.begin(), tripletListLocal.end()); 
+        }
+      } // End OpenMP parallel section. implicit barrier 
+      // Eigen 5.0 :(. might be faster if sorting time > time saved from parallelism 
       // m_stencil.insertFromSortedTriplets()(tripletList.begin(), tripletList.end()); 
       m_stencil.setFromTriplets(tripletList.begin(), tripletList.end()); 
     }
