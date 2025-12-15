@@ -34,20 +34,37 @@ int main()
   double dt = 0.01;
 
   auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2) + 0.5*D(1));
+  auto Diffusion = IOp() + (dt)*(-0.2*D(2)); 
+  auto Convection = IOp() + (dt)*(-0.5*D(1)); 
 
   // setting boundary condition 
   auto left = std::make_shared<DirichletBC>(0.0); 
   auto right = left; 
   fdm_scheme.lbc_ptr = left; 
-  fdm_scheme.rbc_ptr = right; 
+  fdm_scheme.rbc_ptr = right;
+  Diffusion.lbc_ptr = left; 
+  Diffusion.rbc_ptr = right;
+  Convection.lbc_ptr = left; 
+  Convection.rbc_ptr = right;
+ 
+  // set mesh 
   fdm_scheme.set_mesh(my_mesh);
+  Diffusion.set_mesh(my_mesh); 
+  Convection.set_mesh(my_mesh); 
 
   double T = 10.0;
   int NSteps = T/dt; 
   for(int n=0; n<NSteps; n++)
   {
+    // explcit euler 
     // my_vals = Explicit_Step.explicit_step(my_vals); 
-    my_vals = fdm_scheme.solve_implicit(my_vals);
+
+    //implicit euler
+    // my_vals = fdm_scheme.solve_implicit(my_vals);
+
+    // Operator splitting methods
+    auto temp = Convection.apply(my_vals); 
+    my_vals = Diffusion.solve_implicit(temp); 
   }
 
   print_vec(my_vals.begin(),my_vals.end(), "t=T");
