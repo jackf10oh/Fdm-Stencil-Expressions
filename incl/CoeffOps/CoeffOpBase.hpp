@@ -25,11 +25,11 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     {
       static_cast<Derived*>(this)->SetTime_impl(t); 
     }
-    auto& GetMat()
+    decltype(auto) GetMat()
     {
       return static_cast<Derived*>(this)->GetMat(); 
     };
-    const auto& GetMat() const
+    decltype(auto) GetMat() const
     {
       return static_cast<const Derived*>(this)->GetMat(); 
     };

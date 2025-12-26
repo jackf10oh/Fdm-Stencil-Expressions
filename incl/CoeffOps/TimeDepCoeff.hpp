@@ -1,33 +1,31 @@
-// AutonomousCoeff.hpp
+// TimeDepCoeff.hpp
 //
 //
 //
-// JAF 12/12/2025
+// JAF 12/26/2025 
 
-#ifndef AUTONOMOUSCOEFF_H
-#define AUTONOMOUSCOEFF_H
+#ifndef TIMEDEPCOEFF_H
+#define TIMEDEPCOEFF_H
 
-#include<functional>
-#include "../FdmPlugin.hpp"
 #include "CoeffOpBase.hpp"
 
-class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
+class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
 {
   public:
-    using Derived_t = AutonomousCoeff; 
+    using Derived_t = TimeDepCoeff; 
   public:
     std::function<double(double)> m_function;  
   public:
     // constructors 
-    AutonomousCoeff()=delete; // no default constructor
-    AutonomousCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
+    TimeDepCoeff()=delete; // no default constructor
+    TimeDepCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
       :CoeffOpBase(m)
     {
       if(!f_init) throw std::runtime_error("must assign function to AutonomousCoeff"); 
       m_function = f_init; 
       set_mesh(m);
     }
-    AutonomousCoeff(const AutonomousCoeff& other) 
+    TimeDepCoeff(const TimeDepCoeff& other) 
     {
       if(!other.m_function) throw std::runtime_error("must assign function to AutonomousCoeff"); 
       m_function = other.m_function; 
@@ -43,14 +41,20 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
         >
       >
     >
-    AutonomousCoeff(Func_t f){
+    TimeDepCoeff(Func_t f){
       m_function=f; 
       set_mesh(m_mesh_ptr); 
     }
     // destructors
-    ~AutonomousCoeff()=default; 
-    // member functions  
-    void SetTime_impl(double t){};
+    ~TimeDepCoeff()=default;
+    // member funcs 
+    void SetTime_impl(double t){
+      // store the new time 
+      m_current_time=t; 
+      // updated current m_stencil 
+      m_stencil.setIdentity(); 
+      m_stencil *= m_function(t); 
+    };
     MatrixStorage_t& GetMat(){ return m_stencil; }; 
     const MatrixStorage_t& GetMat() const { return m_stencil; };  
     Discretization1D apply(const Discretization1D& d){
@@ -62,17 +66,13 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
     {
       // do nothing on nullptr 
       if(m==nullptr) return; 
-
+      
       // store m into m_mesh_ptr. checks null 
       LinOpBase::set_mesh(m);
 
       m_stencil.resize(m->size(), m->size()); 
-      using T = Eigen::Triplet<double>; 
-      std::vector<T> triplet_list(m->size());  
-      for(int i=0; i<m->size(); i++){
-        triplet_list[i] = T(i,i,m_function((*m)[i])); 
-      }; 
-      m_stencil.setFromTriplets(triplet_list.begin(), triplet_list.end()); 
+      m_stencil.setIdentity(); 
+      m_stencil *= m_function(m_current_time); 
     }
     template<
     typename Func_t,
@@ -83,17 +83,12 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
         >
       >
     >
-    AutonomousCoeff& operator=(Func_t f){
+    TimeDepCoeff& operator=(Func_t f){
       m_function=f; 
-      m_stencil.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
-      using T = Eigen::Triplet<double>; 
-      std::vector<T> triplet_list(m_mesh_ptr->size());  
-      for(int i=0; i<m_mesh_ptr->size(); i++){
-        triplet_list[i] = T(i,i,m_function((*m_mesh_ptr)[i])); 
-      }; 
-      m_stencil.setFromTriplets(triplet_list.begin(), triplet_list.end()); 
+       
       return *this; 
     }
-};
+ 
+}; 
 
-#endif // AutonomousCoeff.hpp 
+#endif // TimeDepCoeff.hpp 
