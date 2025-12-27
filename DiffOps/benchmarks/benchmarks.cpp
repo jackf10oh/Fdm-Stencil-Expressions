@@ -9,7 +9,7 @@
 
 #include<benchmark/benchmark.h>
 
-#include "../incl/All.hpp"
+#include "../All.hpp"
 
 static void BENCHMARK_NthDerivOp_set_mesh(benchmark::State &state)
 {

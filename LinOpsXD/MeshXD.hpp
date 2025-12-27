@@ -1,0 +1,66 @@
+// MeshXD.hpp
+//
+//
+//
+// JAF 12/26/2025
+
+#ifndef MESHXD_H
+#define MESHXD_H 
+
+#include<vector>
+#include<algorithm>
+#include<numeric>
+#include "../LinOps/Mesh.hpp"
+
+// forward declaration -> aliases
+class MeshXD; 
+using MeshXDPtr_t = std::shared_ptr<MeshXD>;
+// using MeshPtr_t = Mesh1D*; // experimenting with non owning views of mesh. 
+
+class MeshXD
+{
+  private:
+    // member data --------------------------------------------------------------------------
+    std::vector<MeshPtr_t> m_mesh_vec; // dynamic array of meshes. 
+  public:
+    // constructors ------------------------------------------------------------------------- 
+    // uniformly on [l,r] with n_steps per dim, with n_dims
+    MeshXD(double left=0.0, double right=1.0, std::size_t n_steps=11,std::size_t n_dims=1)
+      : m_mesh_vec(n_dims)
+    {
+      MeshPtr_t original_ptr = std::make_shared<Mesh1D>(left,right,n_steps); 
+      for(auto& ptr : m_mesh_vec) ptr=original_ptr;  
+    }
+    // uniformly on [ L(i), R(i) ] with NSteps(i) per dim with NSteps.size() dims 
+    MeshXD(const std::vector<std::pair<double,double>>& axes_vec, const std::vector<std::size_t>& nsteps_vec)
+      : m_mesh_vec(axes_vec.size())
+    {
+      if(axes_vec.size()!=nsteps_vec.size()) throw std::invalid_argument("# of axes != # of steps given");
+      auto nstep_it = nsteps_vec.begin();
+      auto axes_it=axes_vec.begin();
+      for(auto write=m_mesh_vec.begin(); write!=m_mesh_vec.end(); write++){
+        *write = std::make_shared<Mesh1D>(axes_it->first, axes_it->second, *nstep_it); 
+        axes_it++; 
+        nstep_it++; 
+      }
+    }
+    // destructors --------------------------------------------------------------------------
+    virtual ~MeshXD()=default;
+    // member functions ---------------------------------------------------------------------
+    // full size of XD mesh. i.e. axis1.size() * ... * axisn.size()
+    std::size_t sizes_product(){return std::accumulate(m_mesh_vec.begin(), m_mesh_vec.end(),1ul, [](std::size_t rolling, const MeshPtr_t& axis){return rolling*(axis->size());});} 
+    // product of axes up to dim exclusively [first, dim)
+    std::size_t sizes_partial_product(std::size_t dim){return std::accumulate(m_mesh_vec.begin(), m_mesh_vec.begin()+dim,1ul, [](std::size_t rolling, const MeshPtr_t& axis){return rolling*(axis->size());});} 
+    // size of a specific axis 
+    std::size_t dim_size(std::size_t i){return m_mesh_vec.at(i)->size();} 
+    // number of dimensions 
+    std::size_t dims(){return m_mesh_vec.size(); } 
+    // get a specific mesh 
+    MeshPtr_t& GetMesh(std::size_t i){return m_mesh_vec[i];} 
+    const MeshPtr_t& GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
+    MeshPtr_t& GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
+    const MeshPtr_t& GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
+
+};
+
+#endif // MeshXD.hpp

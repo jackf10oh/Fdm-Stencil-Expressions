@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(FdmStencilExpressions LANGUAGES CXX)
+project(DiffOps LANGUAGES CXX)
 
 # set cxx standard
 set(CMAKE_CXX_STANDARD 17)
@@ -29,14 +29,14 @@ add_library(LinOps
 )
 
 # define the library as FdmStencilExressions
-add_library(FdmStencilExpressions INTERFACE)
+add_library(DiffOps INTERFACE)
 
-target_include_directories(FdmStencilExpressions 
+target_include_directories(DiffOps 
   INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(FdmStencilExpressions
+target_link_libraries(DiffOps
   INTERFACE OpenMP::OpenMP_CXX
 )
 

@@ -35,6 +35,8 @@ class Mesh1D
       for(std::size_t i=0; i<n_steps-1; i++) m_vals[i] = x1 + i*dx; 
       m_vals[n_steps-1] = x2; 
     }
+    // copy constructors
+    Mesh1D(const Mesh1D& other): m_vals(other.m_vals){}; 
 
     // destructors  ---------------------------------------------------------------------------
     virtual ~Mesh1D()=default; 

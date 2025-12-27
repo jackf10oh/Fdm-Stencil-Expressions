@@ -43,7 +43,7 @@ class Discretization1D
 
     // member functions 
     // return the size of the underlying vector
-    std::size_t size() const { return m_mesh_ptr->size(); }
+    std::size_t size() const { return m_vals.size(); }
 
     // get underlying values
     Eigen::VectorXd& values() { return m_vals; }
@@ -110,13 +110,26 @@ class Discretization1D
     // forward citerators
     auto cbegin() const { return m_vals.cbegin(); }
     auto cend() const { return m_vals.cend(); }
-    // no reverse citerators
+    // no reverse citerators in eigen 
 
     // Operators ----------------------------------------------------
     Discretization1D& operator=(const Discretization1D& other) = default;
-    Discretization1D& operator=(Discretization1D&& other){m_mesh_ptr = other.m_mesh_ptr; other.m_mesh_ptr=nullptr; m_vals=std::move(other.m_vals); m_vals.resize(size());return *this;}; 
-    Discretization1D& operator=(const Eigen::VectorXd& other){ m_vals=other; m_vals.resize(size()); return *this;}
-    Discretization1D& operator=(Eigen::VectorXd&& other){ m_vals=std::move(other); m_vals.resize(size());return *this;}
+    Discretization1D& operator=(Discretization1D&& other){
+      m_mesh_ptr = std::move(other.m_mesh_ptr); 
+      other.m_mesh_ptr=nullptr; 
+      m_vals=std::move(other.m_vals); 
+      return *this;
+    }; 
+    Discretization1D& operator=(const Eigen::VectorXd& other){ 
+      m_vals=other;
+      // if(m_mesh_ptr) m_vals.resize(m_mesh_ptr->size());  
+      return *this;
+    }
+    Discretization1D& operator=(Eigen::VectorXd&& other){ 
+      m_vals=std::move(other);       
+      // if(m_mesh_ptr) m_vals.resize(m_mesh_ptr->size());  
+      return *this;
+    }
 }; // end Discretization1D 
 
 #endif // Discretization.hpp

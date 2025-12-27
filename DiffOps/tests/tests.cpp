@@ -11,7 +11,7 @@
 #include<gtest/gtest.h>
 #include<gmock/gmock.h>
 
-#include "../incl/All.hpp"
+#include "../All.hpp"
 
 // Testing TCoeff can be constructed
 TEST(CoeffOpTestSuite, TCoeffConstructible)
