@@ -38,8 +38,8 @@ class FdmPlugin
   public:
     // constructors ---------------------------------------------------------
     FdmPlugin()
-      : lbc_ptr(std::make_shared<BoundaryCond>()), 
-      rbc_ptr(std::make_shared<BoundaryCond>()), 
+      : lbc_ptr(), 
+      rbc_ptr(), 
       m_current_time(0.0)
     {}
     // destructors ---------------------------------------------------------
@@ -69,8 +69,8 @@ class FdmPlugin
       }
       // set current time, update time in boundary conditions as well 
       m_current_time = t; 
-      lbc_ptr->SetTime(t); 
-      rbc_ptr->SetTime(t); 
+      if(lbc_ptr) lbc_ptr->SetTime(t); 
+      if(rbc_ptr) rbc_ptr->SetTime(t); 
 
       // we aren't an expression call the actual implementor 
       static_cast<typename BaseDerived::Derived_t*>(this)->SetTime_impl(t);
@@ -95,8 +95,8 @@ class FdmPlugin
       Discretization1D result = static_cast<const typename BaseDerived::Derived_t*>(this)->apply(d);
 
       // fix the boundary conditions 
-      lbc_ptr->SetSolL(result);
-      lbc_ptr->SetSolR(result);
+      if(lbc_ptr) lbc_ptr->SetSolL(result);
+      if(rbc_ptr) rbc_ptr->SetSolR(result);
 
       return result; 
     };
@@ -114,22 +114,21 @@ class FdmPlugin
     {
       // applies m_stencil=m_stencil for most derived classes. 
       m_stencil = GetMat(); 
-      lbc_ptr->SetStencilL(m_stencil, d.mesh());
-      rbc_ptr->SetStencilR(m_stencil, d.mesh());  
+      if(lbc_ptr) lbc_ptr->SetStencilL(m_stencil, d.mesh());
+      if(rbc_ptr) rbc_ptr->SetStencilR(m_stencil, d.mesh());  
       // copy construct a new Discretization
       Discretization1D imp_sol = d; 
-      lbc_ptr->SetImpSolL(imp_sol);
-      lbc_ptr->SetImpSolR(imp_sol);
+      if(lbc_ptr) lbc_ptr->SetImpSolL(imp_sol);
+      if(rbc_ptr) rbc_ptr->SetImpSolR(imp_sol);
       
       // now we have the expression A*x = b
       // where x is the solution at timestep n+1 
       // and the rhs b is the given discretization 
 
-      Discretization1D result(d.mesh());
       // Eigen::SparseLU<MatrixStorage_t, Eigen::COLAMDOrdering<int> > solver(m_stencil);
       Eigen::BiCGSTAB<MatrixStorage_t> solver(m_stencil);
-      result = solver.solve(imp_sol.values());
-      return result; 
+      imp_sol = solver.solve(imp_sol.values());
+      return imp_sol; 
     }
     // Compose stencil(linop) with another stencil(linop) 
     template<typename DerivedInner> 
