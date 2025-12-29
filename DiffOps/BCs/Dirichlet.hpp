@@ -9,7 +9,7 @@
 
 #include "../BoundaryCond.hpp"
 
-class DirichletBC : public BoundaryCond
+class DirichletBC : public IBoundaryCond
 {
   public:  
     // member data 

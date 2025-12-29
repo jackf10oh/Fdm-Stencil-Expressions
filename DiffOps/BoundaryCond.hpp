@@ -7,6 +7,7 @@
 #ifndef BOUNDARYCOND_H
 #define BOUNDARYCOND_H
 
+#include<memory>
 #include<eigen3/Eigen/Core>
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/Mesh.hpp"
