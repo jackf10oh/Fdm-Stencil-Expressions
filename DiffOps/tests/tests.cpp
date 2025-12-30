@@ -72,17 +72,6 @@ TEST(DirichletBcSuite, DirichletOverrides)
   ASSERT_EQ(A.coeff(s-1,s-1),1.0); 
 }
 
-
-// testing 1 explicit/implicit step ----------------------------------------------------- 
-TEST(OneStepSuite, OneExplicitStep)
-{
-  
-}
-TEST(OneStepSuite, OneImplicitStep)
-{
-
-}
-
 // Testing TCoeff --------------------------------------------------------------  
 // Testing TCoeff can be constructed
 TEST(CoeffOpTestSuite, TCoeffConstructible)
@@ -129,7 +118,44 @@ TEST(CoeffOpTestSuite, TCoeffSettable)
   ASSERT_EQ(4.0, t.Time()); 
 }
 
-// testing AutonomousCoeff clasS
+// testing TimeDepCoeff class
+TEST(CoeffOpTestSuite, TimeDepCoeffTest)
+{
+  // make a mesh 
+  MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
+
+  // some lambdas to test out 
+  auto lam01 = [](double x){return x*x;}; // x^2
+  auto lam02 = [](double x){return std::sin(x);}; // sin(x)
+  auto lam03 = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // some polynomial in x 
+  
+  // take two vectors and check each |ui-vi| < eps 
+  auto check_lamda = [](Eigen::VectorXd u, double val){
+    double tol = 1e-4;  
+    for(int i=0; i<u.size(); i++){
+      ASSERT_NEAR(u[i],val,tol);
+    }
+  };
+
+  // make coeff
+  TimeDepCoeff coeff(lam01,my_mesh); 
+
+  // check they have the same values 
+  check_lamda(coeff.GetDiag(), lam01(coeff.Time())); 
+
+  // set to new functions / discretization 
+  coeff = lam02; 
+  coeff.SetTime(2.0); 
+  // check again
+  check_lamda(coeff.GetDiag(), lam02(coeff.Time())); 
+
+  // set to new functions / discretization 
+  coeff = lam03; 
+  // check again
+  check_lamda(coeff.GetDiag(), lam03(coeff.Time())); 
+}
+
+// testing AutonomousCoeff class
 TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 {
   // make a mesh 
@@ -349,9 +375,15 @@ TEST(FdmPluginSuite, Method_SetTime_Hooking)
   ASSERT_EQ(5.0,t.Time()); 
 }; 
 
-TEST(FdmPluginSuite, Method_compose_BC_Ptr_Passing)
+TEST(OneStepSuite, OneExplicitStep)
 {
+  
 }
+TEST(OneStepSuite, OneImplicitStep)
+{
+
+}
+
 
 
 

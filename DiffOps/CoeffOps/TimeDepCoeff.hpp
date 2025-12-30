@@ -85,7 +85,7 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
     >
     TimeDepCoeff& operator=(Func_t f){
       m_function=f; 
-       
+      SetTime_impl(m_current_time);
       return *this; 
     }
  
