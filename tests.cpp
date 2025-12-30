@@ -55,7 +55,6 @@ int main()
   // auto prod = Eigen::kroneckerProduct(I, D.GetMat()); 
   // cout << prod << endl; 
 
-  // A.lbc_ptr; 
 
 };
 

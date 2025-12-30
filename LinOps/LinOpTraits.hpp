@@ -39,7 +39,7 @@ template<typename T, typename = void>
 struct is_linop_crtp_impl : std::false_type {};
 
 template<typename T>
-struct is_linop_crtp_impl<T, std::enable_if_t<std::is_base_of_v<LinOpBase<T>,T>,void>> : std::true_type {};
+struct is_linop_crtp_impl<T, std::void_t<typename T::is_linop_tag>> : std::true_type {};
 
 template<typename T>
 using is_linop_crtp = is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 

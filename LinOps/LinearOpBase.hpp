@@ -37,9 +37,10 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
   // friend classes. LINOP_PLUGIN<T> can use private members of T 
   friend LinOpMixIn<LinOpBase>; 
 
-  // type defs so Plugin can access grand child class
+  // type defs 
   public:
-    using Derived_t = Derived; 
+    typedef struct{} is_linop_tag; // to tell if a class derived from LinOpBase<> 
+    using Derived_t = Derived; // so Plugin can access grand child class
 
   protected:
     // member data
