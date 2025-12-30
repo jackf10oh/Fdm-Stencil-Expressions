@@ -36,10 +36,13 @@ struct ScalarMultiply_t{};
 // Traits ---------------------------------------------------------------
 // given a type, detect if it is derived from linopbase<> 
 template<typename T, typename = void>
-struct is_linop_crtp : std::false_type {};
+struct is_linop_crtp_impl : std::false_type {};
 
 template<typename T>
-struct is_linop_crtp<T, std::void_t<typename std::remove_cv_t<std::remove_reference_t<T>>::is_linop_tag>> : std::true_type {};
+struct is_linop_crtp_impl<T, std::enable_if_t<std::is_base_of_v<LinOpBase<T>,T>,void>> : std::true_type {};
+
+template<typename T>
+using is_linop_crtp = is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
 
 // given a linop expression. detect if it is a composition L1( L2( . ))
 template<typename T>

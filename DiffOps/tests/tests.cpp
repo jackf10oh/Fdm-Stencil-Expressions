@@ -5,6 +5,7 @@
 // JAF 12/5/2025
 
 #include<iostream>
+#include<iomanip>
 #include<vector>
 #include<eigen3/Eigen/Core>
 #include<eigen3/Eigen/Sparse>
@@ -89,7 +90,7 @@ TEST(CoeffOpTestSuite, TCoeffConstructible)
   TCoeff t; 
 };
 
-// Testing TCoeff methods  
+// Testing TCoeff methods
 TEST(CoeffOpTestSuite, TCoeffSettable)
 {
   // make a mesh 
@@ -126,9 +127,9 @@ TEST(CoeffOpTestSuite, TCoeffSettable)
   check_lambda(t,4.0);
 
   ASSERT_EQ(4.0, t.Time()); 
-}; 
+}
 
-// testing AutonomousCoeff class
+// testing AutonomousCoeff clasS
 TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 {
   // make a mesh 
@@ -177,126 +178,126 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 TEST(FdmPluginSuite, StandardLinOps)
 {
   // /*TEST(LinearOperatorSuite, IdentityConstructible)*/
-  // {
-  //   // default construct uses nullptr
-  //   IOp Identity01;
-  //   ASSERT_EQ(Identity01.mesh(),nullptr);
+  {
+    // default construct uses nullptr
+    IOp Identity01;
+    ASSERT_EQ(Identity01.mesh(),nullptr);
 
-  //   // construct with ptr arg
-  //   auto my_mesh = make_mesh(); 
-  //   IOp Identity02(my_mesh);
-  //   ASSERT_EQ(Identity02.mesh(), my_mesh);   
+    // construct with ptr arg
+    auto my_mesh = make_mesh(); 
+    IOp Identity02(my_mesh);
+    ASSERT_EQ(Identity02.mesh(), my_mesh);   
 
-  //   // Check that entries on diag are 1
-  //   int s = my_mesh->size()-1; 
-  //   ASSERT_EQ(Identity02.GetMat().coeff(0,0),1); 
-  //   ASSERT_EQ(Identity02.GetMat().coeff(s,s),1); 
-  //   ASSERT_EQ(Identity02.GetMat().coeff(s/2,s/2),1);
+    // Check that entries on diag are 1
+    int s = my_mesh->size()-1; 
+    ASSERT_EQ(Identity02.GetMat().coeff(0,0),1); 
+    ASSERT_EQ(Identity02.GetMat().coeff(s,s),1); 
+    ASSERT_EQ(Identity02.GetMat().coeff(s/2,s/2),1);
 
-  //   // of diag are zero
-  //   ASSERT_EQ(Identity02.GetMat().coeff(0,s),0); 
-  //   ASSERT_EQ(Identity02.GetMat().coeff(s,0),0); 
-  // };
+    // of diag are zero
+    ASSERT_EQ(Identity02.GetMat().coeff(0,s),0); 
+    ASSERT_EQ(Identity02.GetMat().coeff(s,0),0); 
+  };
 
-  // /*TEST(LinearOperatorSuite, RandLinOpConstructible)*/
-  // {
-  //   // default construct uses nullptr
-  //   RandLinOp Rand01;
-  //   ASSERT_EQ(Rand01.mesh(),nullptr);
+  /*TEST(LinearOperatorSuite, RandLinOpConstructible)*/
+  {
+    // default construct uses nullptr
+    RandLinOp Rand01;
+    ASSERT_EQ(Rand01.mesh(),nullptr);
 
-  //   // construct with ptr arg
-  //   auto my_mesh = make_mesh(); 
-  //   RandLinOp Rand02(my_mesh);
-  //   ASSERT_EQ(Rand02.mesh(), my_mesh);   
-  // };
+    // construct with ptr arg
+    auto my_mesh = make_mesh(); 
+    RandLinOp Rand02(my_mesh);
+    ASSERT_EQ(Rand02.mesh(), my_mesh);   
+  };
 
   // /*TEST(LinearOperatorSuite, RandLinOpGetMat)*/ 
-  // {
-  //   // construct with ptr arg
-  //   auto my_mesh = make_mesh(); 
-  //   RandLinOp Rand01(my_mesh);
+  {
+    // construct with ptr arg
+    auto my_mesh = make_mesh(); 
+    RandLinOp Rand01(my_mesh);
 
-  //   ASSERT_EQ(Rand01.mesh(), my_mesh);   
+    ASSERT_EQ(Rand01.mesh(), my_mesh);   
 
-  //   Eigen::MatrixXd result = Rand01.GetMat(); 
-  // };
-  // /* TEST(LinearOperatorSuite, Composition)*/ 
-  // {
-  //   // get a mesh
-  //   auto my_mesh = make_mesh(); 
+    Eigen::MatrixXd result = Rand01.GetMat(); 
+  };
+  /* TEST(LinearOperatorSuite, Composition)*/ 
+  {
+    // get a mesh
+    auto my_mesh = make_mesh(); 
 
-  //   // vector of [1,1,...,1]
-  //   Discretization1D my_vals(my_mesh); 
-  //   my_vals.set_init(1.0);
+    // vector of [1,1,...,1]
+    Discretization1D my_vals(my_mesh); 
+    my_vals.set_init(1.0);
 
-  //   // construct without ptr arg
-  //   RandLinOp L1(my_mesh), L2(my_mesh);
+    // construct without ptr arg
+    RandLinOp L1(my_mesh), L2(my_mesh);
 
-  //   // composition L1( L2(.) ) 
-  //   auto Expr = L1.compose(L2); 
+    // composition L1( L2(.) ) 
+    auto Expr = L1.compose(L2); 
 
-  //   // get underlying Eigen::VectorXd results of .apply() 
-  //   auto expression_result = Expr.apply(my_vals).values(); 
-  //   auto manual_result = L1.apply(L2.apply(my_vals)).values(); 
+    // get underlying Eigen::VectorXd results of .apply() 
+    auto expression_result = Expr.apply(my_vals).values(); 
+    auto manual_result = L1.apply(L2.apply(my_vals)).values(); 
 
-  //   ASSERT_EQ(expression_result.size(), manual_result.size()); 
-  //   for(int i=0; i< expression_result.size(); i++){
-  //     ASSERT_NEAR(expression_result[i], manual_result[i], 1e-4);
-  //   }
-  // };
+    ASSERT_EQ(expression_result.size(), manual_result.size()); 
+    for(int i=0; i< expression_result.size(); i++){
+      ASSERT_NEAR(expression_result[i], manual_result[i], 1e-4);
+    }
+  };
 
   // /*TEST(LinearOperatorSuite, ExpressionChaining)*/
-  // {
-  //   auto my_mesh = make_mesh(); 
-  //   // just a messy expression 
-  //   auto my_expr = (2.0*(2.0*(2.0*(2.0*IOp())))).compose(50*IOp(my_mesh) + RandLinOp() + IOp() - RandLinOp(my_mesh).compose(IOp(my_mesh)));
-  //   // not all lhs/rhs had a mesh in expression construction 
-  //   my_expr.set_mesh(my_mesh); 
-  //   // we should be able to make into eigen Matrix no matter what
-  //   Eigen::MatrixXd resulting_mat = my_expr.GetMat(); 
-  // }
+  {
+    auto my_mesh = make_mesh(); 
+    // just a messy expression 
+    auto my_expr = (2.0*(2.0*(2.0*(2.0*IOp())))).compose(50*IOp(my_mesh) + RandLinOp() + IOp() - RandLinOp(my_mesh).compose(IOp(my_mesh)));
+    // not all lhs/rhs had a mesh in expression construction 
+    my_expr.set_mesh(my_mesh); 
+    // we should be able to make into eigen Matrix no matter what
+    Eigen::MatrixXd resulting_mat = my_expr.GetMat(); 
+  }
 
   // /* TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)*/ 
-  // {
-  //   // Calling set_mesh on an expression E = L1 + L2 
-  //   // should pass the mesh to L1.set_mesh() and L2.set_mesh() 
+  {
+    // Calling set_mesh on an expression E = L1 + L2 
+    // should pass the mesh to L1.set_mesh() and L2.set_mesh() 
     
-  //   // construct without mesh ptrs 
-  //   IOp I_lval(nullptr);
-  //   auto Expr = I_lval + IOp(nullptr);
+    // construct without mesh ptrs 
+    IOp I_lval(nullptr);
+    auto Expr = I_lval + IOp(nullptr);
 
-  //   // make mesh and give it to expression
-  //   auto my_mesh = make_mesh();
-  //   Expr.set_mesh(my_mesh); 
+    // make mesh and give it to expression
+    auto my_mesh = make_mesh();
+    Expr.set_mesh(my_mesh); 
 
-  //   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  //   ASSERT_EQ(I_lval.mesh(), my_mesh);
-  //   ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
+    // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
+    ASSERT_EQ(I_lval.mesh(), my_mesh);
+    ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
 
-  //   // test again for scalar multiply  // construct without mesh ptrs 
-  //   IOp I2_lval(nullptr);
-  //   double c=2.0; 
-  //   auto Expr2 = 2.0* I2_lval;
-  //   auto Expr3 = c*IOp(nullptr);
-  //   Expr2.set_mesh(my_mesh); 
-  //   Expr3.set_mesh(my_mesh); 
-  //   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  //   ASSERT_EQ(I2_lval.mesh(), my_mesh);
-  //   ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
-  //   ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
+    // test again for scalar multiply  // construct without mesh ptrs 
+    IOp I2_lval(nullptr);
+    double c=2.0; 
+    auto Expr2 = 2.0* I2_lval;
+    auto Expr3 = c*IOp(nullptr);
+    Expr2.set_mesh(my_mesh); 
+    Expr3.set_mesh(my_mesh); 
+    // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
+    ASSERT_EQ(I2_lval.mesh(), my_mesh);
+    ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
+    ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
 
-  //   // test again for composition 
-  //   RandLinOp I3_lval(nullptr); 
-  //   IOp I4_lval(nullptr);
-  //   auto Expr4 = I3_lval.compose(I3_lval); 
-  //   auto Expr5 = I3_lval.compose(IOp(nullptr));
-  //   Expr4.set_mesh(my_mesh); 
-  //   Expr5.set_mesh(my_mesh); 
-  //   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  //   ASSERT_EQ(I3_lval.mesh(), my_mesh);
-  //   ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
-  //   ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
-  // }
+    // test again for composition 
+    RandLinOp I3_lval(nullptr); 
+    IOp I4_lval(nullptr);
+    auto Expr4 = I3_lval.compose(I3_lval); 
+    auto Expr5 = I3_lval.compose(IOp(nullptr));
+    Expr4.set_mesh(my_mesh); 
+    Expr5.set_mesh(my_mesh); 
+    // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
+    ASSERT_EQ(I3_lval.mesh(), my_mesh);
+    ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
+    ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
+  }
 }
 
 // testing out SetTime() hooking
@@ -350,7 +351,6 @@ TEST(FdmPluginSuite, Method_SetTime_Hooking)
 
 TEST(FdmPluginSuite, Method_compose_BC_Ptr_Passing)
 {
-
 }
 
 

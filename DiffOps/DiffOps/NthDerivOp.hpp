@@ -125,9 +125,13 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp)
     {
+      // derivative of a scalar multiple 
       if constexpr(is_scalar_multiply_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
         double c = InnerOp.Lhs(); 
         return c * compose(InnerOp.Rhs()); 
+      }
+      if constexpr(is_add_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
+        return compose(InnerOp.Lhs()) + compose(InnerOp.Rhs()); 
       }
       // if taking derivative of another derivative 
       else if constexpr(std::is_same<std::remove_cv_t<std::remove_reference_t<DerivedInner>>,NthDerivOp>::value){
