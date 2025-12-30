@@ -130,24 +130,6 @@ class FdmPlugin
       imp_sol = solver.solve(imp_sol.values());
       return imp_sol; 
     }
-    // Compose stencil(linop) with another stencil(linop) 
-    template<typename DerivedInner> 
-    auto compose(DerivedInner&& InnerOp)
-    {
-      // typical result of composition 
-      auto result = static_cast<BaseDerived*>(this)->compose(std::forward<DerivedInner>(InnerOp));
-      // if I have a left BC give it to result 
-      if(lbc_ptr) result.lbc_ptr = lbc_ptr;
-      else result.lbc_ptr = InnerOp.lbc_ptr;
-      // if I have a right BC give it to result 
-      if(rbc_ptr) result.rbc_ptr = rbc_ptr; 
-      else result.rbc_ptr = InnerOp.rbc_ptr;
-      // give result 
-      return result;
-    };
-
-    // test function
-    void print(){std::cout << "Hello world, from plugin!" << std::endl; }
 };
 
 #endif // BvpPlugin.hpp

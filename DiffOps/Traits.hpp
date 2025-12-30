@@ -12,11 +12,11 @@
 #include "CoeffOps/CoeffOpBase.hpp"
 
 // Given a type, see if it is derived from CoeffOpBase's crtp scheme
-template<typename T, typename = void> 
-struct is_coeffop_crtp : std::false_type{}; 
+// template<typename T, typename = void> 
+// struct is_coeffop_crtp : std::false_type{}; 
 
-template<typename T>
-struct is_coeffop_crtp<T, std::void_t<typename std::remove_cv_t<std::remove_reference_t<T>>::is_coeff_flag>>: std::true_type{}; 
+// template<typename T>
+// struct is_coeffop_crtp<T, std::void_t<typename std::remove_cv_t<std::remove_reference_t<T>>::is_coeff_flag>>: std::true_type{}; 
 
 // given a type, see if it has a .sparseView() method
 template<typename T, typename = void>

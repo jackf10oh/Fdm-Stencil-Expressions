@@ -15,7 +15,6 @@ template<typename Derived>
 class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
 {
   public:
-    using is_coeff_flag = void; 
     // use member types so FdmPlugin can access grandchildren 
     using Derived_t = Derived;
   public:
@@ -52,5 +51,9 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
       return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<DerivedR>(RHS));
     };
 };
+
+// extend is_linop_crtp trait to include any class derived from CoeffOpBase
+template<typename T>
+struct is_linop_crtp_impl<T, std::enable_if_t<std::is_base_of_v<LinOpBase<CoeffOpBase<T>>,T>,void>> : std::true_type {};
 
 #endif

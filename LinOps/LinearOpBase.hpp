@@ -34,8 +34,11 @@ using CustomStorage_t = CUSTOM_IDENTITY_MATRIX_STORAGE;
 template<typename Derived>
 class LinOpBase : public LinOpMixIn<LinOpBase<Derived>> 
 {
+  // friend classes. LINOP_PLUGIN<T> can use private members of T 
+  friend LinOpMixIn<LinOpBase>; 
+
+  // type defs so Plugin can access grand child class
   public:
-    using is_linop_tag = void; 
     using Derived_t = Derived; 
 
   protected:
@@ -93,7 +96,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }; // end .compose(other) & lvalue overload 
 
     // // composition of linear of L1(L2( . ))
-    template<typename DerivedInner> 
+    template<typename DerivedInner>
     auto compose(DerivedInner&& InnerOp) && 
     {
       static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 

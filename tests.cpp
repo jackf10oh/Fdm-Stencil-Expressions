@@ -17,6 +17,11 @@
 typedef double Real;
 using std::cout, std::endl;
 
+class foo : public FdmPlugin<foo>{
+  public: 
+    using Derived_t = foo; 
+}; 
+
 int main()
 {
 
@@ -40,15 +45,17 @@ int main()
   //   cout << endl; 
   // }
 
-  auto my_mesh = make_mesh(0.0,3.0,4); 
-  NthDerivOp D(my_mesh); 
-  cout << D.GetMat() << endl; 
+  // auto my_mesh = make_mesh(0.0,3.0,4); 
+  // NthDerivOp D(my_mesh); 
+  // cout << D.GetMat() << endl; 
 
-  cout << "---------------------" << endl; 
-  MatrixStorage_t I(5,5); 
-  I.setIdentity(); 
-  auto prod = Eigen::kroneckerProduct(I, D.GetMat()); 
-  cout << prod << endl; 
+  // cout << "---------------------" << endl; 
+  // MatrixStorage_t I(5,5); 
+  // I.setIdentity(); 
+  // auto prod = Eigen::kroneckerProduct(I, D.GetMat()); 
+  // cout << prod << endl; 
+
+  // A.lbc_ptr; 
 
 };
 
