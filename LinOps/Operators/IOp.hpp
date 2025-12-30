@@ -7,9 +7,9 @@
 #ifndef IDENTITYOP_H
 #define IDENTITYOP_H
 
-#include<eigen3/Eigen/Core>
-#include<eigen3/Eigen/SparseCore>
-#include<eigen3/Eigen/Sparse>
+#include<Eigen/Core>
+#include<Eigen/SparseCore>
+#include<Eigen/Sparse>
 
 #include "../LinearOpBase.hpp"
 

@@ -9,7 +9,7 @@
 
 #include<iostream>
 #include<cstdint>
-#include<eigen3/Eigen/Core>
+#include<Eigen/Core>
 #include<type_traits>
 #include "Mesh.hpp"
 #include "Discretization.hpp" 

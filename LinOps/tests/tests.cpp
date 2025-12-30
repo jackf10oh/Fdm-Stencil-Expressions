@@ -5,8 +5,8 @@
 // JAF 12/5/2025
 
 #include<vector>
-#include<eigen3/Eigen/Core>
-#include<eigen3/Eigen/Sparse>
+#include<Eigen/Core>
+#include<Eigen/Sparse>
 #include<gtest/gtest.h>
 #include<gmock/gmock.h>
 

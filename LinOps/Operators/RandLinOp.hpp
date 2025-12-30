@@ -7,7 +7,7 @@
 #ifndef RANDLINOP_H
 #define RANDLINOP_H
 
-#include<eigen3/Eigen/Core>
+#include<Eigen/Core>
 
 #include "../LinearOpBase.hpp"
 

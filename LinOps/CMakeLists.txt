@@ -26,6 +26,10 @@ target_include_directories(LinOps
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+target_link_libraries(LinOps
+  INTERFACE Eigen3::Eigen 
+)
+
 # adding  google test
 enable_testing()
 

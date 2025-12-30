@@ -11,7 +11,7 @@
 #include<memory>
 #include<cstdint>
 #include<vector>
-#include<eigen3/Eigen/Core>
+#include<Eigen/Core>
 
 #include "Mesh.hpp"
 
