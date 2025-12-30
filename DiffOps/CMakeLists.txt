@@ -23,9 +23,10 @@ endif()
 # adding Eigenlib to compiler
 find_package(Eigen3 REQUIRED)
 
-# load subdirector LinOps into current CMakeLists.txt
-add_library(LinOps
-  INTERFACE 
+# load library LinOps into current CMakeLists.txt
+add_library(LinOps INTERFACE)
+target_link_libraries(LinOps
+ INTERFACE Eigen3::Eigen 
 )
 
 # define the library as FdmStencilExressions
@@ -37,6 +38,7 @@ target_include_directories(DiffOps
 )
 
 target_link_libraries(DiffOps
+  INTERFACE LinOps
   INTERFACE OpenMP::OpenMP_CXX
 )
 
@@ -73,7 +75,7 @@ else()
   )
 
   target_link_libraries(tests  
-    PRIVATE LinOps 
+    PRIVATE DiffOps 
     PRIVATE GTest::gtest 
     PRIVATE GTest::gtest_main 
     PRIVATE pthread # required by GTest

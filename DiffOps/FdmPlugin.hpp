@@ -114,8 +114,8 @@ class FdmPlugin
     {
       // applies m_stencil=m_stencil for most derived classes. 
       m_stencil = GetMat(); 
-      if(lbc_ptr) lbc_ptr->SetStencilL(m_stencil, d.mesh());
-      if(rbc_ptr) rbc_ptr->SetStencilR(m_stencil, d.mesh());  
+      if(lbc_ptr) lbc_ptr->SetStencilL(m_stencil, static_cast<typename BaseDerived::Derived_t*>(this)->mesh());
+      if(rbc_ptr) rbc_ptr->SetStencilR(m_stencil, static_cast<typename BaseDerived::Derived_t*>(this)->mesh());  
       // copy construct a new Discretization
       Discretization1D imp_sol = d; 
       if(lbc_ptr) lbc_ptr->SetImpSolL(imp_sol);

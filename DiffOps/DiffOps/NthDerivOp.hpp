@@ -60,15 +60,13 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       std::vector<T> tripletList;
       tripletList.resize(2*centered_skirt*(1+m_order) + (mesh_size-2*centered_skirt)*(1+2*centered_skirt)); // not sure if this is correct size of lise...
 
-      // begin OpenMP parallel section
-      #pragma omp parallel 
+      // begin OpenMP parallel section. **** COMMENTED OUT: std::vector writing is not thread safe ******
+      // #pragma omp parallel 
       {
         // instantiate stateful fornberg calculator. one per thread 
-        std::vector<T> tripletListLocal;
-        tripletListLocal.reserve((1+2*((m_order+1)/2))*mesh_size); // not sure if this is correct size of lise...
         FornCalc weight_calc(1+2*((m_order+1)/2),m_order);
         // first rows with forward stencil
-        #pragma omp for nowait 
+        // #pragma omp for nowait 
         for(std::size_t i=0; i<centered_skirt; i++)
         {
           auto left = m->cbegin()+i;
@@ -82,7 +80,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
           }
         }
         // middle rows with centered centered stencil  
-        #pragma omp for nowait 
+        // #pragma omp for nowait 
         for(std::size_t i=centered_skirt;i<mesh_size-centered_skirt; i++)
         {
           auto left = m->cbegin()-centered_skirt+i;  
@@ -97,7 +95,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
           };
         }
         // last rows 
-        #pragma omp for nowait 
+        // #pragma omp for nowait 
         for(std::size_t i = mesh_size-centered_skirt; i<mesh_size; i++)
         {
           auto right = m->cbegin() + i; 

@@ -69,15 +69,22 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     }; 
     const MeshPtr_t& mesh() const 
     {
-      // if we are a scalar multiply expression
-      if constexpr(is_scalar_multiply_expr<LinOpExpr>::value)
+      // if LHS is from linop base 
+      if constexpr(is_linop_crtp<LStorage_t>::value)
       {
-        return m_Rhs().mesh();
+        // and it has a mesh 
+        const auto& result = m_Lhs.mesh(); 
+        if(result) return result; 
       }
-      else
+      // if RHS is from linop base
+      if constexpr(is_linop_crtp<RStorage_t>::value)
       {
-        return m_Lhs.mesh() ? m_Lhs.mesh() : m_Rhs.mesh();
+        // and it has a mesh 
+        const auto& result = m_Rhs.mesh(); 
+        if(result) return result; 
       }
+      // any other other cases give the stored mesh in the expression. presumably a nullptr. 
+      return this->m_mesh_ptr; 
     }
 };
 
