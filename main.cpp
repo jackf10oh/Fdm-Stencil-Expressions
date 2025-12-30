@@ -9,7 +9,7 @@
 #include<vector>
 #include<eigen3/Eigen/Dense>
 // #include<eigen3/unsupported/Eigen/KroneckerProduct>
-#include "incl/All.hpp"
+#include "DiffOps/All.hpp"
 #include "LinOps/All.hpp"
 
 typedef double Real;

@@ -377,12 +377,79 @@ TEST(FdmPluginSuite, Method_SetTime_Hooking)
 
 TEST(OneStepSuite, OneExplicitStep)
 {
-  
-}
-TEST(OneStepSuite, OneImplicitStep)
-{
 
+  auto r = 10.0; 
+  int n_gridpoints = 101;
+
+  // uniform mesh from 0.0 to r with n_gridpoints
+  MeshPtr_t my_mesh = make_mesh(0.0,r,n_gridpoints);
+
+  Discretization1D my_vals;
+  
+  // Bump centered at r/2. Zero at 0.0 and r 
+  auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);}; 
+  
+  // fill my_vals with func(x)
+  my_vals.set_init(my_mesh, func); 
+  
+  // create an fdm_scheme for convection diffusion equation 
+  using D = NthDerivOp; 
+  double dt = 0.01;
+  auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2) + 0.5*D(1));
+
+  // set the boundary conditions to Dirichlet 0
+  auto left = std::make_shared<DirichletBC>(0.0);
+  auto right = left; 
+  fdm_scheme.lbc_ptr = left; 
+  fdm_scheme.rbc_ptr = right; 
+
+  // // fill out the stencil matrix
+  fdm_scheme.set_mesh(my_mesh);
+
+  // // apply the stencil. this uses lbc_ptr->SetSolL & ...->...R 
+  // auto result = fdm_scheme.explicit_step(my_vals);
+
+  // ASSERT_EQ(result.at(0),left->boundary_val); 
+  // ASSERT_EQ(result.at(result.size()-1),right->boundary_val); 
 }
+
+// TEST(OneStepSuite, OneImplicitStep)
+// {
+
+//   auto r = 10.0; 
+//   int n_gridpoints = 1001;
+
+//   // uniform mesh from 0.0 to r with n_gridpoints
+//   MeshPtr_t my_mesh = make_mesh(0.0,r,n_gridpoints);
+
+//   Discretization1D my_vals;
+  
+//   // Bump centered at r/2. Zero at 0.0 and r 
+//   auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);}; 
+  
+//   // fill my_vals with func(x)
+//   my_vals.set_init(my_mesh, func); 
+  
+//   // create an fdm_scheme for convection diffusion equation 
+//   using D = NthDerivOp; 
+//   double dt = 0.01;
+//   auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2) + 0.5*D(1));
+
+//   // set the boundary conditions to Dirichlet 0
+//   auto left = std::make_shared<DirichletBC>(0.0);
+//   auto right = left; 
+//   fdm_scheme.lbc_ptr = left; 
+//   fdm_scheme.rbc_ptr = right; 
+
+//   // fill out the stencil matrix
+//   fdm_scheme.set_mesh(my_mesh);
+
+//   // apply the stencil. this uses lbc_ptr->SetSolL & ...->...R 
+//   auto result = fdm_scheme.solve_implicit(my_vals);
+
+//   ASSERT_EQ(result.at(0),left->boundary_val); 
+//   ASSERT_EQ(result.at(result.size()-1),right->boundary_val); 
+// }
 
 
 
