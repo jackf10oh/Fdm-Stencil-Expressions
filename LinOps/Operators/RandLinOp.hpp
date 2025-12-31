@@ -22,7 +22,6 @@ class RandLinOp : public LinOpBase<RandLinOp>
       m_Mat = Eigen::MatrixXd::Random(s,s); 
     }
     RandLinOp(MeshPtr_t m)
-      : LinOpBase(m) 
     {
       set_mesh(m);  
     }
@@ -39,8 +38,11 @@ class RandLinOp : public LinOpBase<RandLinOp>
     }; 
     void set_mesh(MeshPtr_t m)
     {
-      LinOpBase::set_mesh(m); 
-      if(m_mesh_ptr==nullptr) return; 
+      // check m isnt nullptr or == current
+      if(m==nullptr || m==m_mesh_ptr) return; 
+      // store the new mesh 
+      m_mesh_ptr=m; 
+      // file matrix with random entries 
       m_Mat = Eigen::MatrixXd::Random(m_mesh_ptr->size(),m_mesh_ptr->size()); 
     };
     void resize(std::size_t s)

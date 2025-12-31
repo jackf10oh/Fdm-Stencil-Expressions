@@ -36,11 +36,12 @@ class IOp : public LinOpBase<IOp>
     {
       // store m into inherited m_mesh_ptr data member
       // checks null type
-      LinOpBase::set_mesh(m);
+      // LinOpBase::set_mesh(m);
 
-      // check null type
-      if(m_mesh_ptr==nullptr) return;
-      
+      // check null type, or same ptr 
+      if(m==nullptr || m==m_mesh_ptr) return; 
+      // store the new mesh 
+      m_mesh_ptr=m; 
       // pointer isn't null -> resize m_Mat
       m_Mat.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
       m_Mat.setIdentity(); 

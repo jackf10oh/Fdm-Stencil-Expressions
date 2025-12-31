@@ -49,7 +49,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 
   public:
     // Constructors ---------------------------------------------------------- 
-    LinOpBase(MeshPtr_t m=nullptr): LinOpMixIn<LinOpBase<Derived>>(), m_mesh_ptr(m){}; 
+    LinOpBase(MeshPtr_t m=nullptr): LinOpMixIn<LinOpBase<Derived>>(){set_mesh(m);}; 
     // member functions -------------------------------------------------------
     // member functions. implemented by derived class -------------------------
     auto& GetMat()
@@ -74,12 +74,12 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
     };
 
-    // fit operator to a mesh of rectangular domain 
+    // fit operator to a mesh of rectangular domain.
     void set_mesh(MeshPtr_t m) 
     {
       // ensure we aren't resetting the mesh again, or setting to nullptr
-      if((m==nullptr)||(m==m_mesh_ptr)) return; 
-      m_mesh_ptr = m; // take shared ownership of mesh
+      // if((m==nullptr)||(m==m_mesh_ptr)) return; 
+      // m_mesh_ptr = m; // take shared ownership of mesh
       static_cast<Derived*>(this)->set_mesh(m);
     };
     const MeshPtr_t& mesh() const 

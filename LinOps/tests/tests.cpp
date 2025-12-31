@@ -330,6 +330,18 @@ TEST(LinearOperatorSuite, ExpressionChaining)
   my_expr.set_mesh(my_mesh); 
   // we should be able to make into eigen Matrix no matter what
   Eigen::MatrixXd resulting_mat = my_expr.GetMat(); 
+
+  // building the same expression step by step 
+  auto tmp1 = 2.0*IOp();
+  auto tmp2 = 2.0*tmp1; 
+  auto tmp3 = 2.0*tmp2; 
+  auto tmp4 = 2.0*tmp3;
+  auto rhs1 = 50*IOp(my_mesh); 
+  auto rhs2 = rhs1 + RandLinOp(); 
+  auto rhs3 = rhs2 + IOp(); 
+  auto rhs4 = rhs3 - RandLinOp(my_mesh).compose(IOp(my_mesh));
+
+  auto my_expr2 = tmp4.compose(rhs4); // all temporaries still alive
 }
 
 TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)

@@ -21,7 +21,6 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
     // constructors 
     AutonomousCoeff()=delete; // no default constructor
     AutonomousCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
-      :CoeffOpBase(m)
     {
       if(!f_init) throw std::runtime_error("must assign function to AutonomousCoeff"); 
       m_function = f_init; 
@@ -60,11 +59,11 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
     };
     void set_mesh(MeshPtr_t m)
     {
-      // do nothing on nullptr 
-      if(m==nullptr) return; 
+      // do nothing on nullptr or same mesh
+      if(m==nullptr || m==m_mesh_ptr) return; 
 
       // store m into m_mesh_ptr. checks null 
-      LinOpBase::set_mesh(m);
+      m_mesh_ptr=m; 
 
       m_stencil.resize(m->size(), m->size()); 
       using T = Eigen::Triplet<double>; 

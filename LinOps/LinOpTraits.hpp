@@ -44,6 +44,18 @@ struct is_linop_crtp_impl<T, std::void_t<typename T::is_linop_tag>> : std::true_
 template<typename T>
 using is_linop_crtp = is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
 
+// given a type T see if it is an expression
+template<typename T>
+struct is_expr_crtp_impl : public std::false_type
+{};
+
+template<typename L, typename R, typename OP>
+struct is_expr_crtp_impl<LinOpExpr<L,R,OP>>: public std::true_type
+{};
+
+template<typename T>
+using is_expr_crtp = is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;
+
 // given a linop expression. detect if it is a composition L1( L2( . ))
 template<typename T>
 struct is_compose_expr: public std::false_type
@@ -94,26 +106,13 @@ struct Storage_t
   using type = typename std::conditional<
   is_linop_crtp<T>::value,  // if T derives from linopbase
   std::conditional_t<
-    std::is_lvalue_reference<T>::value, // if T is an lvalue 
+    std::is_lvalue_reference<T>::value && !(is_expr_crtp<T>::value),// if T is an lvalue LinOpBase
     T, // store by reference
     std::remove_reference_t<T> // else store rvalue by value
   >, 
   T // else store Non linops as is 
   >::type; 
 }; 
-
-// given a type T see if it is an expression
-template<typename T>
-struct is_expr_crtp_impl : public std::false_type
-{};
-
-template<typename L, typename R, typename OP>
-struct is_expr_crtp_impl<LinOpExpr<L,R,OP>>: public std::true_type
-{};
-
-template<typename T>
-struct is_expr_crtp 
-  : is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>> {};
 
 // given a type T that will be a mixin, see if it has .apply() const method 
 template<typename T, typename = void>

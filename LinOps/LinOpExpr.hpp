@@ -64,11 +64,17 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshPtr_t m)
     {
+      // LinOpBase::set_mesh(m); 
       if constexpr(is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
       if constexpr(is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
     }; 
     const MeshPtr_t& mesh() const 
     {
+      // if expressions mesh is not nullptr 
+      if(this->m_mesh_ptr)
+      {
+        return this->m_mesh_ptr;
+      }
       // if LHS is from linop base 
       if constexpr(is_linop_crtp<LStorage_t>::value)
       {
@@ -158,11 +164,12 @@ auto operator*(Scalar_t c, Derived&& L)
 {
   using LStorage_t = double;
   using RStorage_t = typename Storage_t<Derived>::type;
+  // using RStorage_t = typename Storage_t<std::remove_reference_t<Derived>>::type;
 
   auto bin_op = [](const LStorage_t& scalar, const RStorage_t& Mat){ return scalar*Mat.GetMat(); };
   using Op_t = make_flagged_t<decltype(bin_op), ScalarMultiply_t>;
 
-  return LinOpExpr<double, Derived, Op_t>(
+  return LinOpExpr<double, RStorage_t, Op_t>(
     static_cast<double>(c),
     std::forward<Derived>(L),
     static_cast<Op_t>(bin_op)

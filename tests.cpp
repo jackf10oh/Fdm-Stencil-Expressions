@@ -24,6 +24,18 @@ class foo : public FdmPlugin<foo>{
 
 int main()
 {
+  auto tmp0 = IOp(); 
+  auto tmp1 = IOp(); 
+  auto tmp2 = tmp0 + tmp1; 
+  cout << std::is_lvalue_reference<decltype(tmp2)::RStorage_t>::value << endl; 
+  cout << std::is_lvalue_reference<decltype((tmp2))>::value << endl; 
+  cout << std::is_rvalue_reference<decltype((tmp2))>::value << endl; 
+  cout << std::is_lvalue_reference<decltype(2.0*tmp2)::RStorage_t>::value << endl; 
+  cout << is_expr_crtp<decltype(tmp2)>::value << endl; 
+  cout << is_expr_crtp<decltype(tmp0)>::value << endl; 
+
+  auto tmp3 = tmp2 + tmp2; 
+};
 
   // std::vector<std::pair<double,double>> axes = {{0.0,1.0},{0.0,2.0},{0.0,3.0}}; 
   // std::vector<std::size_t> nsteps = {3,5,7}; 
@@ -55,8 +67,6 @@ int main()
   // auto prod = Eigen::kroneckerProduct(I, D.GetMat()); 
   // cout << prod << endl; 
 
-
-};
 
 // printed output 
 /*

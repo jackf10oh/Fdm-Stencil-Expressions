@@ -19,7 +19,8 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     using Derived_t = Derived;
   public:
     // Constructors
-    CoeffOpBase(MeshPtr_t m=nullptr): LinOpBase<CoeffOpBase<Derived>>(m){}; 
+    CoeffOpBase(MeshPtr_t m=nullptr){set_mesh(m);};
+    // Member functions  
     void SetTime_impl(double t)
     {
       static_cast<Derived*>(this)->SetTime_impl(t); 
@@ -32,13 +33,13 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     {
       return static_cast<const Derived*>(this)->GetMat(); 
     };
+    void set_mesh(MeshPtr_t m)
+    {
+      static_cast<Derived_t*>(this)->set_mesh(m); 
+    }
     // default functionality to cast to Eigen::VectorXd
     Eigen::VectorXd GetDiag() const {return Eigen::VectorXd(GetMat().diagonal());};
-    // Discretization1D apply(const Discretization1D& d) const
-    // {
-    //   return static_cast<const Derived*>(this)->apply(d); 
-    // };
-    // operator for scalar multiplication c*L
+
     template<typename DerivedR>
     auto operator*(DerivedR&& RHS) &
     {

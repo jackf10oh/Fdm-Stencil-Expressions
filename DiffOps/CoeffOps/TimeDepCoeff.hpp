@@ -18,13 +18,14 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
   public:
     // constructors 
     TimeDepCoeff()=delete; // no default constructor
+    // from callable + mesh 
     TimeDepCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
-      :CoeffOpBase(m)
     {
       if(!f_init) throw std::runtime_error("must assign function to AutonomousCoeff"); 
       m_function = f_init; 
       set_mesh(m);
     }
+    // copy constructor
     TimeDepCoeff(const TimeDepCoeff& other) 
     {
       if(!other.m_function) throw std::runtime_error("must assign function to AutonomousCoeff"); 
@@ -43,7 +44,6 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
     >
     TimeDepCoeff(Func_t f){
       m_function=f; 
-      set_mesh(m_mesh_ptr); 
     }
     // destructors
     ~TimeDepCoeff()=default;
@@ -64,13 +64,14 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
     };
     void set_mesh(MeshPtr_t m)
     {
-      // do nothing on nullptr 
-      if(m==nullptr) return; 
+      // do nothing on nullptr or same mesh
+      if(m==nullptr || m==m_mesh_ptr) return; 
       
       // store m into m_mesh_ptr. checks null 
-      LinOpBase::set_mesh(m);
+      m_mesh_ptr = m; 
 
-      m_stencil.resize(m->size(), m->size()); 
+      // resize stencil and set as F(t)
+      m_stencil.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
       m_stencil.setIdentity(); 
       m_stencil *= m_function(m_current_time); 
     }

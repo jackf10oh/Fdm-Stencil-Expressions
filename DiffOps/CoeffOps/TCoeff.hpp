@@ -16,7 +16,6 @@ class TCoeff : public CoeffOpBase<TCoeff>
   public:
     // constructors 
     TCoeff(MeshPtr_t m=nullptr)
-      :CoeffOpBase(m)
     {
       set_mesh(m);
     }
@@ -36,11 +35,11 @@ class TCoeff : public CoeffOpBase<TCoeff>
     }
     void set_mesh(MeshPtr_t m)
     {
-      // store m into m_mesh_ptr. checks null 
-      LinOpBase::set_mesh(m);
-
       // do nothing on nullptr 
-      if(m==nullptr) return; 
+      if(m==nullptr || m==m_mesh_ptr) return; 
+      // store m into m_mesh_ptr.
+      m_mesh_ptr=m; 
+      // resize current stencil 
       m_stencil.resize(m->size(), m->size()); 
       m_stencil.setIdentity(); 
       m_stencil *= m_current_time; 

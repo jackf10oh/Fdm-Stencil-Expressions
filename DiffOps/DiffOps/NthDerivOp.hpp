@@ -39,10 +39,8 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     // set the mesh the derivative operator works on 
     void set_mesh(MeshPtr_t m)
     {
-      //  do nothing if meshes are ==
-      if(m==m_mesh_ptr) return;  
-      // resize 0 on nullptr
-      if(m==nullptr){m_stencil.resize(0,0); return;};
+      //  do nothing if meshes are == or on nullptr 
+      if(m==nullptr || m==m_mesh_ptr) return;  
       
       // new pointer set. proceed to recalculate Matrix 
       m_mesh_ptr = m; 
