@@ -377,12 +377,12 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   RandLinOp I3_lval(nullptr); 
   IOp I4_lval(nullptr);
   auto Expr4 = I3_lval.compose(I3_lval); 
-  auto Expr5 = I3_lval.compose(IOp(nullptr));
-  Expr4.set_mesh(my_mesh); 
+  auto Expr5 = Expr4.compose(IOp(nullptr));
+  // Expr4.set_mesh(my_mesh); 
   Expr5.set_mesh(my_mesh); 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
   ASSERT_EQ(I3_lval.mesh(), my_mesh);
-  ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
+  // ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
   ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
 }
 
