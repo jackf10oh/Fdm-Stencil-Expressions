@@ -95,16 +95,19 @@ class FdmPlugin
       Discretization1D result = static_cast<const typename BaseDerived::Derived_t*>(this)->apply(d);
 
       // fix the boundary conditions 
-      if(lbc_ptr) lbc_ptr->SetSolL(result);
-      if(rbc_ptr) rbc_ptr->SetSolR(result);
+      // get mesh from derived class 
+      const MeshPtr_t& current_mesh = static_cast<const typename BaseDerived::Derived_t*>(this)->mesh(); 
+      // set L/R boundary according to mesh + BC 
+      if(lbc_ptr) lbc_ptr->SetSolL(result, current_mesh);
+      if(rbc_ptr) rbc_ptr->SetSolR(result, current_mesh);
 
       return result; 
     };
 
     Discretization1D apply(const Discretization1D& d) const
     {
-      // temp store of result 
-      Discretization1D result(d.mesh()); 
+      // temp store of result  
+      Discretization1D result; // // Discretization1D result(d.mesh()); no longer copying the mesh to result  
       result = GetMat() * d.values();
       return result; 
     };
@@ -114,12 +117,13 @@ class FdmPlugin
     {
       // applies m_stencil=m_stencil for most derived classes. 
       m_stencil = GetMat(); 
-      if(lbc_ptr) lbc_ptr->SetStencilL(m_stencil, static_cast<typename BaseDerived::Derived_t*>(this)->mesh());
-      if(rbc_ptr) rbc_ptr->SetStencilR(m_stencil, static_cast<typename BaseDerived::Derived_t*>(this)->mesh());  
+      const MeshPtr_t& current_mesh = static_cast<typename BaseDerived::Derived_t*>(this)->mesh(); 
+      if(lbc_ptr) lbc_ptr->SetStencilL(m_stencil, current_mesh);
+      if(rbc_ptr) rbc_ptr->SetStencilR(m_stencil, current_mesh);  
       // copy construct a new Discretization
       Discretization1D imp_sol = d; 
-      if(lbc_ptr) lbc_ptr->SetImpSolL(imp_sol);
-      if(rbc_ptr) rbc_ptr->SetImpSolR(imp_sol);
+      if(lbc_ptr) lbc_ptr->SetImpSolL(imp_sol, current_mesh);
+      if(rbc_ptr) rbc_ptr->SetImpSolR(imp_sol, current_mesh);
       
       // now we have the expression A*x = b
       // where x is the solution at timestep n+1 

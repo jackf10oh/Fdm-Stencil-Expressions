@@ -70,23 +70,18 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     }; 
     const MeshPtr_t& mesh() const 
     {
-      // if expressions mesh is not nullptr 
-      if(this->m_mesh_ptr)
-      {
-        return this->m_mesh_ptr;
-      }
-      // if LHS is from linop base 
+      // if LHS is from linop base. given priority over RHS 
       if constexpr(is_linop_crtp<LStorage_t>::value)
       {
         // and it has a mesh 
-        const auto& result = m_Lhs.mesh(); 
+        const MeshPtr_t& result = m_Lhs.mesh(); 
         if(result) return result; 
       }
-      // if RHS is from linop base
+      // if RHS is from linop base. 
       if constexpr(is_linop_crtp<RStorage_t>::value)
       {
         // and it has a mesh 
-        const auto& result = m_Rhs.mesh(); 
+        const MeshPtr_t& result = m_Rhs.mesh(); 
         if(result) return result; 
       }
       // any other other cases give the stored mesh in the expression. presumably a nullptr. 

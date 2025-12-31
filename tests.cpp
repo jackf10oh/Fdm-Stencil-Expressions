@@ -18,7 +18,6 @@
 typedef double Real;
 using std::cout, std::endl;
 
-
 template<typename F, typename Tup_t, typename = void>
 struct has_apply_result_double_impl : public std::false_type{}; 
 

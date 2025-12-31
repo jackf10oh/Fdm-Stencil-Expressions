@@ -53,4 +53,6 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     };
 };
 
+// operator+ should be deleted for coeffopbase LHS/RHS... 
+
 #endif
