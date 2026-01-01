@@ -15,38 +15,15 @@
 #include "LinOpsXD/MeshXD.hpp"
 #include "LinOpsXD/LinOpXDTraits.hpp"
 
-typedef double Real;
 using std::cout, std::endl;
-
-template<typename F, typename Tup_t, typename = void>
-struct has_apply_result_double_impl : public std::false_type{}; 
-
-template<typename F,typename Tup_t>
-struct has_apply_result_double_impl<
-  F,  
-  Tup_t,
-  std::void_t<decltype(std::apply(std::declval<F>(),std::declval<Tup_t>()))>> 
-  : public std::is_same<double, decltype(std::apply(std::declval<F>(),std::declval<Tup_t>()))>
-{}; 
-
-template<typename F, typename Tup_t> 
-using has_apply_result_double = has_apply_result_double_impl<F,Tup_t>; 
 
 int main()
 {
-  // given a function F(double ...) unwrap a vector and apply it 
-  auto lam_03 = [](double x, double y, double z){return x*x + y*y + z*z;}; 
-
-  std::tuple<double,double,double> my_point{ 1.0,1.0,1.0 }; 
-  std::tuple<double,double,double> my_point2{ 1.0,1.0, 0.0 }; 
-  std::tuple<double,double,double, double> my_point3{ 1.0,1.0, 0.0, 1.0}; 
-
-  cout << std::apply(lam_03, my_point) << endl; 
-  // cout << std::apply(lam_03, my_point3) << endl; 
-
-  cout << has_apply_result_double<decltype(lam_03),decltype(my_point)>::value << endl; 
-  // cout << has_apply_result_double<decltype(lam_03),decltype(my_point3)>::value << endl; 
-
+  std::cout << std::setprecision(2); 
+  auto rand = Eigen::MatrixXd::Random(11,11);
+  MatrixStorage_t A(rand.rows(), rand.cols()); 
+  rand.diagonal(0).asDiagonal().evalTo(A);   
+  cout << A << endl; 
 };
 
   // std::vector<std::pair<double,double>> axes = {{0.0,1.0},{0.0,2.0},{0.0,3.0}}; 

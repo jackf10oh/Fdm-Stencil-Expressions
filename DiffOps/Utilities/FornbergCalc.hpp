@@ -51,12 +51,14 @@ class WeightsResult_t{
     double operator[](std::size_t i){return *(m_begin_it+i);}
 };
 
+// stateful Fornberg weight calculator. only allocate memory at creation 
 class FornCalc
 {
   public:
     // member data
     // maximum order of derivative stencil 
     std::size_t m_order; 
+    // number of nodes to use in approximation 
     std::size_t m_n_nodes; 
     // single allocation of memory rows*cols big 
     std::vector<double> m_arr; 
@@ -79,7 +81,7 @@ class FornCalc
       if(std::distance(start,end)*(order+1) > m_arr.size()) throw std::runtime_error("nodes*(order+1) exceeds size of stored array!"); 
       // m_arr.resize(m_n_nodes*(order+1));
 
-      // utility lambdas 
+      // utility lambdas convert (i,j) -> index in flattened m_arr 
       auto entryRef = [this](std::size_t i, std::size_t j)->double&{ return this->m_arr[i*this->m_n_nodes+j];}; 
 
       // number of nodes 
