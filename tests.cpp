@@ -15,24 +15,57 @@
 
 // #include "LinOpsXD/MeshXD.hpp"
 // #include "LinOpsXD/LinOpXDTraits.hpp"
+#include "DiffOps/Utilities/make_diagonal.hpp"
 
 using std::cout, std::endl;
+
+auto rand_banded = [](std::size_t N, int bands=1){
+  auto rand = Eigen::MatrixXd::Random(N,N);
+  Eigen::MatrixXd temp(rand.rows(), rand.cols()); 
+  temp.setZero();
+  for(int i=-bands; i<=bands; i++){
+    temp.diagonal(i) = rand.diagonal(i); 
+  }
+  MatrixStorage_t A = temp.sparseView(); 
+  return A; 
+}; 
 
 int main()
 {
   std::cout << std::setprecision(2); 
-  auto rand = Eigen::MatrixXd::Random(11,11);
-  Eigen::MatrixXd temp(rand.rows(), rand.cols()); 
-  temp.setZero();
-  int n = 2; 
-  for(int i=-n; i<= n; i++){
-    temp.diagonal(i) = rand.diagonal(i); 
-  }
-  MatrixStorage_t A = temp.sparseView(); 
 
-  // MatrixStorage_t A(rand.rows(), rand.cols()); 
-  // rand.diagonal(0).asDiagonal().evalTo(A);   
-  cout << A << endl; 
+  // create mesh 
+  auto my_mesh = make_mesh(); 
+
+  // create flat 1 row matrix 
+  // MatrixStorage_t A(1,my_mesh->size());
+
+  // cout << "------------" << endl; 
+  // cout << A << endl; 
+
+
+  // // use a BC to set left/right end of A 
+  // BcPtr_t bc = std::make_shared<NeumannBC>(); 
+
+  // // set left side of row 
+  // bc->SetStencilL(A, my_mesh); 
+
+  // // store into a temp vector 
+  // std::vector<double> temp(A.valuePtr(), A.valuePtr()+A.nonZeros());
+
+  // // set right side of row. this zeros left side 
+  // bc->SetStencilR(A, my_mesh);
+  // // repopulate left side 
+  // for(auto i=0; i<temp.size(); i++) A.coeffRef(0,i) = temp[i]; 
+
+  // cout << "------------" << endl; 
+  // cout << A << endl; 
+
+  Eigen::VectorXd vec(4);
+  vec << 1, 2, 4, 8;
+  Eigen::MatrixXd mat;
+  mat = makeCirculant(vec);
+  std::cout << mat << std::endl;
 };
 
   // std::vector<std::pair<double,double>> axes = {{0.0,1.0},{0.0,2.0},{0.0,3.0}}; 
@@ -64,6 +97,24 @@ int main()
   // I.setIdentity(); 
   // auto prod = Eigen::kroneckerProduct(I, D.GetMat()); 
   // cout << prod << endl; 
+
+  //   cout << "---------------" << endl; 
+  // auto start = A.outerIndexPtr(); 
+  // for(auto i=0; i<A.outerSize(); i++){
+  //   cout << start[i] << endl; 
+  // }
+
+  // cout << "---------------" << endl; 
+  // auto inner_start = A.innerIndexPtr(); 
+  // for(auto i=0; i<A.nonZeros(); i++){
+  //   cout << inner_start[i] << endl; 
+  // }
+
+  // cout << "---------------" << endl; 
+  // auto val_start = A.valuePtr(); 
+  // for(auto i=0; i<A.nonZeros(); i++){
+  //   cout << val_start[i] << endl; 
+  // }
 
 
 // printed output 
