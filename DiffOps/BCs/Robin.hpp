@@ -1,27 +1,32 @@
-// Neumann.hpp 
+// Robin.hpp 
 //
-// neumann boundary condtions of the form 
-// Ux = c for some value c
+// robin(third type) boundary conditions 
+// alpha*U + beta*Ux = target_val
 //
 // JAF 12/8/2025
 
-#ifndef NEUMANNBCS_H
-#define NEUMANNBCS_H 
+#ifndef ROBINBCS_H
+#define ROBINBCS_H 
 
 #include "../BoundaryCond.hpp"
 #include "../Utilities/FornbergCalc.hpp"
 
-class NeumannBC : public IBoundaryCond
+class RobinBC : public IBoundaryCond
 {
   public:  
     // member data 
-    double boundary_flux;
+    double boundary_target;
+    double val_coeff;
+    double deriv_coeff;
 
   public:
     // Constructors ---------------------------------------------
-    NeumannBC(double val_init=0.0) : boundary_flux(val_init){}; 
+    // a*U + b*Ux = target
+    RobinBC(double a=1.0, double b=0.0, double target=0.0) 
+      : val_coeff(a), deriv_coeff(b), boundary_target(target) 
+    {}; 
     // Destructors ----------------------------------------------
-    virtual ~NeumannBC()=default; 
+    virtual ~RobinBC()=default; 
     // Member Funcs ----------------------------------------------
     // change first/last (left/right boundary) row of the fdm stencil matrix
     virtual void SetStencilL(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
@@ -29,22 +34,22 @@ class NeumannBC : public IBoundaryCond
       Mat.topRows(1) *= 0;
       // first order derivative approximation 
       double h = mesh->operator[](1) - mesh->operator[](0);  
-      Mat.coeffRef(0,0)= -1.0/h;
-      Mat.coeffRef(0,1)=  1.0/h;
+      Mat.coeffRef(0,0)=  val_coeff + deriv_coeff*(-1.0/h);
+      Mat.coeffRef(0,1)=  deriv_coeff*(1.0/h);
     }; 
     virtual void SetStencilR(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
     {
       Mat.bottomRows(1) *= 0; 
       // first order derivative approximation 
       double h = mesh->operator[](mesh->size()-1) - mesh->operator[](mesh->size()-2);  
-      Mat.coeffRef(Mat.rows()-1, Mat.cols()-2)= -1.0/h;
-      Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=  1.0/h;
+      Mat.coeffRef(Mat.rows()-1, Mat.cols()-2)= deriv_coeff*(-1.0/h);
+      Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=  val_coeff + deriv_coeff*(1.0/h);
     };
 
     virtual void SetImpSolL(Discretization1D& Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(0) = boundary_flux;};
+    {Sol.at(0) = boundary_target;};
     virtual void SetImpSolR(Discretization1D& Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(Sol.size()-1) = boundary_flux;};
+    {Sol.at(Sol.size()-1) = boundary_target;};
     
     // change the first/last (left/right boundary) entry of a vector  
     virtual void SetSolL(Discretization1D& Sol, const MeshPtr_t& mesh) const override 
@@ -57,12 +62,12 @@ class NeumannBC : public IBoundaryCond
       // get forward finite difference weights for Sol[0], Sol[1], Sol[2] 
       auto weights = calc.GetWeights((*mesh)[0], mesh->begin(), mesh->begin()+3, 1); 
 
-      // solve the equation Flux = W[0]*S[0] + W[1]*S[1] + W[2]*S[2] 
+      // solve the equation target = a*(S[0]) + b * ( W[0]*S[0] + W[1]*S[1] + W[2]*S[2] ) 
       // for the target value S[0] 
-      double target = boundary_flux; 
-      target -= weights[1]*Sol[1]; 
-      target -= weights[2]*Sol[2];
-      target /= weights[0]; 
+      double target = boundary_target; 
+      target -= deriv_coeff * weights[1]*Sol[1]; 
+      target -= deriv_coeff * weights[2]*Sol[2];
+      target /= val_coeff + deriv_coeff * weights[0]; 
 
       // assign to Sol reference
       Sol[0] = target;  
@@ -78,12 +83,12 @@ class NeumannBC : public IBoundaryCond
       // get forward finite difference weights for Sol[0], Sol[1], Sol[2] 
       auto weights = calc.GetWeights((*mesh)[mesh->size()-1], mesh->end()-3, mesh->end(), 1); 
 
-      // solve the equation Flux = W[0]*S[N-3] + W[1]*S[N-2] + W[2]*S[N-1] 
+      // solve the equation target = a*(S[N-1]) + b * ( W[0]*S[N-3] + W[1]*S[N-2] + W[2]*S[N-1] ) 
       // for the target value S[N-1] 
-      double target = boundary_flux; 
-      target -= weights[0]*Sol[Sol.size()-3]; 
-      target -= weights[1]*Sol[Sol.size()-2]; 
-      target /= weights[2]; 
+      double target = boundary_target; 
+      target -= deriv_coeff * weights[0]*Sol[Sol.size()-3]; 
+      target -= deriv_coeff * weights[1]*Sol[Sol.size()-2]; 
+      target /= val_coeff + deriv_coeff*weights[2]; 
 
       // assign to Sol reference
       Sol[Sol.size()-1] = target;  
@@ -91,4 +96,4 @@ class NeumannBC : public IBoundaryCond
     };
 };
 
-#endif
+#endif // Robin.hpp

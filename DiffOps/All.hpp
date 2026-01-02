@@ -19,6 +19,8 @@
 #include "CoeffOps/TimeDepCoeff.hpp"
 
 #include "BCs/Dirichlet.hpp"
+#include "BCs/Neumann.hpp"
+#include "BCs/Robin.hpp"
 
 #include "Utilities/Fornberg.hpp"
 

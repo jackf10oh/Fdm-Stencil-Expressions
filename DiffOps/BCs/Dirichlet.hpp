@@ -1,6 +1,7 @@
 // Dirichlet.hpp 
 //
-//
+// dirichlet boundary value conditions of the form 
+// U(0) = c for some constant c 
 //
 // JAF 12/8/2025
 
