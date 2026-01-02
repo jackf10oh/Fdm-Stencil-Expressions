@@ -7,9 +7,10 @@
 #ifndef NTHDERIVOP_H
 #define NTHDERIVOP_H
 
-#include<eigen3/Eigen/Core>
+#include<cstdint>
+#include<Eigen/Core>
 
-#include "../Utilities/Fornberg.hpp"
+// #include "../Utilities/Fornberg.hpp"
 #include "../Utilities/FornbergCalc.hpp"
 #include "../../LinOps/Discretization.hpp"
 #include "../FdmPlugin.hpp"

@@ -8,7 +8,8 @@
 #define BOUNDARYCOND_H
 
 #include<memory>
-#include<eigen3/Eigen/Core>
+#include<cstdint>
+#include<Eigen/Core>
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/Mesh.hpp"
 

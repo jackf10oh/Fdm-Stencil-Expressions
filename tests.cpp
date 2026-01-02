@@ -4,16 +4,17 @@
 //
 // JAF 12/8/2025
 
+#include<cstdint>
 #include<iostream>
 #include<iomanip>
 #include<vector>
-#include<eigen3/Eigen/Dense>
-#include<eigen3/unsupported/Eigen/KroneckerProduct>
+#include<Eigen/Dense>
+// #include<eigen3/unsupported/Eigen/KroneckerProduct>
 #include "DiffOps/All.hpp"
 #include "LinOps/All.hpp"
 
-#include "LinOpsXD/MeshXD.hpp"
-#include "LinOpsXD/LinOpXDTraits.hpp"
+// #include "LinOpsXD/MeshXD.hpp"
+// #include "LinOpsXD/LinOpXDTraits.hpp"
 
 using std::cout, std::endl;
 
@@ -21,8 +22,16 @@ int main()
 {
   std::cout << std::setprecision(2); 
   auto rand = Eigen::MatrixXd::Random(11,11);
-  MatrixStorage_t A(rand.rows(), rand.cols()); 
-  rand.diagonal(0).asDiagonal().evalTo(A);   
+  Eigen::MatrixXd temp(rand.rows(), rand.cols()); 
+  temp.setZero();
+  int n = 2; 
+  for(int i=-n; i<= n; i++){
+    temp.diagonal(i) = rand.diagonal(i); 
+  }
+  MatrixStorage_t A = temp.sparseView(); 
+
+  // MatrixStorage_t A(rand.rows(), rand.cols()); 
+  // rand.diagonal(0).asDiagonal().evalTo(A);   
   cout << A << endl; 
 };
 

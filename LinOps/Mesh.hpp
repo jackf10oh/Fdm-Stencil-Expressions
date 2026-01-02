@@ -7,7 +7,6 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include <cassert>
 #include<cstdint>
 #include<vector>
 #include<memory> 

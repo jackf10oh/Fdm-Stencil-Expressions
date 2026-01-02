@@ -34,7 +34,7 @@ target_link_libraries(LinOps
 enable_testing()
 
 #find the gtest library 
-find_package(GTest REQUIRED) # will fail if not found
+find_package(GTest CONFIG REQUIRED) # will fail if not found
 
 if(NOT GTest_FOUND)
   message(WARNING "GTest not found. Skipping targets.")
@@ -48,7 +48,9 @@ else()
     PRIVATE LinOps 
     PRIVATE GTest::gtest 
     PRIVATE GTest::gtest_main 
-    PRIVATE pthread # required by GTest
+    # PRIVATE GTest::gmock
+    # PRIVATE GTest::gmock_main
+    # PRIVATE pthread # required by GTest
   )
 
   include(GoogleTest)

@@ -4,6 +4,7 @@
 //
 // JAF 12/5/2025
 
+#include<cstdint>
 #include<vector>
 #include<Eigen/Core>
 #include<Eigen/Sparse>

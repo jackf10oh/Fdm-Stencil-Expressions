@@ -47,7 +47,8 @@ enable_testing()
 
 #find the gtest library 
 find_package(GTest REQUIRED) # will fail if not found
-find_package(benchmark REQUIRED) # Google Benchmark will fail if not found
+find_package(benchmark) # Google Benchmark will fail if not found
+# find_package(benchmark REQUIRED) # Google Benchmark will fail if not found
 
 if(NOT (benchmark_FOUND AND GTest_FOUND))
   message(WARNING "Google Benchmark not found. Skipping benchmark targets")

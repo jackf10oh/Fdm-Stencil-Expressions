@@ -10,13 +10,14 @@
 #define LINOP_PLUGIN FdmPlugin
 #define CUSTOM_IDENTITY_MATRIX_STORAGE Eigen::SparseMatrix<double,Eigen::RowMajor>
 
+#include<cstdint>
 #include<iostream>
-#include<eigen3/Eigen/Core>
-#include<eigen3/Eigen/Dense>
-#include<eigen3/Eigen/LU>
-#include<eigen3/Eigen/SparseCore>
-#include<eigen3/Eigen/SparseLU> 
-#include<eigen3/Eigen/IterativeLinearSolvers> // BICGSTAB
+#include<Eigen/Core>
+#include<Eigen/Dense>
+#include<Eigen/LU>
+#include<Eigen/SparseCore>
+#include<Eigen/SparseLU> 
+#include<Eigen/IterativeLinearSolvers> // BICGSTAB
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/LinOpTraits.hpp"
 #include "BoundaryCond.hpp"
