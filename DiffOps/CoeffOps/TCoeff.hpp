@@ -7,7 +7,6 @@
 #ifndef CURRENTTIMEOP_H
 #define CURRENTTIMEOP_H
 
-#include "../FdmPlugin.hpp"
 #include "CoeffOpBase.hpp"
 
 class TCoeff : public CoeffOpBase<TCoeff>

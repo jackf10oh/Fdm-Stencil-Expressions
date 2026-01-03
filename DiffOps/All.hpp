@@ -11,21 +11,16 @@
 #include "BoundaryCond.hpp" 
 #include "Traits.hpp"
 
+#include "BCs/Dirichlet.hpp"
+#include "BCs/Neumann.hpp"
+#include "BCs/Robin.hpp"
+
 #include "DiffOps/NthDerivOp.hpp"
 
 #include "CoeffOps/CoeffOpBase.hpp"
 #include "CoeffOps/TCoeff.hpp"
 #include "CoeffOps/AutonomousCoeff.hpp"
 #include "CoeffOps/TimeDepCoeff.hpp"
-
-#include "BCs/Dirichlet.hpp"
-#include "BCs/Neumann.hpp"
-#include "BCs/Robin.hpp"
-
-#include "Utilities/Fornberg.hpp"
-#include "Utilities/FornbergCalc.hpp"
-#include "Utilities/SparseDiagExpr.hpp"
-
 
 #include "../LinOps/All.hpp"
 

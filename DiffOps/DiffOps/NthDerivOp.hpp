@@ -10,9 +10,7 @@
 #include<cstdint>
 #include<Eigen/Core>
 
-// #include "../Utilities/Fornberg.hpp"
-#include "../Utilities/FornbergCalc.hpp"
-#include "../../LinOps/Discretization.hpp"
+#include "../../Utilities/FornbergCalc.hpp"
 #include "../FdmPlugin.hpp"
 #include "../../LinOps/LinearOpBase.hpp"
 

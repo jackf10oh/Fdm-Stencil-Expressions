@@ -11,7 +11,6 @@
 
 #include<Eigen/Core>
 #include<Eigen/Sparse>
-#include "../FdmPlugin.hpp"
 
 // forward declaration -----------------------------------------------
 template <class ArgType>

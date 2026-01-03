@@ -9,7 +9,7 @@
 #define NEUMANNBCS_H 
 
 #include "../BoundaryCond.hpp"
-#include "../Utilities/FornbergCalc.hpp"
+#include "../../Utilities/FornbergCalc.hpp"
 
 class NeumannBC : public IBoundaryCond
 {

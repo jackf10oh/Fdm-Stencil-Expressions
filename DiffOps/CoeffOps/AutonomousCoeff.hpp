@@ -8,7 +8,6 @@
 #define AUTONOMOUSCOEFF_H
 
 #include<functional>
-#include "../FdmPlugin.hpp"
 #include "CoeffOpBase.hpp"
 
 class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>

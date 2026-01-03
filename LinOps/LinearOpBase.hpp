@@ -17,8 +17,9 @@
 
 #ifndef LINOP_PLUGIN
 // use an empty struct if no plugin given.
+struct empty{}; 
 template<typename T> 
-struct LinOpMixin{}; 
+using LinOpMixIn = empty; 
 #else
 template<typename T>
 using LinOpMixIn = LINOP_PLUGIN<T>; 

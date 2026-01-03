@@ -9,7 +9,8 @@
 #define ROBINBCS_H 
 
 #include "../BoundaryCond.hpp"
-#include "../Utilities/FornbergCalc.hpp"
+#include "../../Utilities/FornbergCalc.hpp"
+
 
 class RobinBC : public IBoundaryCond
 {
