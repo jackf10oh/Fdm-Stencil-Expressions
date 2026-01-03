@@ -7,8 +7,10 @@
 #ifndef BOUNDARYCONDXD_H
 #define BOUNDARYCONDXD_H 
 
+#include<iostream>
 #include<vector>
 #include<tuple>
+#include<unsupported/Eigen/KroneckerProduct>
 #include "../DiffOps/BoundaryCond.hpp"
 #include "../Utilities/FillStencil.hpp"
 #include "../Utilities/SparseDiagExpr.hpp"
@@ -53,38 +55,47 @@ class BoundaryCondXD
     // get a Matrix that to apply as a mask over XD fdm stencils 
     void SetStencilImp(MatrixStorage_t& Mat, const MeshXDPtr_t& mesh)
     {
+      // check args are compaitble ---------------------------------
       if(m_bc_list.empty()) throw std::runtime_error("m_bc_list must be non empty!"); 
       if(m_bc_list.size()!=mesh->dims()) throw std::invalid_argument("length of boundary condition list must be == to # of dims of MeshXDPtr"); 
-      if(m_bc_list.size() > 2) throw std::runtime_error("BoundaryCondXD doesn't support dims >= 3 yet!"); 
-      // resulting mask for the operation of replacing rows in Mat input
-      // MatrixStorage_t mask(mesh->sizes_product());  
+      // if(m_bc_list.size() > 2) throw std::runtime_error("BoundaryCondXD doesn't support dims >= 3 yet!"); 
 
-      MatrixStorage_t I; // will set to identity inside loop 
+      // initializations ---------------------------------------------
+      // s1 = ith dims size, s2 = cumulative product of all dims < ith dim
+      std::size_t s1=mesh->dim_size(0), s2=1; 
+      // lambda to give an NxN identity matrix 
+      MatrixStorage_t cap_mat; 
+      auto I = [&cap_mat](std::size_t N) -> const MatrixStorage_t& {cap_mat.resize(N,N); cap_mat.setIdentity(); return cap_mat;}; 
+      // resulting mask for replacing rows in Mat input ---------------
+      MatrixStorage_t mask(s1,s1);  
       
-      // build up rows we are going to set in Mat -----------------------
-
-      // first build the 1 dim case with rows set by BcPtr_t's 
-      std::size_t s1=mesh->dim_size(0);  
-      MatrixStorage_t mask(s1,s1); 
+      // base case: 
+      // set stencil's first/last rows maually with BcPtr_t  
       m_bc_list[0].first->SetStencilL(mask,mesh->GetMesh(0));   
       m_bc_list[0].second->SetStencilR(mask,mesh->GetMesh(0)); 
 
-      if(mesh->dims()==2)
+      // recursive case: 
+      for(std::size_t ith_dim=1; ith_dim<mesh->dims(); ith_dim++)
       {
-        std::size_t s2 = mesh->dim_size(1); 
-        I.resize(s2,s2); I.setIdentity(); 
-        // take mask into higher dimension 
-        MatrixStorage_t mask_temp = Eigen::KroneckerProductSparse(I,mask);
+        // take previous mesh to higher dimension 
+        s1 = mesh->dim_size(ith_dim); 
+        MatrixStorage_t mask_temp = Eigen::KroneckerProductSparse(I(s1), mask); 
+        
+        // fill new empty rows with ith BcPtr_t pair
+        MatrixStorage_t sp_diag = make_SparseDiag( flat_stencil(m_bc_list[ith_dim],mesh->GetMesh(ith_dim)), s2 ); 
+        MatrixStorage_t fill_rows = Eigen::KroneckerProductSparse(sp_diag, I(s1));
+        fill_stencil(mask_temp, fill_rows); 
 
-        // fill new empty rows 
-        I.resize(s1,s1); I.setIdentity(); 
-        MatrixStorage_t fill_rows =  Eigen::KroneckerProductSparse(make_SparseDiag(flat_stencil(m_bc_list[1], mesh->GetMesh(1))),I); 
-        fill_stencil(mask_temp,fill_rows); 
+        // take ownership of higher dim temp with mask 
         mask = std::move(mask_temp); 
+
+        // // increment the cumulative product 
+        s2 *= s1; 
       }
-      
+
       // overwrite rows in Mat with nonzero rows from mask 
       overwrite_stencil(Mat, mask); 
+
       // void return type
     }
 };

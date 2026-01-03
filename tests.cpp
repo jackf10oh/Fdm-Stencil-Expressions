@@ -40,23 +40,22 @@ int main()
   // iomanip 
   std::cout << std::setprecision(2); 
 
-  auto my_mesh = make_mesh(0.0,1.0,5); 
-  auto bc01 = make_neumann(3.0); 
-  auto bc02 = make_dirichlet(0.0); 
-  auto row_vec = flat_stencil({bc01,bc02}, my_mesh); 
 
-  cout << make_SparseDiag(row_vec, 3) << endl; 
+  // mesh assembly. 2 dims 
+  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 5, 2);
+  
+  // block random operator 
+  DirectionalRandOp L(my_meshes,0); 
 
+  // assembling BoundaryCondXD 
+  BoundaryCondXD bc_list; 
+  bc_list.m_bc_list.resize(0); 
+  bc_list.m_bc_list.push_back({make_neumann(1.0),make_neumann(1.0)});
+  bc_list.m_bc_list.push_back({make_neumann(1.0),make_neumann(1.0)});
+
+  bc_list.SetStencilImp(L.GetMat(), L.mesh());
+
+
+  Eigen::MatrixXd foo = L.GetMat(); 
+  cout << foo << endl; 
 };
-
-  // // mesh assembly. 2 dims 
-  // MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 3);
-  
-  // DirectionalRandOp L(2); 
-
-  // L.set_mesh(my_meshes);  
-
-  // Eigen::MatrixXd foo = L.GetMat(); 
-
-  // cout << foo << endl; 
-  
