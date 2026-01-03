@@ -40,16 +40,23 @@ int main()
   // iomanip 
   std::cout << std::setprecision(2); 
 
-  // mesh assembly. 2 dims 
-  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 3);
-  
-  DirectionalRandOp L(2); 
+  auto my_mesh = make_mesh(0.0,1.0,5); 
+  auto bc01 = make_neumann(3.0); 
+  auto bc02 = make_dirichlet(0.0); 
+  auto row_vec = flat_stencil({bc01,bc02}, my_mesh); 
 
-  L.set_mesh(my_meshes);  
-
-  Eigen::MatrixXd foo = L.GetMat(); 
-
-  cout << foo << endl; 
-
+  cout << make_SparseDiag(row_vec, 3) << endl; 
 
 };
+
+  // // mesh assembly. 2 dims 
+  // MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 3);
+  
+  // DirectionalRandOp L(2); 
+
+  // L.set_mesh(my_meshes);  
+
+  // Eigen::MatrixXd foo = L.GetMat(); 
+
+  // cout << foo << endl; 
+  

@@ -10,8 +10,8 @@
 #include<vector>
 #include<tuple>
 #include "../DiffOps/BoundaryCond.hpp"
-#include "../DiffOps/Utilities/FillStencil.hpp"
-#include "../DiffOps/Utilities/SparseDiagExpr.hpp"
+#include "../Utilities/FillStencil.hpp"
+#include "../Utilities/SparseDiagExpr.hpp"
 #include "MeshXD.hpp"
 
 auto flat_stencil = [](const std::pair<BcPtr_t,BcPtr_t>& p, const MeshPtr_t& mesh){
