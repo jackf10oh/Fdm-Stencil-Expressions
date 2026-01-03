@@ -16,18 +16,12 @@
 #include "LinOpTraits.hpp"
 
 #ifndef LINOP_PLUGIN
-struct empty_struct{}; 
-template<typename T>
-using LinOpMixIn = empty_struct; 
+// use an empty struct if no plugin given.
+template<typename T> 
+struct LinOpMixin{}; 
 #else
 template<typename T>
 using LinOpMixIn = LINOP_PLUGIN<T>; 
-#endif
-
-#ifndef CUSTOM_IDENTITY_MATRIX_STORAGE
-using CustomStorage_t = Eigen::MatrixXd;
-#else
-using CustomStorage_t = CUSTOM_IDENTITY_MATRIX_STORAGE;
 #endif
 
 // CTRP base for 1D differential operator -------------------------------
@@ -123,20 +117,11 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       else{
         auto bin_op = [](const LStorage_t& A, const RStorage_t& B){return A.GetMat()*B.GetMat(); };
         using Op_t = make_flagged_t<decltype(bin_op), OperatorComposition_t>;
-        if constexpr(std::is_lvalue_reference<Lhs_t>::value){
-          return LinOpExpr<Lhs_t, Rhs_t, Op_t>(
-          std::forward<Lhs_t>(static_cast<Lhs_t&>(*this)), 
-          std::forward<DerivedInner>(InnerOp), 
-          static_cast<Op_t>(bin_op)
-          ); 
-        }
-        else{
-          return LinOpExpr<Lhs_t, Rhs_t, Op_t>(
-          std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), 
-          std::forward<DerivedInner>(InnerOp), 
-          static_cast<Op_t>(bin_op)
-          ); 
-        }
+        return LinOpExpr<Lhs_t, Rhs_t, Op_t>(
+        std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), 
+        std::forward<DerivedInner>(InnerOp), 
+        static_cast<Op_t>(bin_op)
+        ); 
       } // end else 
     }; // end .compose_impl(other) 
 

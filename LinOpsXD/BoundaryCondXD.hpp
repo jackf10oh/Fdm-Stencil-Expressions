@@ -55,7 +55,7 @@ class BoundaryCondXD
     {
       if(m_bc_list.empty()) throw std::runtime_error("m_bc_list must be non empty!"); 
       if(m_bc_list.size()!=mesh->dims()) throw std::invalid_argument("length of boundary condition list must be == to # of dims of MeshXDPtr"); 
-      if(m_bc_list.size() > 2) throw std::runtime_error("BoundaryCondXD doesn't support dims >= 3 yet!")
+      if(m_bc_list.size() > 2) throw std::runtime_error("BoundaryCondXD doesn't support dims >= 3 yet!"); 
       // resulting mask for the operation of replacing rows in Mat input
       // MatrixStorage_t mask(mesh->sizes_product());  
 

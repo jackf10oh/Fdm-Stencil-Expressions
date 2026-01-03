@@ -7,16 +7,16 @@
 #ifndef DISCRETIZATIONXD_H
 #define DISCRETIZATIONXD_H
 
-#include<eigen3/Eigen/Core>
+#include<Eigen/Core>
 
-class DiscretizationXD
+struct DiscretizationXD
 {
   private:
     // member data 
     Eigen::VectorXd m_vals; // flattened array of values 
   public:
     // constructors
-    
+    DiscretizationXD()=default; 
     // destructors -----------------------------------------------------------------
     ~DiscretizationXD()=default; 
     // member functions ------------------------------------------------------------ 

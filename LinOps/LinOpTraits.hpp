@@ -11,12 +11,6 @@
 #include "Mesh.hpp"
 #include "Discretization.hpp"
 
-// Utility funcs --------------------------------------------- 
-template <typename T>
-constexpr bool is_lvalue(T&&) {
-  return std::is_lvalue_reference<T>{};
-}
-
 // Forward Declarations -------------------------------------------------
 template<typename Derived>
 class LinOpBase;
