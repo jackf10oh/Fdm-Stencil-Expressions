@@ -35,7 +35,7 @@ class FornCalc
     FornCalc(const FornCalc& other)=delete; 
     ~FornCalc()=default; 
     template<typename Input_Iter>
-    MemView GetWeights(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
+    MemView<std::vector<double>::iterator> GetWeights(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
     {
       // Matrix of Order+1 rows, N cols
       // row m from Weights is the coeffs for derivative of order m (m= 0, ... , order)

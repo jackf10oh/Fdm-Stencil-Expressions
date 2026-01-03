@@ -12,35 +12,6 @@
 #include<string> 
 #include<iostream> 
 
-template<typename T>
-void print_vec(const std::vector<T>& v, std::string comment="")
-{
-  if(!comment.empty()) std::cout << comment << ": "; 
-  auto it = v.begin(); 
-  std::cout<< "["; 
-  while(it!=std::prev(v.end()))
-  {
-    std::cout << *it << ", ";
-    it++;
-  }
-  std::cout << *it << "]" << std::endl; 
-}
-
-template<typename Iter>
-void print_vec(const Iter& start, const Iter& end, std::string comment="")
-{
-  if(!comment.empty()) std::cout << comment << ": "; 
-  auto it = start; 
-  std::cout<< "["; 
-  while(it!=end-1)
-  {
-    std::cout << *it << ", ";
-    it++;
-  }
-  std::cout << *it << "]" << std::endl; 
-}
-
-
 // ------------------------------------------------------------------------
 template<template<typename T,typename TAlloc> class Container, typename Real, typename RealAlloc>
 std::vector<Real> LagrangeWeights(Real x_bar, const Container<Real,RealAlloc> nodes)
