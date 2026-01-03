@@ -43,7 +43,7 @@ int main()
   // mesh assembly. 2 dims 
   MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 3);
   
-  DirectionalRandOp L(2); 
+  IOpXD L; 
 
   L.set_mesh(my_meshes);  
 

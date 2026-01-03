@@ -15,5 +15,6 @@
 #include "LinearOpXDBase.hpp"
 
 #include "OperatorsXD/DirectionalRandOp.hpp"
+#include "OperatorsXD/IOpXD.hpp"
 
 #endif // All.hpp 
