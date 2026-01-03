@@ -23,6 +23,9 @@
 #include "BCs/Robin.hpp"
 
 #include "Utilities/Fornberg.hpp"
+#include "Utilities/FornbergCalc.hpp"
+#include "Utilities/SparseDiagExpr.hpp"
+
 
 #include "../LinOps/All.hpp"
 

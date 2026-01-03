@@ -15,8 +15,6 @@
 
 // #include "LinOpsXD/MeshXD.hpp"
 // #include "LinOpsXD/LinOpXDTraits.hpp"
-#include "DiffOps/Utilities/CirculantExpr.hpp"
-#include "DiffOps/Utilities/SparseDiagExpr.hpp"
 
 using std::cout, std::endl;
 
@@ -38,6 +36,10 @@ int main()
   // create mesh + boundary condition 
   auto my_mesh = make_mesh(0,4,6); 
   BcPtr_t bc = std::make_shared<NeumannBC>(); 
+
+  // Identity matrix I 
+  MatrixStorage_t I(my_mesh->size(), my_mesh->size()); 
+  I.setIdentity();  
 
   // first deriv stencil 
   auto D = MatrixStorage_t(my_mesh->size(), my_mesh->size());
@@ -61,20 +63,19 @@ int main()
   // cout << A << endl; 
 
   cout << "------------" << endl; 
-  auto foo = make_SparseDiag(A); 
-  cout << foo.eval() << endl; 
-
-  cout << "------------" << endl; 
-  MatrixStorage_t I(my_mesh->size(), my_mesh->size()); 
-  I.setIdentity();  
-  // put boundary conditions on outter dimension 
-  cout <<  Eigen::KroneckerProductSparse(foo,I) << endl;
-
-  cout << "------------" << endl; 
   // put the boundary conditions on inner dimension 
-  cout << Eigen::KroneckerProductSparse(I,D) << endl; 
+  MatrixStorage_t stencil = Eigen::KroneckerProductSparse(I,D);  
+  // cout << stencil << endl; 
 
+  cout << "------------" << endl; 
+  // put boundary conditions on outter dimension 
+  // cout <<  Eigen::KroneckerProductSparse(foo,I) << endl;
+  MatrixStorage_t B = Eigen::KroneckerProductSparse(make_SparseDiag(A),I); 
+  fill_stencil(stencil, B); 
+  cout << stencil << endl; 
 };
+
+
 
   // auto my_mesh = make_mesh(0.0,3.0,4); 
   // NthDerivOp D(my_mesh); 

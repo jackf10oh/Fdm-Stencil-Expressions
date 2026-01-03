@@ -6,6 +6,9 @@
 // 
 // JAF 1/2/2026 
 
+#ifndef SPARSEDIAGEXPR_H
+#define SPARSEDIAGEXPR_H
+
 #include<Eigen/Core>
 #include<Eigen/Sparse>
 #include "../FdmPlugin.hpp"
@@ -119,3 +122,5 @@ template <class ArgType>
 SparseDiag<ArgType> make_SparseDiag(const Eigen::SparseMatrixBase<ArgType>& arg) {
   return SparseDiag<ArgType>(arg.derived());
 }
+
+#endif // SparseDiagExpr.hpp
