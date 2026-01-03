@@ -38,8 +38,14 @@ class DirectionalRandOp: public LinOpXDBase<DirectionalRandOp>
       // do nothing on nullptr or same ptr 
       if(m==nullptr || m==m_mesh_ptr) return; 
       if(m->dims() < m_direction) throw std::runtime_error("MeshXD must have dims >= m_direction of DirectionalRandOp!"); 
+
+      // store meshxdptr into member data; 
       m_mesh_ptr = m; 
 
+      // identity matrix for calculations later 
+      Matrix_t I; 
+
+      // get a random matrix R that matches specific direction 
       std::size_t s = m_mesh_ptr->dim_size(m_direction); 
       auto temp = Eigen::MatrixXd::Random(s,s); 
       Matrix_t R = temp.sparseView(); 
@@ -47,11 +53,10 @@ class DirectionalRandOp: public LinOpXDBase<DirectionalRandOp>
       if(m_mesh_ptr->dims()>m_direction)
       {
         // product of last meshes > direction 
-        std::size_t prod = 1;
-        for(std::size_t i=m_direction+1; i<m_mesh_ptr->dims(); i++) prod *= m_mesh_ptr->dim_size(i); 
+        std::size_t prod = m_mesh_ptr->sizes_middle_product(m_direction+1, m_mesh_ptr->dims()); 
         
-        // make identity matrix for last meshes after direction 
-        Matrix_t I(prod,prod); I.setIdentity(); 
+        // resize identity matrix for last meshes after direction 
+        I.resize(prod,prod); I.setIdentity(); 
 
         // update R according to kronecker 
         Matrix_t intermediate = Eigen::KroneckerProductSparse(I,R); 
@@ -61,17 +66,16 @@ class DirectionalRandOp: public LinOpXDBase<DirectionalRandOp>
       if(m_direction>0)
       {
         // product of first meshes < direction 
-        std::size_t prod = 1;
-        for(std::size_t i=0; i<m_direction; i++) prod *= m_mesh_ptr->dim_size(i); 
+        std::size_t prod = m_mesh_ptr->sizes_middle_product(0, m_direction); 
           
-        // make identity matrix for first meshes before direction 
-        Matrix_t I(prod,prod); I.setIdentity(); 
+        // resize identity matrix for first meshes before direction 
+        I.resize(prod,prod); I.setIdentity(); 
 
         // update R according to kronecker 
         Matrix_t intermediate = Eigen::KroneckerProductSparse(R,I); 
         R = std::move(intermediate); 
       }
-      m_mat = std::move(R);
+      m_mat = std::move(R); // take ownership of high dimensional R with m_mat member data. 
     } // end set_mesh()  
 }; 
 

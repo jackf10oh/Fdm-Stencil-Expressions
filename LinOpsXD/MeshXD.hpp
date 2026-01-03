@@ -51,7 +51,13 @@ class MeshXD
     // full size of XD mesh. i.e. axis1.size() * ... * axisn.size()
     std::size_t sizes_product(){return std::accumulate(m_mesh_vec.begin(), m_mesh_vec.end(),1ul, [](std::size_t rolling, const MeshPtr_t& axis){return rolling*(axis->size());});} 
     // product of axes up to dim exclusively [first, dim)
-    std::size_t sizes_partial_product(std::size_t dim){return std::accumulate(m_mesh_vec.begin(), m_mesh_vec.begin()+dim,1ul, [](std::size_t rolling, const MeshPtr_t& axis){return rolling*(axis->size());});} 
+    std::size_t sizes_middle_product(std::size_t start, std::size_t end){
+      if(start > end) throw std::invalid_argument("start index must be <= end index for middle product"); 
+      if(end > m_mesh_vec.size()) throw std::invalid_argument("end index must be <= # of dims in MeshXD"); 
+      std::size_t prod = 1; 
+      for(std::size_t i=start; i<end; i++) prod *= m_mesh_vec[i]->size(); 
+      return prod; 
+    } 
     // size of a specific axis 
     std::size_t dim_size(std::size_t i){return m_mesh_vec.at(i)->size();} 
     // number of dimensions 
