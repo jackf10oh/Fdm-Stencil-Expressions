@@ -16,26 +16,6 @@
 #include "../Utilities/SparseDiagExpr.hpp"
 #include "MeshXD.hpp"
 
-auto flat_stencil = [](const std::pair<BcPtr_t,BcPtr_t>& p, const MeshPtr_t& mesh){
-
-  // empty singuglar row of size == mesh size 
-  MatrixStorage_t result(1, mesh->size()); 
-
-  // set the row according to left boundary condition. 
-  p.first->SetStencilL(result, mesh); 
-
-  // store it into a temp vector 
-  std::vector<double> temp(result.valuePtr(), result.valuePtr()+result.nonZeros()); 
-
-  // set the row according to right boundary condition 
-  p.second->SetStencilR(result, mesh); 
-
-  // copy left side back in to result 
-  for(auto i=0; i<temp.size(); i++) result.coeffRef(0,i) = temp[i]; 
-
-  return result; 
-}; 
-
 class BoundaryCondXD
 {
   public:
@@ -52,7 +32,7 @@ class BoundaryCondXD
 
     // set a DiscretizationXD to an implicit solution 
 
-    // get a Matrix that to apply as a mask over XD fdm stencils 
+    // set a Matrixs' row according to m_bc_list. making it an implicit stencil  
     void SetStencilImp(MatrixStorage_t& Mat, const MeshXDPtr_t& mesh)
     {
       // check args are compaitble ---------------------------------
@@ -98,6 +78,26 @@ class BoundaryCondXD
 
       // void return type
     }
+  private:
+    MatrixStorage_t flat_stencil(const std::pair<BcPtr_t,BcPtr_t>& p, const MeshPtr_t& mesh){
+
+    // empty singuglar row of size == mesh size 
+    MatrixStorage_t result(1, mesh->size()); 
+
+    // set the row according to left boundary condition. 
+    p.first->SetStencilL(result, mesh); 
+
+    // store it into a temp vector 
+    std::vector<double> temp(result.valuePtr(), result.valuePtr()+result.nonZeros()); 
+
+    // set the row according to right boundary condition 
+    p.second->SetStencilR(result, mesh); 
+
+    // copy left side back in to result 
+    for(auto i=0; i<temp.size(); i++) result.coeffRef(0,i) = temp[i]; 
+
+    return result; 
+  }; 
 };
 
 #endif // BOundaryCondXD.hpp
