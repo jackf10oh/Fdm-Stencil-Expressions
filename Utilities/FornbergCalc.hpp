@@ -11,45 +11,7 @@
 #include<vector>
 #include<string> 
 #include<iostream> 
-
-// traits 
-using Array_t = std::vector<double>;
-using Iter_t = Array_t::iterator;
-using CIter_t = Array_t::const_iterator;
-using RIter_t = Array_t::reverse_iterator;
-using CRIter_t = Array_t::const_reverse_iterator;
-
-// non owning view into array of memory
-class WeightsResult_t{
-  private:
-    // member data 
-    const Iter_t m_begin_it; 
-    const Iter_t m_end_it;
-  public:
-    // Constructors 
-    WeightsResult_t()=delete; 
-    WeightsResult_t(Iter_t begin, Iter_t end): m_begin_it(begin), m_end_it(end){}; 
-    WeightsResult_t(const WeightsResult_t& other)=delete; 
-    
-    // destructors
-    ~WeightsResult_t()=default;
-    
-    // member funcs 
-    std::size_t size() const {return std::distance(m_begin_it,m_end_it);};
-    double at(std::size_t i){if(i>=size()) throw std::out_of_range("index >= size");return *(m_begin_it+i);}
-    // Iterators 
-    const Iter_t& begin() const {return m_begin_it;};  
-    const Iter_t& end() const {return m_end_it;};  
-    CIter_t cbegin() const {return m_begin_it;};  
-    CIter_t cend() const {return m_end_it;};  
-    RIter_t rbegin() const { return std::make_reverse_iterator(m_end_it);}; 
-    RIter_t rend() const { return std::make_reverse_iterator(m_begin_it);};
-    CRIter_t crbegin() const { return std::make_reverse_iterator(m_end_it);}; 
-    CRIter_t crend() const { return std::make_reverse_iterator(m_end_it);}; 
-
-    // operators
-    double operator[](std::size_t i){return *(m_begin_it+i);}
-};
+#include "MemView.hpp"
 
 // stateful Fornberg weight calculator. only allocate memory at creation 
 class FornCalc
@@ -73,7 +35,7 @@ class FornCalc
     FornCalc(const FornCalc& other)=delete; 
     ~FornCalc()=default; 
     template<typename Input_Iter>
-    WeightsResult_t GetWeights(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
+    MemView GetWeights(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
     {
       // Matrix of Order+1 rows, N cols
       // row m from Weights is the coeffs for derivative of order m (m= 0, ... , order)
@@ -162,7 +124,7 @@ class FornCalc
       // Weights now contains LaGrange Interpolant Polynomials for 
       // nodes a0, a1, ..., an evaluated at x_bar
       // return non owning view of last row of Weights;
-      return WeightsResult_t(m_arr.begin()+(m_n_nodes*order), m_arr.begin()+(m_n_nodes*(order+1))); 
+      return MemView(m_arr.begin()+(m_n_nodes*order), m_arr.begin()+(m_n_nodes*(order+1))); 
     };
 
 };
