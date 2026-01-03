@@ -8,13 +8,14 @@
 #define BOUNDARYCONDXD_H 
 
 #include<vector>
+#include<tuple>
 #include "../DiffOps/BoundaryCond.hpp"
 #include "MeshXD.hpp"
 
 struct BoundaryCondXD
 {
   // member data. list of boundary conditions. 1 per Dimension 
-  std::vector<BcPtr_t> m_bc_arr; 
+  std::vector<std::pair<BcPtr_t>> m_bc_arr; 
 
   // set a DiscretizationXD to an explicit solution 
 

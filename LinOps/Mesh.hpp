@@ -15,7 +15,6 @@
 // forward declaration -> aliases
 class Mesh1D; 
 using MeshPtr_t = std::shared_ptr<Mesh1D>;
-// using MeshPtr_t = Mesh1D*; // experimenting with non owning views of mesh. 
 
 class Mesh1D
 {
@@ -67,25 +66,17 @@ class Mesh1D
     // set vals / size from std vector or iterators? 
 };
 
-// type trait 
-template<class T, class U>
-struct is_same_type : std::false_type{};
-
-template<class T>
-struct is_same_type<T, T> : std::true_type{};
-
-auto make_mesh(double x1=0.0, double x2=1.0, std::size_t n_steps=11)
+template<typename Mesh_t=Mesh1D, typename... Args> 
+auto make_mesh(Args... args)
 {
-  if constexpr(is_same_type<MeshPtr_t, std::shared_ptr<Mesh1D>>::value){
-    return std::make_shared<Mesh1D>(x1,x2,n_steps); 
-  }
-  else if constexpr(is_same_type<MeshPtr_t,Mesh1D*>::value)
-  {
-    return new Mesh1D(x1,x2,n_steps);
-  }
-  else{
-    throw std::runtime_error("MeshPtr_t has to be a pointer type");
-  }
+  static_assert(std::is_base_of<Mesh1D,Mesh_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
+  return std::make_shared<Mesh_t>(args...); 
+}
+
+template<>
+auto make_mesh<Mesh1D>()
+{
+  return std::make_shared<Mesh1D>(); 
 }
 
 #endif // Mesh.hpp

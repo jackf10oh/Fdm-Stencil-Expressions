@@ -96,4 +96,7 @@ class RobinBC : public IBoundaryCond
     };
 };
 
+template<typename... Args>
+auto make_robin(Args... args){ return std::make_shared<RobinBC>(args...); }; 
+
 #endif // Robin.hpp

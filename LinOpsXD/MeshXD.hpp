@@ -7,7 +7,9 @@
 #ifndef MESHXD_H
 #define MESHXD_H 
 
+#include<cstdint>
 #include<vector>
+#include<memory>
 #include<algorithm>
 #include<numeric>
 #include "../LinOps/Mesh.hpp"
@@ -15,7 +17,6 @@
 // forward declaration -> aliases
 class MeshXD; 
 using MeshXDPtr_t = std::shared_ptr<MeshXD>;
-// using MeshPtr_t = Mesh1D*; // experimenting with non owning views of mesh. 
 
 class MeshXD
 {

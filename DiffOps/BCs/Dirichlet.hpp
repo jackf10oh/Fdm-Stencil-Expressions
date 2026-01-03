@@ -44,4 +44,7 @@ class DirichletBC : public IBoundaryCond
     {Sol.at(Sol.size()-1) = boundary_val;};
 };
 
+template<typename... Args>
+auto make_dirichlet(Args... args){ return std::make_shared<DirichletBC>(args...); }; 
+
 #endif

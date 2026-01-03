@@ -8,119 +8,63 @@
 #include<iostream>
 #include<iomanip>
 #include<vector>
+#include<tuple>
 #include<Eigen/Dense>
 #include<unsupported/Eigen/KroneckerProduct>
 #include "DiffOps/All.hpp"
 #include "LinOps/All.hpp"
 
-// #include "LinOpsXD/MeshXD.hpp"
+#include "LinOpsXD/MeshXD.hpp"
+#include "DiffOps/Utilities/FillStencil.hpp"
 // #include "LinOpsXD/LinOpXDTraits.hpp"
 
 using std::cout, std::endl;
 
-auto rand_banded = [](std::size_t N, int bands=1){
+auto random_banded = [](std::size_t N, int bands=1) -> MatrixStorage_t {
+  if(bands<=0) throw std::invalid_argument("bands must be >= 1"); 
   auto rand = Eigen::MatrixXd::Random(N,N);
   Eigen::MatrixXd temp(rand.rows(), rand.cols()); 
   temp.setZero();
-  for(int i=-bands; i<=bands; i++){
+  for(int i=-bands; i<= bands; i++){
     temp.diagonal(i) = rand.diagonal(i); 
   }
   MatrixStorage_t A = temp.sparseView(); 
   return A; 
-}; 
+};
 
 int main()
 {
+  // iomanip 
   std::cout << std::setprecision(2); 
 
-  // create mesh + boundary condition 
-  auto my_mesh = make_mesh(0,4,6); 
-  BcPtr_t bc = std::make_shared<NeumannBC>(); 
+  // mesh assembly. 2 dims 
+  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 5, 2); 
 
-  // Identity matrix I 
-  MatrixStorage_t I(my_mesh->size(), my_mesh->size()); 
-  I.setIdentity();  
+  // vector of pair of BcPtrs. what BoundaryCondXD will look like. 
+  std::vector<std::pair<BcPtr_t,BcPtr_t>> bc_list; 
+  bc_list.push_back({make_neumann(0.0), make_neumann(1.0)});
+  bc_list.push_back({make_dirichlet(0.0), make_dirichlet(1.0)});
 
-  // first deriv stencil 
-  auto D = MatrixStorage_t(my_mesh->size(), my_mesh->size());
-  bc->SetStencilL(D,my_mesh); 
-  bc->SetStencilR(D,my_mesh); 
+  std::size_t s = my_meshes->GetMesh(0)->size();
+  MatrixStorage_t A(s,s);
+  bc_list[0].first->SetStencilL(A,my_meshes->GetMesh(0));
+  bc_list[0].first->SetStencilR(A,my_meshes->GetMesh(0));
 
-  // create flat 1 row matrix 
-  MatrixStorage_t A(1,my_mesh->size());
+  cout << A << endl; 
 
-  // use a BC to set left/right end of A 
-  // set left side of row 
-  bc->SetStencilL(A, my_mesh); 
-  // store into a temp vector 
-  std::vector<double> temp(A.valuePtr(), A.valuePtr()+A.nonZeros());
-  // set right side of row. this zeros left side 
-  bc->SetStencilR(A, my_mesh);
-  // repopulate left side 
-  for(auto i=0; i<temp.size(); i++) A.coeffRef(0,i) = temp[i]; 
-
-  cout << "------------" << endl; 
-  // cout << A << endl; 
-
-  cout << "------------" << endl; 
-  // put the boundary conditions on inner dimension 
-  MatrixStorage_t stencil = Eigen::KroneckerProductSparse(I,D);  
-  // cout << stencil << endl; 
-
-  cout << "------------" << endl; 
-  // put boundary conditions on outter dimension 
-  // cout <<  Eigen::KroneckerProductSparse(foo,I) << endl;
-  MatrixStorage_t B = Eigen::KroneckerProductSparse(make_SparseDiag(A),I); 
-  fill_stencil(stencil, B); 
-  cout << stencil << endl; 
+  IOp I; 
+  I.set_mesh(my_meshes->GetMesh(1)); 
+  cout << Eigen::KroneckerProductSparse(I.GetMat(), A) << endl; 
 };
 
-
-
-  // auto my_mesh = make_mesh(0.0,3.0,4); 
-  // NthDerivOp D(my_mesh); 
-  // cout << D.GetMat() << endl; 
-
-  // cout << "---------------------" << endl; 
-  // MatrixStorage_t I(5,5); 
-  // I.setIdentity(); 
-  // auto prod = Eigen::kroneckerProduct(I, D.GetMat()); 
-  // cout << prod << endl; 
-
-  //   cout << "---------------" << endl; 
-  // auto start = A.outerIndexPtr(); 
-  // for(auto i=0; i<A.outerSize(); i++){
-  //   cout << start[i] << endl; 
-  // }
-
-  // cout << "---------------" << endl; 
-  // auto inner_start = A.innerIndexPtr(); 
-  // for(auto i=0; i<A.nonZeros(); i++){
-  //   cout << inner_start[i] << endl; 
-  // }
-
-  // cout << "---------------" << endl; 
-  // auto val_start = A.valuePtr(); 
-  // for(auto i=0; i<A.nonZeros(); i++){
-  //   cout << val_start[i] << endl; 
-  // }
-
-  // std::vector<std::pair<double,double>> axes = {{0.0,1.0},{0.0,2.0},{0.0,3.0}}; 
-  // std::vector<std::size_t> nsteps = {3,5,7}; 
-  // MeshXDPtr_t my_mesh = std::make_shared<MeshXD>(axes,nsteps); 
-
-  // cout << "my_mesh product_size: " << my_mesh->sizes_product() << endl; 
-
-  // // how to iterate through dynamic multi dim meshes?
-  // std::size_t end = my_mesh->sizes_product();  
-  // std::vector<double> coords(my_mesh->dims()); 
-  // for(std::size_t flat_i=0; flat_i<end; flat_i++){
-  //   for(std::size_t dim=0; dim<my_mesh->dims(); dim++){
-  //     std::size_t dim_i = flat_i;
-  //     dim_i /= my_mesh->sizes_partial_product(dim); 
-  //     dim_i %= my_mesh->dim_size(dim); 
-  //     cout << dim_i; 
-  //     cout << ", ";
-  //   }
-  //   cout << endl; 
-  // }
+// auto random_banded = [](std::size_t N, int bands=1) -> MatrixStorage_t {
+//   if(bands<=0) throw std::invalid_argument("bands must be >= 1"); 
+//   auto rand = Eigen::MatrixXd::Random(N,N);
+//   Eigen::MatrixXd temp(rand.rows(), rand.cols()); 
+//   temp.setZero();
+//   for(int i=-bands; i<= bands; i++){
+//     temp.diagonal(i) = rand.diagonal(i); 
+//   }
+//   MatrixStorage_t A = temp.sparseView(); 
+//   return A; 
+// };
