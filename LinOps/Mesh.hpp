@@ -66,17 +66,12 @@ class Mesh1D
     // set vals / size from std vector or iterators? 
 };
 
+// quick helper to wrap std::make_shared<Mesh1D> or other Mesh1D derived types  
 template<typename Mesh_t=Mesh1D, typename... Args> 
 auto make_mesh(Args... args)
 {
   static_assert(std::is_base_of<Mesh1D,Mesh_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
   return std::make_shared<Mesh_t>(args...); 
-}
-
-template<>
-auto make_mesh<Mesh1D>()
-{
-  return std::make_shared<Mesh1D>(); 
 }
 
 #endif // Mesh.hpp

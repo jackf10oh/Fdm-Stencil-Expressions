@@ -15,6 +15,7 @@
 #include "LinOps/All.hpp"
 
 #include "LinOpsXD/MeshXD.hpp"
+#include "LinOpsXD/BoundaryCondXD.hpp" 
 #include "DiffOps/Utilities/FillStencil.hpp"
 // #include "LinOpsXD/LinOpXDTraits.hpp"
 
@@ -40,21 +41,32 @@ int main()
   // mesh assembly. 2 dims 
   MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 5, 2); 
 
-  // vector of pair of BcPtrs. what BoundaryCondXD will look like. 
-  std::vector<std::pair<BcPtr_t,BcPtr_t>> bc_list; 
-  bc_list.push_back({make_neumann(0.0), make_neumann(1.0)});
-  bc_list.push_back({make_dirichlet(0.0), make_dirichlet(1.0)});
+  // BoundaryCondXD. holds vector of pair of BcPtrs. 
+  BoundaryCondXD bc_list; 
+  bc_list.m_bc_list.push_back({make_neumann(0.0), make_neumann(1.0)});
+  bc_list.m_bc_list.push_back({make_robin(1.0,1.0,5.0), make_robin(1.0,1.0,5.0)});
+  // bc_list.m_bc_list.push_back({make_dirichlet(0.0), make_dirichlet(1.0)});
 
-  std::size_t s = my_meshes->GetMesh(0)->size();
+  std::size_t prod = my_meshes->sizes_product(); 
+  MatrixStorage_t bc_mask(prod,prod); 
+
+  // create an empty stencil A and set its boundarys for 1 dimensional case 
+  std::size_t s = my_meshes->sizes_product();
   MatrixStorage_t A(s,s);
-  bc_list[0].first->SetStencilL(A,my_meshes->GetMesh(0));
-  bc_list[0].first->SetStencilR(A,my_meshes->GetMesh(0));
-
+  bc_list.SetStencilImp(A, my_meshes); 
   cout << A << endl; 
 
-  IOp I; 
-  I.set_mesh(my_meshes->GetMesh(1)); 
-  cout << Eigen::KroneckerProductSparse(I.GetMat(), A) << endl; 
+  // // create an empty stencil A and set its boundarys for 1 dimensional case 
+  // std::size_t s1 = my_meshes->GetMesh(0)->size();
+  // MatrixStorage_t A(s1,s1);
+  // bc_list.SetStencilImp(A, my_meshes); 
+  // cout << A << endl; 
+
+  // make a mask of this dimensions bcs 
+  // std::size_t s2 = my_meshes->GetMesh(1)->size();
+  // auto mat_row = flat_stencil(bc_list[1], my_meshes->GetMesh(1)); 
+  // auto diag_expr = make_SparseDiag(mat_row);  
+  // cout << Eigen::KroneckerProductSparse(diag_expr,I) << endl; 
 };
 
 // auto random_banded = [](std::size_t N, int bands=1) -> MatrixStorage_t {
