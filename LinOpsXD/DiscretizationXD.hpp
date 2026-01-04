@@ -46,19 +46,33 @@ struct DiscretizationXD
     const Eigen::VectorXd& values() const {return m_vals; } 
 
     // --------------------------------------------------- ????????????? 
-    // std::vector<MemView<typename Eigen::VectorXd::iterator>> dim_values_view(std::size_t i=0)
+    // std::vector<MemView<StrideIterator<Eigen::VectorXd::iterator>>> dim_values_view(std::size_t ith_dim=0)
     // {
     //   // i has to be one of the dimensions of DiscretizationXD 
-    //   if(i >= dims()) throw std::invalid_argument("Discretization1D::dim_values_view(i) i must be < Discretization1D.dims().");
+    //   if(ith_dim >= dims()) throw std::invalid_argument("Discretization1D::dim_values_view(i) i must be < Discretization1D.dims().");
     //   // case for i=0 
     //   std::vector<MemView<typename Eigen::VectorXd::iterator>> result; 
-    //   result.reserve(m_dims[i]); 
+    //   result.reserve(m_dims[ith_dim]); 
 
-    //   std::size_t stride = sizes_middle_product(0,i); // ?????? 
-    //   for(std::size_t j=0; j<dim_size(i); j++) {
-    //     result.push_back( make_strided_MemView(m_vals, j, stride) ); 
+    //   std::size_t ith_dim_size = dim_size(ith_dim); 
+    //   std::size_t num_copies = sizes_product() / ith_dim_size; 
+    //   std::size_t mod = sizes_middle_product(0, ith_dim); 
+    //   std::size_t scale = mod * ith_dim_size; 
+
+    //   // iterate through the copies 
+    //   for(std::size_t n=0; n<num_copies; n++)
+    //   {
+    //     // offset from start of current copy 
+    //     std::size_t offset = (mod ? n % mod : n) + (scale * (n/mod));  
+
+    //     // begin/end stride iterators of copies 
+    //     StrideIterator begin (m_vals.begin()+offset, mod);  
+    //     auto end = begin + dim_size(ith_dim); 
+
+    //     // MemView of current copy 
+    //     result.emplace_back(begin, end);
     //   }
-
+    //   return result; 
     // }
 
     // get underlying list of dim sizes
@@ -85,6 +99,7 @@ struct DiscretizationXD
 
     // set discretization to same size as meshxd's sizes_product
     void match_mesh(MeshXDPtr_t m) { 
+      if(!m) return; // do nothing on nullptr 
       m_mesh_ptr=m; 
       m_vals.resize(m->sizes_product()); 
       m_dims.resize(m->dims()); 
