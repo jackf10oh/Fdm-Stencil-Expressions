@@ -11,7 +11,7 @@
 #include<vector>
 #include<string> 
 #include<iostream> 
-#include "MemView.hpp"
+#include<Eigen/Dense> // Eigen::Map 
 
 // stateful Fornberg weight calculator. only allocate memory at creation 
 class FornCalc
@@ -35,7 +35,7 @@ class FornCalc
     FornCalc(const FornCalc& other)=delete; 
     ~FornCalc()=default; 
     template<typename Input_Iter>
-    MemView<std::vector<double>::iterator> GetWeights(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
+    Eigen::Map<const Eigen::VectorXd> GetWeights(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
     {
       // Matrix of Order+1 rows, N cols
       // row m from Weights is the coeffs for derivative of order m (m= 0, ... , order)
@@ -124,7 +124,7 @@ class FornCalc
       // Weights now contains LaGrange Interpolant Polynomials for 
       // nodes a0, a1, ..., an evaluated at x_bar
       // return non owning view of last row of Weights;
-      return MemView(m_arr.begin()+(m_n_nodes*order), m_arr.begin()+(m_n_nodes*(order+1))); 
+      return Eigen::Map<const Eigen::VectorXd>(m_arr.data()+(m_n_nodes*order), m_n_nodes); 
     };
 
 };

@@ -17,7 +17,6 @@
 class IBoundaryCond; 
 using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 using BcPtr_t = std::shared_ptr<IBoundaryCond>; 
-// using BcPtr_t = BoundaryCond*; // unlikely to use. Only going to assign to boundary conditions once 
 
 // Base Class for Boundary Conditions. All operators make no changes to stencil / solution 
 class IBoundaryCond

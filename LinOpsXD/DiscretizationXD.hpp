@@ -16,10 +16,15 @@
 struct DiscretizationXD
 {
   private:
+    // private typedefs ==================================================== 
+    typedef Eigen::Stride<0,Eigen::Dynamic> Stride_t; 
+    typedef Eigen::Map<Eigen::VectorXd, Eigen::Unaligned, Stride_t> StrideView_t; 
+
     // member data ==========================================================
     Eigen::VectorXd m_vals; // flattened array of values 
     std::vector<std::size_t> m_dims; 
     MeshXDPtr_t m_mesh_ptr; 
+
   public:
     // constructors ==========================================================
     // Default ----------------------------------------------- 
@@ -46,34 +51,34 @@ struct DiscretizationXD
     const Eigen::VectorXd& values() const {return m_vals; } 
 
     // --------------------------------------------------- ????????????? 
-    // std::vector<MemView<StrideIterator<Eigen::VectorXd::iterator>>> dim_values_view(std::size_t ith_dim=0)
-    // {
-    //   // i has to be one of the dimensions of DiscretizationXD 
-    //   if(ith_dim >= dims()) throw std::invalid_argument("Discretization1D::dim_values_view(i) i must be < Discretization1D.dims().");
-    //   // case for i=0 
-    //   std::vector<MemView<typename Eigen::VectorXd::iterator>> result; 
-    //   result.reserve(m_dims[ith_dim]); 
+    std::vector<StrideView_t> dim_values_view(std::size_t ith_dim=0)
+    {
+      // i has to be one of the dimensions of DiscretizationXD 
+      if(ith_dim >= dims()) throw std::invalid_argument("Discretization1D::dim_values_view(i) i must be < Discretization1D.dims().");
 
-    //   std::size_t ith_dim_size = dim_size(ith_dim); 
-    //   std::size_t num_copies = sizes_product() / ith_dim_size; 
-    //   std::size_t mod = sizes_middle_product(0, ith_dim); 
-    //   std::size_t scale = mod * ith_dim_size; 
+      std::size_t ith_dim_size = m_dims[ith_dim]; 
+      std::size_t num_copies = sizes_product() / ith_dim_size; 
+      std::size_t mod = sizes_middle_product(0, ith_dim); 
+      std::size_t scale = mod * ith_dim_size; 
 
-    //   // iterate through the copies 
-    //   for(std::size_t n=0; n<num_copies; n++)
-    //   {
-    //     // offset from start of current copy 
-    //     std::size_t offset = (mod ? n % mod : n) + (scale * (n/mod));  
+      std::vector<StrideView_t> result; 
+      result.reserve(m_dims[ith_dim]); 
 
-    //     // begin/end stride iterators of copies 
-    //     StrideIterator begin (m_vals.begin()+offset, mod);  
-    //     auto end = begin + dim_size(ith_dim); 
+      Stride_t stride(0,mod); 
 
-    //     // MemView of current copy 
-    //     result.emplace_back(begin, end);
-    //   }
-    //   return result; 
-    // }
+      // iterate through the copies 
+      for(std::size_t n=0; n<num_copies; n++)
+      {
+        // offset from start of current copy 
+        std::size_t offset = (mod ? n % mod : n) + (scale * (n/mod));  
+        // begin data ptr of copy  
+        auto begin = m_vals.data()+offset;  
+
+        // MemView of current copy 
+        result.emplace_back(begin, ith_dim_size, stride);
+      }
+      return result; 
+    }
 
     // get underlying list of dim sizes
     std::vector<std::size_t>& dims_list(){ return m_dims; }

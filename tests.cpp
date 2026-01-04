@@ -22,8 +22,6 @@
 #include "LinOpsXD/OperatorsXD/IOpXD.hpp" 
 #include "LinOpsXD/OperatorsXD/DirectionalRandOp.hpp" 
 
-#include "Utilities/StrideIterator.hpp"
-
 using std::cout, std::endl;
 
 int main()
@@ -34,37 +32,20 @@ int main()
   // mesh assembly. 2 dims 
   MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 3);
 
+  // discretization.
   DiscretizationXD my_vals(my_meshes); 
-  my_vals.set_init(1.5); 
+  my_vals.set_init(0.0); 
+
+  auto dim_copies_list = my_vals.dim_values_view(1); 
+
+  int n=0; 
+  for(auto& view : dim_copies_list){
+    for(auto& val : view) val=n; 
+    n++; 
+  };
   
-  std::vector<MemView<StrideIterator<Eigen::VectorXd::iterator>>> result; 
-  result.reserve()
-
-  // given an ith dimension from meshes 
-  std::size_t ith_dim = 0; 
-
-  // there are (sizes_product) / (ith dim size) many copies that look like 1D meshes of it 
-  std::size_t num_copies = my_meshes->sizes_product() / my_meshes->dim_size(ith_dim); 
-
-  // iterate through the copies 
-  for(std::size_t n=0; n<num_copies; n++)
-  {
-    std::size_t mod = my_meshes->sizes_middle_product(0, ith_dim); 
-    std::size_t scale = mod * my_meshes->dim_size(ith_dim); 
-    std::size_t offset = (mod ? n % mod : n) + (scale * (n/mod));  
-    // cout << "offset: " << offset << " stride: " << mod << endl;
-
-    StrideIterator begin (my_vals.values().begin()+offset, mod);  
-    auto end = begin + my_meshes->dim_size(ith_dim); 
-
-    MemView<StrideIterator<Eigen::VectorXd::iterator>> view(begin, end);
-       
-    for(auto it=view.begin(); it!= view.end(); it++){
-      *it = n; 
-    }
-  }
-
   cout << my_vals.values() << endl; 
+
 };
 
   // // how to iterate through dynamic multi dim meshes?
