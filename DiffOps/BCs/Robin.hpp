@@ -48,9 +48,9 @@ class RobinBC : public IBoundaryCond
     };
 
     virtual void SetImpSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(0) = boundary_target;};
+    {Sol[0] = boundary_target;};
     virtual void SetImpSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(Sol.size()-1) = boundary_target;};
+    {Sol[Sol.size()-1] = boundary_target;};
     
     // change the first/last (left/right boundary) entry of a vector  
     virtual void SetSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 

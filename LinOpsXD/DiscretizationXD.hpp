@@ -10,8 +10,6 @@
 #include<vector>
 #include<Eigen/Core>
 #include "MeshXD.hpp"
-#include "../Utilities/MemView.hpp" 
-#include "../Utilities/StrideIterator.hpp" 
 
 struct DiscretizationXD
 {

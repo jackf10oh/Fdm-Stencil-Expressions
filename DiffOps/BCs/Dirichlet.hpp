@@ -33,15 +33,15 @@ class DirichletBC : public IBoundaryCond
     };
 
     virtual void SetImpSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(0) = boundary_val;};
+    {Sol[0] = boundary_val;};
     virtual void SetImpSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(Sol.size()-1) = boundary_val;};
+    {Sol[Sol.size()-1] = boundary_val;};
     
     // change the first/last (left/right boundary) entry of a vector  
     virtual void SetSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 
-    { Sol.at(0) = boundary_val;};
+    { Sol[0] = boundary_val;};
     virtual void SetSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 
-    {Sol.at(Sol.size()-1) = boundary_val;};
+    {Sol[Sol.size()-1] = boundary_val;};
 };
 
 template<typename... Args>

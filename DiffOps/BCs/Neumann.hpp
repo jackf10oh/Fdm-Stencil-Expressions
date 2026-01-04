@@ -42,9 +42,9 @@ class NeumannBC : public IBoundaryCond
     };
 
     virtual void SetImpSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(0) = boundary_flux;};
+    {Sol[0] = boundary_flux;};
     virtual void SetImpSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
-    {Sol.at(Sol.size()-1) = boundary_flux;};
+    {Sol[Sol.size()-1] = boundary_flux;};
     
     // change the first/last (left/right boundary) entry of a vector  
     virtual void SetSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 
