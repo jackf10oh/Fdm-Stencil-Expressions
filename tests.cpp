@@ -24,6 +24,52 @@
 
 using std::cout, std::endl;
 
+// test if callable type F can be invoked on N doubles 
+template<typename F, std::size_t N=20, typename... Args> //  typename = std::enable_if<N!= std::size_t{-1}> 
+struct callable_traits
+{
+  constexpr static bool is_callable = std::is_invocable<F,Args...>::value;
+
+  constexpr static std::size_t num_args(){ 
+    if constexpr (is_callable){
+      return sizeof...(Args); 
+    }
+     else{
+      return callable_traits<F,N-1,double, Args...>::num_args(); 
+    }
+  } 
+}; 
+
+template<typename F, typename... Args> //  typename = std::enable_if<N!= std::size_t{-1}> 
+struct callable_traits<F,0,Args...>
+{
+  constexpr static bool is_callable = std::is_invocable<F,Args...>::value; 
+
+  using result_type = int; 
+
+  constexpr static std::size_t num_args(){ 
+    if constexpr (is_callable){
+      return sizeof...(Args); 
+    }
+     else{
+      static_assert(false, "maximum length of args reached"); 
+      // return callable_traits<F,N-1,double, Args...>::num_args(); 
+    }
+  } 
+}; 
+
+template<typename F, std::size_t N, typename... Args> 
+struct result_traits
+{
+  using result_type = typename result_traits<F,N-1, double, Args...>::result_type; 
+}; 
+
+template<typename F, typename... Args> 
+struct result_traits<F,0,Args...>
+{
+  using result_type = typename std::invoke_result<F,Args...>::type; 
+}; 
+
 int main()
 {
   // // iomanip 
@@ -36,15 +82,19 @@ int main()
   DiscretizationXD my_vals(my_meshes); 
   my_vals.set_init(0.0); 
 
-  auto dim_copies_list = my_vals.dim_values_view(1); 
+  auto lam00 = [](){return 1.0;}; 
+  auto lam01 = [](double x){return x*x + 1.0;}; 
+  auto lam02 = [](double x, double y){return x*x + y*y;}; 
+  auto lam03 = [](double x, double y, double z){return "foobar";}; 
 
-  int n=0; 
-  for(auto& view : dim_copies_list){
-    for(auto& val : view) val=n; 
-    n++; 
-  };
-  
-  cout << my_vals.values() << endl; 
+  cout << callable_traits<decltype(lam00)>::num_args() << endl; 
+  cout << callable_traits<decltype(lam01)>::num_args() << endl; 
+  cout << callable_traits<decltype(lam02)>::num_args() << endl; 
+  cout << callable_traits<decltype(lam03)>::num_args() << endl; 
+
+  cout << typeid(result_traits<decltype(lam00),0>::result_type).name() << endl; 
+  cout << typeid(result_traits<decltype(lam01),1>::result_type).name() << endl; 
+  cout << typeid(result_traits<decltype(lam03),3>::result_type).name() << endl; 
 
 };
 
