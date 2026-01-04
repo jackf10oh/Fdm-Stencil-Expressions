@@ -30,7 +30,7 @@ class RobinBC : public IBoundaryCond
     virtual ~RobinBC()=default; 
     // Member Funcs ----------------------------------------------
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilL(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh) const override
     {
       Mat.topRows(1) *= 0;
       // first order derivative approximation 
@@ -38,7 +38,7 @@ class RobinBC : public IBoundaryCond
       Mat.coeffRef(0,0)=  val_coeff + deriv_coeff*(-1.0/h);
       Mat.coeffRef(0,1)=  deriv_coeff*(1.0/h);
     }; 
-    virtual void SetStencilR(MatrixStorage_t& Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilR(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh) const override
     {
       Mat.bottomRows(1) *= 0; 
       // first order derivative approximation 

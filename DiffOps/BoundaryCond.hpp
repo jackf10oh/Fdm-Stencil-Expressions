@@ -34,8 +34,8 @@ class IBoundaryCond
     virtual void SetTime(double t){m_current_time=t;};
 
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(MatrixStorage_t& Mat, const MeshPtr_t& mesh)const=0; 
-    virtual void SetStencilR(MatrixStorage_t& Mat, const MeshPtr_t& mesh)const=0;
+    virtual void SetStencilL(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh)const=0; 
+    virtual void SetStencilR(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh)const=0;
     
     // change the first/last entries in an impicit solution vector 
     virtual void SetImpSolL(Discretization1D& Sol, const MeshPtr_t& mesh)const=0;
