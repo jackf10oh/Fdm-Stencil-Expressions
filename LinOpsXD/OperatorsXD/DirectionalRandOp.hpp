@@ -8,6 +8,7 @@
 #define DIRECTIONALRANDOP_H
 
 #include<iostream>
+#include<Eigen/Sparse> 
 #include "../LinearOpXDBase.hpp" 
 
 class DirectionalRandOp: public LinOpXDBase<DirectionalRandOp> 
@@ -33,7 +34,19 @@ class DirectionalRandOp: public LinOpXDBase<DirectionalRandOp>
     // member functions 
     auto& GetMat(){ return m_mat; }; 
     const auto& GetMat() const { return m_mat; }; 
-    DiscretizationXD apply(const DiscretizationXD& d){ return d; }; 
+    DiscretizationXD apply(const DiscretizationXD& d){ 
+
+      // result copies mesh and dims from d 
+      DiscretizationXD result;
+      result.mesh() = d.mesh(); 
+      result.dims_list() = d.dims_list();  
+
+      // use move operator from result Eigen::VectorXd
+      result = m_mat * d.values(); 
+
+      return result; 
+    }; 
+    
     void set_mesh(MeshXDPtr_t m){
       // do nothing on nullptr or same ptr 
       if(m==nullptr || m==m_mesh_ptr) return; 

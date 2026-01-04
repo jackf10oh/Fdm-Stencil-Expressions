@@ -90,10 +90,10 @@ StrideIterator<Iter_t> operator-(const StrideIterator<Iter_t>& s_it, typename  S
 }
 
 // entry points --------------------------------------------------------------------- 
-template<typename Cont> 
-MemView<StrideIterator<typename Cont::const_iterator>> make_strided_MemView(const Cont& c, typename Cont::difference_type stride=1, typename Cont::difference_type offset=0){
-  StrideIterator<typename Cont::const_iterator> begin(c.begin() + offset, stride); 
-  typename Cont::difference_type size = ((c.size()-offset) + stride - 1) / stride; 
+template<typename Cont, typename difference_type = typename Cont::difference_type> 
+MemView<StrideIterator<typename Cont::iterator>> make_strided_MemView(Cont& c, difference_type stride=1, difference_type offset=0){
+  StrideIterator<typename Cont::iterator> begin(c.begin() + offset, stride); 
+  difference_type size = ((c.size()-offset) + stride - 1) / stride; 
   auto end = begin + size;  
   return MemView(begin, end); 
 } 

@@ -8,6 +8,7 @@
 #define IDENTITYOPXD_H
 
 #include<iostream>
+#include<Eigen/Sparse>
 #include "../LinearOpXDBase.hpp" 
 
 // temporary macro until we need to move it somewhere else. 
