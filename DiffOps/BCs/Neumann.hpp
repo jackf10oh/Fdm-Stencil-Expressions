@@ -41,13 +41,13 @@ class NeumannBC : public IBoundaryCond
       Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=  1.0/h;
     };
 
-    virtual void SetImpSolL(Discretization1D& Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
     {Sol.at(0) = boundary_flux;};
-    virtual void SetImpSolR(Discretization1D& Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
     {Sol.at(Sol.size()-1) = boundary_flux;};
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(Discretization1D& Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 
     { 
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
@@ -68,7 +68,7 @@ class NeumannBC : public IBoundaryCond
       Sol[0] = target;  
       // void return type
     };
-    virtual void SetSolR(Discretization1D& Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 
     {
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
