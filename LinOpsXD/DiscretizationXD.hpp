@@ -49,8 +49,8 @@ struct DiscretizationXD
     Eigen::VectorXd& values(){return m_vals; }
     const Eigen::VectorXd& values() const {return m_vals; } 
 
-    // --------------------------------------------------- ????????????? 
-    std::vector<StrideView_t> dim_values_view(std::size_t ith_dim=0)
+    // Give a list of Eigen::Map<>. each Map looks like a Discretization1D on a Mesh1d  
+    std::vector<StrideView_t> 1D_views(std::size_t ith_dim=0)
     {
       // i has to be one of the dimensions of DiscretizationXD 
       if(ith_dim >= dims()) throw std::invalid_argument("Discretization1D::dim_values_view(i) i must be < Discretization1D.dims().");
@@ -154,25 +154,34 @@ struct DiscretizationXD
 
       // if we need to copy into more layers 
       if(flat_end != m_vals.size()){
+        // ither through views
         for(std::size_t ith_view=0; ith_view<flat_end; ith_view++){
-
           // store the first layer's entry 
           double first_val = m_vals[ith_view]; 
-
           // create a view to paste into. 
           Stride_t s(0,flat_end); 
           StrideView_t view(m_vals.data()+ith_view, n_layers,s); 
+          // fill in all layers with first layers value 
           for(std::size_t layer=1; layer<n_layers; layer++){
             view[layer]=first_val; 
-          }
-        }
-      }
-
-
-
+          } // end for loop through values of ith layer 
+        } // end for loop through layers  
+      } // end if 
       // void return type. m_vals now has output of func for each entry. 
     }
-    
+
+    // set discretization based on current stored mesh + callable F 
+    template<
+    typename F,
+    typename = std::enable_if_t<
+      std::is_same_v<double, typename callable_traits<F>::result_type>
+      >
+    >
+    void set_init(F func)
+    {
+      if(m_mesh_ptr==nullptr) return; // do nothing if no stored mesh 
+      set_init(m_mesh_ptr, func); // otherwise assign func(x) to each point x in mesh 
+    }
     // Operators ----------------------------------------------------
     DiscretizationXD& operator=(const DiscretizationXD& other) = default;
     DiscretizationXD& operator=(DiscretizationXD&& other){

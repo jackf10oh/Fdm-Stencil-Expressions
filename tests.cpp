@@ -47,9 +47,9 @@ int main()
   DiscretizationXD my_vals; 
 
   auto lam00 = [](){return 1.0;}; 
-  auto lam01 = [](double x){return x*x;}; 
+  auto lam01 = [](double x){return std::sqrt(x*x);}; 
   auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
-  auto lam03 = [](double x, double y, double z){return x*x + y*y + z*z;}; 
+  auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
   my_vals.set_init(my_meshes, lam01); 
 
