@@ -77,7 +77,13 @@ class MeshXD
     const MeshPtr_t& GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
     MeshPtr_t& GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
     const MeshPtr_t& GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
-
 };
+
+template<typename MeshXD_t=MeshXD, typename... Args> 
+auto make_meshes(Args... args)
+{
+  static_assert(std::is_base_of<MeshXD,MeshXD_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
+  return std::make_shared<MeshXD_t>(args...); 
+}
 
 #endif // MeshXD.hpp

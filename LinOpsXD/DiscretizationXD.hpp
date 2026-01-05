@@ -90,7 +90,7 @@ struct DiscretizationXD
     // number of dimensions 
     std::size_t dims() const{ return m_dims.size(); };
     // size of ith dimension  
-    std::size_t dim_size(std::size_t i) const {return m_dims[i]; }
+    std::size_t dim_size(std::size_t i) const {return m_dims.at(i); }
     
     // product of all dimensions' sizes 
     std::size_t sizes_product() const { return std::accumulate(m_dims.begin(), m_dims.end(), 1, std::multiplies{}); } 
