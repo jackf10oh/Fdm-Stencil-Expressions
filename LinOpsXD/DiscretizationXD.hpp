@@ -10,6 +10,7 @@
 #include<vector>
 #include<Eigen/Core>
 #include "MeshXD.hpp"
+#include "LinOpXDTraits.hpp"
 
 struct DiscretizationXD
 {
@@ -113,6 +114,39 @@ struct DiscretizationXD
     // set vector to match a mesh size and set it constant 
     void match_mesh(MeshXDPtr_t m, double val){ match_mesh(m), m_vals.setConstant(val); } 
 
+    // set discretizations values according to callable type F
+    template<
+    typename F,
+    typename = std::enable_if_t<
+      std::is_same_v<double, typename callable_traits<F>::result_type>
+      >
+    >
+    void set_init(MeshXDPtr_t m, F func)
+    {
+      // check there are enough dimensions to use callable type F
+      if(m->dims() < callable_traits<F>::num_args) throw std::invalid_argument("# dims of MeshXDPtr_t must be >= # args in callable F"); 
+
+      // stores mesh, resizes dims + vals 
+      match_mesh(m); 
+
+      // stores n args. n is 
+      std::array<double, callable_traits<F>::num_args> args_arr; 
+
+      std::size_t end = m_vals.size(); 
+      for(std::size_t flat_i=0; flat_i<end; flat_i++){
+
+        for(std::size_t dim=0; dim < callable_traits<F>::num_args; dim++){
+          std::size_t dim_i = flat_i;
+          dim_i /= sizes_middle_product(0, dim); 
+          dim_i %= m_dims[dim]; 
+          args_arr[dim] = m_mesh_ptr->GetMesh(dim)->operator[](dim_i); 
+        }
+
+        m_vals[flat_i] = std::apply(func, args_arr);  
+      } 
+      // void return type. m_vals now has output of func for each entry. 
+    }
+    
     // Operators ----------------------------------------------------
     DiscretizationXD& operator=(const DiscretizationXD& other) = default;
     DiscretizationXD& operator=(DiscretizationXD&& other){

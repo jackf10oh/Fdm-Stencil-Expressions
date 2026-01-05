@@ -21,54 +21,19 @@
 #include "LinOpsXD/DiscretizationXD.hpp" 
 #include "LinOpsXD/OperatorsXD/IOpXD.hpp" 
 #include "LinOpsXD/OperatorsXD/DirectionalRandOp.hpp" 
+#include "LinOpsXD/LinOpXDTraits.hpp"
 
 using std::cout, std::endl;
 
-// test if callable type F can be invoked on N doubles 
-template<typename F, std::size_t N=20, typename... Args> //  typename = std::enable_if<N!= std::size_t{-1}> 
-struct callable_traits
-{
-  constexpr static bool is_callable = std::is_invocable<F,Args...>::value;
-
-  constexpr static std::size_t num_args(){ 
-    if constexpr (is_callable){
-      return sizeof...(Args); 
-    }
-     else{
-      return callable_traits<F,N-1,double, Args...>::num_args(); 
-    }
-  } 
-}; 
-
-template<typename F, typename... Args> //  typename = std::enable_if<N!= std::size_t{-1}> 
-struct callable_traits<F,0,Args...>
-{
-  constexpr static bool is_callable = std::is_invocable<F,Args...>::value; 
-
-  using result_type = int; 
-
-  constexpr static std::size_t num_args(){ 
-    if constexpr (is_callable){
-      return sizeof...(Args); 
-    }
-     else{
-      static_assert(false, "maximum length of args reached"); 
-      // return callable_traits<F,N-1,double, Args...>::num_args(); 
-    }
-  } 
-}; 
-
-template<typename F, std::size_t N, typename... Args> 
-struct result_traits
-{
-  using result_type = typename result_traits<F,N-1, double, Args...>::result_type; 
-}; 
-
-template<typename F, typename... Args> 
-struct result_traits<F,0,Args...>
-{
-  using result_type = typename std::invoke_result<F,Args...>::type; 
-}; 
+template<typename Cont>
+void print_vec(const Cont& v, std::string comment=""){
+  if(!comment.empty()) std::cout << comment << ": ";
+  auto it = v.begin(); 
+  auto end = std::prev(v.end()); 
+  std::cout << "["; 
+  while(it!= end) cout << *(it++) << ", ";
+  std::cout << *it << "]" << std::endl;   
+}
 
 int main()
 {
@@ -76,26 +41,36 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 3);
+  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 30, 2);
 
   // discretization.
-  DiscretizationXD my_vals(my_meshes); 
-  my_vals.set_init(0.0); 
+  DiscretizationXD my_vals; 
 
   auto lam00 = [](){return 1.0;}; 
   auto lam01 = [](double x){return x*x + 1.0;}; 
-  auto lam02 = [](double x, double y){return x*x + y*y;}; 
-  auto lam03 = [](double x, double y, double z){return "foobar";}; 
+  auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
+  auto lam03 = [](double x, double y, double z){return x*x + y*y + z*z;}; 
 
-  cout << callable_traits<decltype(lam00)>::num_args() << endl; 
-  cout << callable_traits<decltype(lam01)>::num_args() << endl; 
-  cout << callable_traits<decltype(lam02)>::num_args() << endl; 
-  cout << callable_traits<decltype(lam03)>::num_args() << endl; 
+  my_vals.set_init(my_meshes, lam02); 
 
-  cout << typeid(result_traits<decltype(lam00),0>::result_type).name() << endl; 
-  cout << typeid(result_traits<decltype(lam01),1>::result_type).name() << endl; 
-  cout << typeid(result_traits<decltype(lam03),3>::result_type).name() << endl; 
+  // print as flat vector 
+  // cout << my_vals.values() << endl; 
 
+  // print as a 2d matrix 
+  cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
+
+  // from a given "slice" that looks like 2d. print the matrix 
+  // std::size_t ith_slice = 20; 
+  // std::size_t offset = ith_slice * my_meshes->sizes_middle_product(0,2); 
+  // cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data() + offset, my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
+
+  // cout << "lam00: " << callable_traits<decltype(lam03)>::num_args << ", " << typeid(callable_traits<decltype(lam03)>::result_type).name() << endl; 
+
+  // std::array<double, callable_traits<decltype(lam02)>::num_args> arr; 
+  // for(int i=0; i< arr.size(); i++) arr[i] = i+1;
+  // print_vec(arr, "std::array"); 
+
+  // cout << "result of apply: " << std::apply(lam02, arr) << endl;
 };
 
   // // how to iterate through dynamic multi dim meshes?
