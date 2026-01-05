@@ -29,8 +29,89 @@ class BoundaryCondXD
     ~BoundaryCondXD()=default; 
 
     // set a DiscretizationXD to an explicit solution 
+    void SetSol(DiscretizationXD& Sol, const MeshXDPtr_t& mesh){
+      // check args are compaitble ---------------------------------
+      if(m_bc_list.empty()) throw std::runtime_error("BoundaryCondXD: m_bc_list must be non empty!"); 
+      if(m_bc_list.size()!=mesh->dims()) throw std::invalid_argument("BoundaryCondXD:  length of boundary condition list must be == to # of dims of MeshXDPtr");
+      if(m_bc_list.size()!=Sol.dims()) throw std::invalid_argument("BoundaryCondXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
+      for(std::size_t i=0; i<Sol.dims(); i++){
+        if(Sol.dim_size(i)!=mesh->dim_size(i)) throw std::invalid_argument("BoundaryCondXD: Dimension sizes of Discretization1D and MeshXD must match!");
+      };
+
+      // this lambda takes 1 BcPtr_t and applies it to Sol
+      // without double assigning to corners/edges of XDim space 
+      auto set_dim_boundaries = [&](std::size_t dim, const std::pair<BcPtr_t,BcPtr_t>& bc_pair){
+        auto mesh_1dim = mesh->GetMesh(dim); 
+        auto views = Sol.OneDim_views(dim); 
+        // iterate through views that look like Mesh1D
+        for(std::size_t i=0; i<views.size(); i++){
+          // determine if it has been set by lower dimension 
+          bool set_by_low_dim = false; 
+          std::size_t s1 = 1; 
+          for(int dim_i=0; dim_i<dim; dim_i++){
+            std::size_t s2 = Sol.dim_size(dim_i); 
+            // in first group of values
+            if((i/s1)%s2 == 0) set_by_low_dim = true;  
+            // in last group of values
+            if((i/s1)%s2 == s2-1) set_by_low_dim = true;  
+            // next check uses a large bucket 
+            s1 *= s2; 
+          }
+          // if it hasn't, use BC on it. 
+          if(!set_by_low_dim){
+            bc_pair.first->SetSolL(views[i], mesh_1dim); 
+            bc_pair.second->SetSolR(views[i], mesh_1dim); 
+          }
+        }
+      }; // end set_dim_boundaries lambda 
+
+      // apply lambda + corresponding bc from m_bc_list to Sol 
+      for(std::size_t j=0; j<m_bc_list.size(); j++) set_dim_boundaries(j,m_bc_list[j]); 
+
+      // void return type       
+    }
 
     // set a DiscretizationXD to an implicit solution 
+    void SetImpSol(DiscretizationXD& Sol, const MeshXDPtr_t& mesh){
+      // check args are compaitble ---------------------------------
+      if(m_bc_list.empty()) throw std::runtime_error("BoundaryCondXD: m_bc_list must be non empty!"); 
+      if(m_bc_list.size()!=mesh->dims()) throw std::invalid_argument("BoundaryCondXD:  length of boundary condition list must be == to # of dims of MeshXDPtr");
+      if(m_bc_list.size()!=Sol.dims()) throw std::invalid_argument("BoundaryCondXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
+      for(std::size_t i=0; i<Sol.dims(); i++){
+        if(Sol.dim_size(i)!=mesh->dim_size(i)) throw std::invalid_argument("BoundaryCondXD: Dimension sizes of Discretization1D and MeshXD must match!"); 
+      }; 
+
+      // this lambda takes 1 BcPtr_t and applies it to Sol
+      // without double assigning to corners/edges of XDim space 
+      auto set_dim_boundaries_imp = [&](std::size_t dim, const std::pair<BcPtr_t,BcPtr_t>& bc_pair){
+        auto mesh_1dim = mesh->GetMesh(dim); 
+        auto views = Sol.OneDim_views(dim); 
+        // iterate through views that look like Mesh1D
+        for(std::size_t i=0; i<views.size(); i++){
+          // determine if it has been set by lower dimension 
+          bool set_by_low_dim = false; 
+          std::size_t s1 = 1; 
+          for(int dim_i=0; dim_i<dim; dim_i++){
+            std::size_t s2 = Sol.dim_size(dim_i); 
+            // in first group of values
+            if((i/s1)%s2 == 0) set_by_low_dim = true;  
+            // in last group of values
+            if((i/s1)%s2 == s2-1) set_by_low_dim = true;  
+            // next check uses a large bucket 
+            s1 *= s2; 
+          }
+          // if it hasn't, use BC on it. 
+          if(!set_by_low_dim){
+            bc_pair.first->SetImpSolL(views[i], mesh_1dim); 
+            bc_pair.second->SetImpSolR(views[i], mesh_1dim); 
+          }
+        }
+      }; // end set_dim_boundaries lambda 
+      // apply lambda + corresponding bc from m_bc_list to Sol 
+      std::size_t dim_i=0; 
+      for(auto& bc : m_bc_list) set_dim_boundaries_imp(dim_i++, bc); 
+      // void return type       
+    }
 
     // set a Matrixs' row according to m_bc_list. making it an implicit stencil  
     void SetStencilImp(MatrixStorage_t& Mat, const MeshXDPtr_t& mesh)
@@ -100,4 +181,45 @@ class BoundaryCondXD
   }; 
 };
 
-#endif // BOundaryCondXD.hpp
+#endif // BOundaryCondXD.hpp 
+
+
+/* 
+// order of priority for m_bc_list to be applied 
+corners / edges of XDim space are given priority to whichever BC would cover it first 
+0 is unaffected by BCs. 
+1 is first BC in m_bc_list,
+2 is 2nd,
+...  
+
+// e.g. in 2D --------------------------
+1 1 1 1 1 1 1
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+1 1 1 1 1 1 1
+
+
+// e.g. in 3D -----------------------
+
+// slice of bottom 
+1 1 1 1 1 1 1
+2 3 3 3 3 3 2
+2 3 3 3 3 3 2
+2 3 3 3 3 3 2
+2 3 3 3 3 3 2
+2 3 3 3 3 3 2
+1 1 1 1 1 1 1
+
+// slice directly off bottom. (3 no longer applies)
+1 1 1 1 1 1 1
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+2 0 0 0 0 0 2
+1 1 1 1 1 1 1
+
+*/

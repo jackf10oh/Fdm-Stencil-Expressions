@@ -22,6 +22,7 @@ using std::cout, std::endl;
 auto lam00 = [](){return 1.0;}; 
 auto lam01 = [](double x){return std::sqrt(x*x);}; 
 auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
+// auto lam02 = [](double x, double y){return 0.0;}; 
 auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
 int main()
@@ -34,17 +35,18 @@ int main()
 
   // discretization.
   DiscretizationXD my_vals; 
-
   my_vals.set_init(my_meshes, lam02); 
 
-  // boundary conditions 
-  auto bc = make_dirichlet(4.0); 
-  
-  auto views = my_vals.OneDim_views(0); 
-  for(auto& v : views){
-    bc->SetSolL(v, my_meshes->GetMesh(0)); 
-    bc->SetSolR(v, my_meshes->GetMesh(0)); 
-  }
+  // BoundaryCondXD 
+  BoundaryCondXD bc_list; 
+  using pair_t = std::pair<BcPtr_t,BcPtr_t>; 
+  pair_t p1 = {make_dirichlet(1.0), make_dirichlet(2.0)}; 
+  pair_t p2 = {make_neumann(3.0), make_neumann(4.0)};
+  // pair_t p2 = {make_robin(1,1,3.0), make_robin(1,1,4.0)};
+  bc_list.m_bc_list = {p1,p2}; 
+
+  bc_list.SetSol(my_vals, my_meshes); 
+  // bc_list.SetImpSol(my_vals, my_meshes); 
 
   // print as flat vector 
   // cout << my_vals.values() << endl; 
@@ -53,9 +55,12 @@ int main()
   cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
 
   // from a given "slice" that looks like 2d. print the matrix 
-  // std::size_t ith_slice = 20; 
+  // std::size_t ith_slice = 1; 
   // std::size_t offset = ith_slice * my_meshes->sizes_middle_product(0,2); 
   // cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data() + offset, my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
+
+  // auto views = my_vals.OneDim_views(2);
+  // for(auto& v : views) print_vec(v); 
 
 };
 
@@ -155,3 +160,36 @@ int main()
 2, 3, 3, 
 3, 3, 3, 
 */ 
+
+/*   
+  // boundary conditions 
+  auto set_dim_boundaries = [&](std::size_t dim, BcPtr_t bc){
+    auto views = my_vals.OneDim_views(dim); 
+    std::size_t s1 = views.size(); 
+    // iterate through views that look like Mesh1D
+    for(std::size_t i=0; i<s1; i++){
+      bool set_by_low_dim = false; 
+      // determine if it has been set by lower dimension 
+      std::size_t s2 = 1; 
+      for(int dim_i=0; dim_i<dim; dim_i++){
+        std::size_t s3 = my_vals.dim_size(dim_i); 
+        // in first group of values
+        if((i/s2)%s3 == 0) set_by_low_dim = true;  
+        // in last group of values
+        if((i/s2)%s3 == s3-1) set_by_low_dim = true;  
+        
+        // next check uses a large bucket 
+        s2 *= s3; 
+      }
+      // if it hasn't, use BC on it. 
+      if(!set_by_low_dim){
+        bc->SetSolL(views[i], my_meshes->GetMesh(dim)); 
+        bc->SetSolR(views[i], my_meshes->GetMesh(dim)); 
+      }
+    }
+  }; 
+
+  set_dim_boundaries(0, make_dirichlet(1.0)); 
+  set_dim_boundaries(1, make_dirichlet(2.0)); 
+  // set_dim_boundaries(2, make_dirichlet(3.0)); 
+*/
