@@ -21,7 +21,7 @@ class LinOpXDBase
 
   // type defs 
   public:
-    typedef struct{} is_linop_tag; // to tell if a class derived from LinOpBase<> 
+    typedef struct{} is_linopxd_tag; // to tell if a class derived from LinOpBase<> 
     using Derived_t = Derived; // so Plugin can access grand child class
 
   protected:

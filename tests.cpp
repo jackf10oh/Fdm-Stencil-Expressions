@@ -53,7 +53,6 @@ int main()
 
   // print as a 2d matrix 
   print_mat(my_vals.OneDim_views(0), "Mapped 2D"); 
-  // cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
 
   // from a given "slice" that looks like 2d. print the matrix 
   // std::size_t ith_slice = 1; 

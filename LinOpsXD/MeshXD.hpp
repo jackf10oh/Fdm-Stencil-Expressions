@@ -25,6 +25,14 @@ class MeshXD
     std::vector<MeshPtr_t> m_mesh_vec; // dynamic array of meshes. 
   public:
     // constructors ------------------------------------------------------------------------- 
+    // uniformly on [0,1] with 5 steps per dim, with n_dims
+    MeshXD(std::size_t n_dims_init) 
+      : m_mesh_vec(n_dims_init)
+    {
+      for(std::size_t dim_i=0; dim_i<n_dims_init; dim_i++){
+        m_mesh_vec[dim_i] = std::make_shared<Mesh1D>(0.0, 1.0, 5); 
+      }; 
+    };
     // uniformly on [l,r] with n_steps per dim, with n_dims
     MeshXD(double left=0.0, double right=1.0, std::size_t n_steps=11,std::size_t n_dims=1)
       : m_mesh_vec(n_dims)
@@ -45,6 +53,8 @@ class MeshXD
         nstep_it++; 
       }
     }
+    // Copy 
+    MeshXD(const MeshXD& other)=default; 
     // destructors --------------------------------------------------------------------------
     virtual ~MeshXD()=default;
     // member functions ---------------------------------------------------------------------
