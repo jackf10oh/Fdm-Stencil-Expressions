@@ -41,7 +41,7 @@ int main()
   BoundaryCondXD bc_list; 
   using pair_t = std::pair<BcPtr_t,BcPtr_t>; 
   pair_t p1 = {make_dirichlet(1.0), make_dirichlet(2.0)}; 
-  pair_t p2 = {make_neumann(3.0), make_neumann(4.0)};
+  pair_t p2 = {make_dirichlet(3.0), make_dirichlet(4.0)};
   // pair_t p2 = {make_robin(1,1,3.0), make_robin(1,1,4.0)};
   bc_list.m_bc_list = {p1,p2}; 
 
@@ -49,10 +49,11 @@ int main()
   // bc_list.SetImpSol(my_vals, my_meshes); 
 
   // print as flat vector 
-  // cout << my_vals.values() << endl; 
+  // print_vec(my_vals.values(), "flattened vals"); 
 
   // print as a 2d matrix 
-  cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
+  print_mat(my_vals.OneDim_views(0), "Mapped 2D"); 
+  // cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
 
   // from a given "slice" that looks like 2d. print the matrix 
   // std::size_t ith_slice = 1; 
@@ -61,6 +62,8 @@ int main()
 
   // auto views = my_vals.OneDim_views(2);
   // for(auto& v : views) print_vec(v); 
+
+  // funky_print(my_vals.values()); 
 
 };
 

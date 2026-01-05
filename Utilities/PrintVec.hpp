@@ -1,6 +1,7 @@
 // PrintVec.hpp 
 //
-//
+// prints vectors in a pythonic way: 
+// i.e. comment: [x0, x1, ..., xn] 
 //
 // JAF 1/4/2026 
 
@@ -13,36 +14,43 @@
 // from container with .begin() .end() 
 template<typename Cont>
 void print_vec(const Cont& v, std::string comment="", bool new_line=true){
+  // print comment 
   if(!comment.empty()) std::cout << comment << ": ";
-  auto it = v.begin(); 
-  auto end = std::prev(v.end()); 
-  std::cout << "["; 
-  while(it!= end) std::cout << *(it++) << ", ";
-  std::cout << *it << "]"; 
-  if(new_line) std::cout << std::endl;   
+  // print [ x0, x1, ..., xn] 
+  std::cout << "[" << *std::for_each_n(v.begin(), v.size()-1, [](const auto& x){std::cout << x << ", ";}) << "]"; 
+  // print new line 
+  if(new_line) std::cout << "\n";   
 };
 
 // from iterators. 
 template<typename Iter>
 void print_vec(const Iter& start, const Iter& stop, std::string comment="", bool new_line=true){
+  // print comment 
   if(!comment.empty()) std::cout << comment << ": ";
-  auto it = start; 
-  auto end = std::prev(stop); 
-  std::cout << "["; 
-  while(it!= end) std::cout << *(it++) << ", ";
-  std::cout << *it << "]";   
-  if(new_line) std::cout << std::endl;   
+  // print [ x0, x1, ..., xn] 
+  std::cout << "[" << *std::for_each_n(start, std::distance(start,stop)-1, [](const auto& x){std::cout << x << ", ";}) << "]"; 
+  // print new line 
+  if(new_line) std::cout << "\n";   
 };
 
 // for an eigen MatrixXd
-void print_mat(const Eigen::Ref<const Eigen::MatrixXd>& A, std::string comment="")
+template<typename Cont2D>
+void print_mat(const Cont2D& A, std::string comment="")
 {
-  if(!comment.empty()) std::cout << "--------------" << comment << "--------------" << std::endl;
-  for(auto row : A.rowwise()){
-    print_vec(row); 
-    std::cout << "," << std::endl; 
-  }
-  std::cout << std::endl; 
+  // print comment 
+  if(!comment.empty()) std::cout << "--------------" << comment << "--------------" << "\n";
+  // opening brace 
+  std::cout << "["; 
+  // print rows up to last row with , << \n 
+  auto it_last_row = std::for_each_n(A.begin(), A.size()-1, 
+      [](const auto& row){
+          print_vec(row,"",false); std::cout<<","<< "\n";
+      }
+  ); 
+  // print last row
+  print_vec(*it_last_row, "", false); 
+  // closing brace 
+  std::cout << "]\n\n";
 }
 
 #endif // PrintVec.hpp
