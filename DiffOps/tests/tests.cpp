@@ -43,8 +43,8 @@ TEST(DirichletBcSuite, DirichletOverrides)
 
   // explicit methods 
   // sets left/right end of discretization 
-  bc_ptr->SetSolL(my_disc, my_mesh);
-  bc_ptr->SetSolR(my_disc, my_mesh);
+  bc_ptr->SetSolL(my_disc.values(), my_mesh);
+  bc_ptr->SetSolR(my_disc.values(), my_mesh);
   ASSERT_EQ(my_disc.at(0),bval); 
   ASSERT_EQ(my_disc.at(s-1),bval); 
   
@@ -53,8 +53,8 @@ TEST(DirichletBcSuite, DirichletOverrides)
   my_disc.at(0)=1.2345; 
   my_disc.at(s-1)=6.789; 
   // set left/right end of discretization in implicit scheme
-  bc_ptr->SetImpSolL(my_disc, my_mesh);
-  bc_ptr->SetImpSolR(my_disc, my_mesh);
+  bc_ptr->SetImpSolL(my_disc.values(), my_mesh);
+  bc_ptr->SetImpSolR(my_disc.values(), my_mesh);
   // sets first/last row in a stencil
   bc_ptr->SetStencilL(A, my_mesh); 
   bc_ptr->SetStencilR(A, my_mesh);
