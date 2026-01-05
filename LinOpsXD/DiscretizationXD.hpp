@@ -50,7 +50,7 @@ struct DiscretizationXD
     const Eigen::VectorXd& values() const {return m_vals; } 
 
     // Give a list of Eigen::Map<>. each Map looks like a Discretization1D on a Mesh1d  
-    std::vector<StrideView_t> 1D_views(std::size_t ith_dim=0)
+    std::vector<StrideView_t> OneDim_views(std::size_t ith_dim=0)
     {
       // i has to be one of the dimensions of DiscretizationXD 
       if(ith_dim >= dims()) throw std::invalid_argument("Discretization1D::dim_values_view(i) i must be < Discretization1D.dims().");

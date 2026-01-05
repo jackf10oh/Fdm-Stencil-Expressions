@@ -12,28 +12,17 @@
 #include<Eigen/Dense>
 #include<unsupported/Eigen/KroneckerProduct>
 
-#include "DiffOps/All.hpp" // must include first for plugin to take effect over linops 
-
-#include "LinOps/All.hpp"
-
-// #include "LinOpsXD/All.hpp"
-#include "LinOpsXD/MeshXD.hpp" 
-#include "LinOpsXD/DiscretizationXD.hpp" 
-#include "LinOpsXD/OperatorsXD/IOpXD.hpp" 
-#include "LinOpsXD/OperatorsXD/DirectionalRandOp.hpp" 
-#include "LinOpsXD/LinOpXDTraits.hpp"
+#include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
+#include "LinOps/All.hpp" 
+#include "LinOpsXD/All.hpp"
+#include "Utilities/PrintVec.hpp"
 
 using std::cout, std::endl;
 
-template<typename Cont>
-void print_vec(const Cont& v, std::string comment=""){
-  if(!comment.empty()) std::cout << comment << ": ";
-  auto it = v.begin(); 
-  auto end = std::prev(v.end()); 
-  std::cout << "["; 
-  while(it!= end) cout << *(it++) << ", ";
-  std::cout << *it << "]" << std::endl;   
-}
+auto lam00 = [](){return 1.0;}; 
+auto lam01 = [](double x){return std::sqrt(x*x);}; 
+auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
+auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
 int main()
 {
@@ -46,18 +35,22 @@ int main()
   // discretization.
   DiscretizationXD my_vals; 
 
-  auto lam00 = [](){return 1.0;}; 
-  auto lam01 = [](double x){return std::sqrt(x*x);}; 
-  auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
-  auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
+  my_vals.set_init(my_meshes, lam02); 
 
-  my_vals.set_init(my_meshes, lam01); 
+  // boundary conditions 
+  // auto bc = make_dirichlet(4.0); 
+  
+  // auto views = my_vals.OneDim_views(0); 
+  // for(auto& v : views){
+  //   bc->SetSolL(v, my_meshes->GetMesh(0)); 
+  //   bc->SetSolR(v, my_meshes->GetMesh(0)); 
+  // }
 
   // print as flat vector 
-  cout << my_vals.values() << endl; 
+  // cout << my_vals.values() << endl; 
 
   // print as a 2d matrix 
-  // cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
+  cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
 
   // from a given "slice" that looks like 2d. print the matrix 
   // std::size_t ith_slice = 20; 

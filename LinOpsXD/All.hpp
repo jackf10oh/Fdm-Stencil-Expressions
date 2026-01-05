@@ -7,6 +7,7 @@
 #ifndef LINOPXD_ALL_H
 #define LINOPXD_ALL_H 
 
+#include "LinOpXDTraits.hpp"
 #include "MeshXD.hpp" 
 #include "DiscretizationXD.hpp" 
 
