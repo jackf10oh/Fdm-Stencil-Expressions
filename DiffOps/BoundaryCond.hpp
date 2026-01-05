@@ -22,8 +22,12 @@ using BcPtr_t = std::shared_ptr<IBoundaryCond>;
 class IBoundaryCond
 {
   protected:  
+    // type defs 
+    using StridedRef = Eigen::Ref<Eigen::VectorXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
+
     // member data 
     double m_current_time;
+    
   public:
     // Constructors ---------------------------------------------
     IBoundaryCond(): m_current_time(0.0){}; 
@@ -38,12 +42,12 @@ class IBoundaryCond
     virtual void SetStencilR(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh)const=0;
     
     // change the first/last entries in an impicit solution vector 
-    virtual void SetImpSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh)const=0;
-    virtual void SetImpSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh)const=0;
+    virtual void SetImpSolL(StridedRef Sol, const MeshPtr_t& mesh)const=0;
+    virtual void SetImpSolR(StridedRef Sol, const MeshPtr_t& mesh)const=0;
 
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh)const=0;
-    virtual void SetSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh)const=0;
+    virtual void SetSolL(StridedRef Sol, const MeshPtr_t& mesh)const=0;
+    virtual void SetSolR(StridedRef Sol, const MeshPtr_t& mesh)const=0;
 };
 
 #endif // BoundaryCond.hpp

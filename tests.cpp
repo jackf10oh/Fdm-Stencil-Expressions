@@ -38,13 +38,13 @@ int main()
   my_vals.set_init(my_meshes, lam02); 
 
   // boundary conditions 
-  // auto bc = make_dirichlet(4.0); 
+  auto bc = make_dirichlet(4.0); 
   
-  // auto views = my_vals.OneDim_views(0); 
-  // for(auto& v : views){
-  //   bc->SetSolL(v, my_meshes->GetMesh(0)); 
-  //   bc->SetSolR(v, my_meshes->GetMesh(0)); 
-  // }
+  auto views = my_vals.OneDim_views(0); 
+  for(auto& v : views){
+    bc->SetSolL(v, my_meshes->GetMesh(0)); 
+    bc->SetSolR(v, my_meshes->GetMesh(0)); 
+  }
 
   // print as flat vector 
   // cout << my_vals.values() << endl; 

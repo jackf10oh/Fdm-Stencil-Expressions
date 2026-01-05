@@ -47,13 +47,13 @@ class RobinBC : public IBoundaryCond
       Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=  val_coeff + deriv_coeff*(1.0/h);
     };
 
-    virtual void SetImpSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolL(StridedRef Sol, const MeshPtr_t& mesh) const override
     {Sol[0] = boundary_target;};
-    virtual void SetImpSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolR(StridedRef Sol, const MeshPtr_t& mesh) const override
     {Sol[Sol.size()-1] = boundary_target;};
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolL(StridedRef Sol, const MeshPtr_t& mesh) const override 
     { 
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
@@ -74,7 +74,7 @@ class RobinBC : public IBoundaryCond
       Sol[0] = target;  
       // void return type
     };
-    virtual void SetSolR(Eigen::Ref<Eigen::VectorXd> Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolR(StridedRef Sol, const MeshPtr_t& mesh) const override 
     {
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
