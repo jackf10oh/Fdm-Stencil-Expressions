@@ -41,36 +41,29 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 30, 2);
+  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 7, 2);
 
   // discretization.
   DiscretizationXD my_vals; 
 
   auto lam00 = [](){return 1.0;}; 
-  auto lam01 = [](double x){return x*x + 1.0;}; 
+  auto lam01 = [](double x){return x*x;}; 
   auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
   auto lam03 = [](double x, double y, double z){return x*x + y*y + z*z;}; 
 
-  my_vals.set_init(my_meshes, lam02); 
+  my_vals.set_init(my_meshes, lam01); 
 
   // print as flat vector 
-  // cout << my_vals.values() << endl; 
+  cout << my_vals.values() << endl; 
 
   // print as a 2d matrix 
-  cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
+  // cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data(), my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
 
   // from a given "slice" that looks like 2d. print the matrix 
   // std::size_t ith_slice = 20; 
   // std::size_t offset = ith_slice * my_meshes->sizes_middle_product(0,2); 
   // cout << Eigen::Map<Eigen::MatrixXd>(my_vals.values().data() + offset, my_meshes->dim_size(0), my_meshes->dim_size(1)) << endl; 
 
-  // cout << "lam00: " << callable_traits<decltype(lam03)>::num_args << ", " << typeid(callable_traits<decltype(lam03)>::result_type).name() << endl; 
-
-  // std::array<double, callable_traits<decltype(lam02)>::num_args> arr; 
-  // for(int i=0; i< arr.size(); i++) arr[i] = i+1;
-  // print_vec(arr, "std::array"); 
-
-  // cout << "result of apply: " << std::apply(lam02, arr) << endl;
 };
 
   // // how to iterate through dynamic multi dim meshes?

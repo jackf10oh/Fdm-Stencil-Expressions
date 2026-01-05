@@ -123,27 +123,53 @@ struct DiscretizationXD
     >
     void set_init(MeshXDPtr_t m, F func)
     {
+      static constexpr std::size_t num_args = callable_traits<F>::num_args; 
       // check there are enough dimensions to use callable type F
-      if(m->dims() < callable_traits<F>::num_args) throw std::invalid_argument("# dims of MeshXDPtr_t must be >= # args in callable F"); 
+      if(m->dims() < num_args) throw std::invalid_argument("# dims of MeshXDPtr_t must be >= # args in callable F"); 
 
       // stores mesh, resizes dims + vals 
       match_mesh(m); 
 
-      // stores n args. n is 
-      std::array<double, callable_traits<F>::num_args> args_arr; 
+      // some initializations before looping 
+      std::size_t flat_end = sizes_middle_product(0,num_args); // how many values are in flattened 1D array to fill before copy/paste  
+      std::size_t n_layers = m_vals.size() / flat_end; 
+      std::array<double, num_args> args_arr; // stores n args for std::apply(func,args_arr) later 
+      std::array<std::size_t, num_args> cumulative_prod_arr; // holds sizes_middle_product(i) for i=0,...,num_args 
 
-      std::size_t end = m_vals.size(); 
-      for(std::size_t flat_i=0; flat_i<end; flat_i++){
+      // calculate all of cumulative_prod_arr
+      for(std::size_t dim=0; dim<num_args; dim++) cumulative_prod_arr[dim] = sizes_middle_product(0, dim); 
 
-        for(std::size_t dim=0; dim < callable_traits<F>::num_args; dim++){
+      // iterate through flattened first layer 
+      for(std::size_t flat_i=0; flat_i<flat_end; flat_i++){
+        // fill args_arr 
+        for(std::size_t dim=0; dim < num_args; dim++){
           std::size_t dim_i = flat_i;
-          dim_i /= sizes_middle_product(0, dim); 
+          dim_i /= cumulative_prod_arr[dim]; 
           dim_i %= m_dims[dim]; 
           args_arr[dim] = m_mesh_ptr->GetMesh(dim)->operator[](dim_i); 
         }
-
+        // write func(arg_arr) to m_vals 
         m_vals[flat_i] = std::apply(func, args_arr);  
-      } 
+      } // end first layer 
+
+      // if we need to copy into more layers 
+      if(flat_end != m_vals.size()){
+        for(std::size_t ith_view=0; ith_view<flat_end; ith_view++){
+
+          // store the first layer's entry 
+          double first_val = m_vals[ith_view]; 
+
+          // create a view to paste into. 
+          Stride_t s(0,flat_end); 
+          StrideView_t view(m_vals.data()+ith_view, n_layers,s); 
+          for(std::size_t layer=1; layer<n_layers; layer++){
+            view[layer]=first_val; 
+          }
+        }
+      }
+
+
+
       // void return type. m_vals now has output of func for each entry. 
     }
     
