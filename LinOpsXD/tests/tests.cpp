@@ -29,6 +29,11 @@ TEST(MeshXDSuite, MeshXDConstructible){
   MeshXD from_ends_list_steps_list01({{0.0,4.0}}, {8}); 
   MeshXD from_ends_list_steps_list02({{0.0,4.0},{-2.0,2.0},{-4.0,0.0}}, {8,16,32}); 
 
+  // from std::vector<> of std::shared_ptr<Mesh1D>  
+  auto mesh_1d_01 = make_mesh(); 
+  auto mesh_1d_02 = make_mesh(-1.0,1.0,21); 
+  auto mesh_1d_03 = make_mesh(0,10.0, 101); 
+  MeshXD from_vec(std::vector<MeshPtr_t>({mesh_1d_01,mesh_1d_02,mesh_1d_03})) 
 
   // copy 
   MeshXD from_copy(from_dims_only); 

@@ -11,19 +11,11 @@
 #include<Eigen/Sparse>
 #include "../LinearOpXDBase.hpp" 
 
-// temporary macro until we need to move it somewhere else. 
-#define CUSTOM_IOPXD_MATRIX_STORAGE Eigen::SparseMatrix<double, Eigen::RowMajor>
-
-#ifndef CUSTOM_IOPXD_MATRIX_STORAGE
-#define CUSTOM_IOPXD_MATRIX_STORAGE Eigen::MatrixXd
-#endif
-
-
 class IOpXD: public LinOpXDBase<IOpXD> 
 {
   private:
     // private type defs
-    typedef typename Eigen::SparseMatrix<double, Eigen::RowMajor> Matrix_t; 
+    typedef typename CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Matrix_t; 
     // member data 
     Matrix_t m_mat; 
   public:

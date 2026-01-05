@@ -53,6 +53,8 @@ class MeshXD
         nstep_it++; 
       }
     }
+    // from std::vector<> of MeshPtr_t (Mesh1D's)
+    MeshXD(const std::vector<MeshPtr_t>& init_vec) : m_mesh_vec(init_vec){}; 
     // Copy 
     MeshXD(const MeshXD& other)=default; 
     // destructors --------------------------------------------------------------------------

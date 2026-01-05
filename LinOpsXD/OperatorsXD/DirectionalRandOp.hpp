@@ -15,7 +15,7 @@ class DirectionalRandOp: public LinOpXDBase<DirectionalRandOp>
 {
   private:
     // private type defs
-    typedef typename Eigen::SparseMatrix<double, Eigen::RowMajor> Matrix_t; 
+    typedef typename CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Matrix_t; 
     // member data 
     Matrix_t m_mat; 
     std::size_t m_direction; // which Mesh1D the operator acts on. 

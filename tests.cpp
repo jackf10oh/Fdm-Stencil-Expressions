@@ -10,7 +10,6 @@
 #include<vector>
 #include<tuple>
 #include<Eigen/Dense>
-#include<unsupported/Eigen/KroneckerProduct>
 
 #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
 #include "LinOps/All.hpp" 
@@ -31,7 +30,7 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 7, 2);
+  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 5, 2);
 
   // discretization.
   DiscretizationXD my_vals; 

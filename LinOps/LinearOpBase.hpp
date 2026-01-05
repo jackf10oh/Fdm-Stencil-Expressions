@@ -25,6 +25,10 @@ template<typename T>
 using LinOpMixIn = LINOP_PLUGIN<T>; 
 #endif
 
+#ifndef CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE
+#define CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Eigen::SparseMatrix<double, Eigen::ColMajor>
+#endif 
+
 // CTRP base for 1D differential operator -------------------------------
 template<typename Derived>
 class LinOpBase : public LinOpMixIn<LinOpBase<Derived>> 
