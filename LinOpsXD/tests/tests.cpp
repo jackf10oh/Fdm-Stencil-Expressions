@@ -13,7 +13,8 @@
 
 #include "../All.hpp"
 
-// Mesh Suite ---------------------------------------- 
+// Mesh Suite ==================================================== 
+// Test all constructors 
 TEST(MeshXDSuite, MeshXDConstructible){
   // simply make a mesh and do nothing with it
   MeshXD my_mesh; 
@@ -33,7 +34,7 @@ TEST(MeshXDSuite, MeshXDConstructible){
   auto mesh_1d_01 = make_mesh(); 
   auto mesh_1d_02 = make_mesh(-1.0,1.0,21); 
   auto mesh_1d_03 = make_mesh(0,10.0, 101); 
-  MeshXD from_vec(std::vector<MeshPtr_t>({mesh_1d_01,mesh_1d_02,mesh_1d_03})) 
+  MeshXD from_vec(std::vector<MeshPtr_t>({mesh_1d_01,mesh_1d_02,mesh_1d_03})); 
 
   // copy 
   MeshXD from_copy(from_dims_only); 
@@ -45,6 +46,7 @@ TEST(MeshXDSuite, MeshXDConstructible){
   EXPECT_ANY_THROW(MeshXD(1.0, -5.0, 6, 1));
 }; 
 
+// Testing all method that return std::shared_ptr<Mesh1D> 
 TEST(MeshXDSuite, MeshXDMesh1DGetters){
   // make a unit mesh, 5 steps per dim, X dimensions 
   std::size_t X = 4; 
@@ -62,6 +64,7 @@ TEST(MeshXDSuite, MeshXDMesh1DGetters){
   EXPECT_ANY_THROW(from_dims_only.GetMeshAt(X+5));  
 }; 
 
+// Testing all method that return sizes 
 TEST(MeshXDSuite, MeshXDSizesGetters){
   // simply make a mesh and do nothing with it
   MeshXD my_mesh; 
@@ -96,7 +99,8 @@ TEST(MeshXDSuite, MeshXDSizesGetters){
   EXPECT_ANY_THROW(from_ends_list_steps_list02.sizes_middle_product(4,0)); // start > end  
 }; 
 
-// Discretization Suite ---------------------------------------- 
+// Discretization Suite ============================================= 
+// Test all constructors 
 TEST(DiscretizationXDSuite, DiscretizationXDConstructible){
   // default constructor leaves m_vals, m_dims, m_mesh_ptr all empty 
   DiscretizationXD empty_disc; 
@@ -113,9 +117,12 @@ TEST(DiscretizationXDSuite, DiscretizationXDConstructible){
 
   // copy 
   DiscretizationXD from_other(from_meshes_1d); 
-  
+
 }
 
+// testing move constructors ???????????????
+
+// Testing all method that return sizes. should match original MeshXDPtr_t 
 TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
   // simply make a mesh and do nothing with it
   auto my_mesh = make_meshes(); 
@@ -170,5 +177,31 @@ TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
   EXPECT_ANY_THROW(DiscretizationXD(from_ends_list_steps_list02).sizes_middle_product(4,0)); // start > end 
 }
 
-// Linear Operators XD Suite ---------------------------------------------
+// Testing set_init() for constant ????????????????????
+TEST(DiscretizationXDSuite, DiscretizationXDSetByConstant){
+
+  MeshXDPtr_t my_meshes = make_meshes(); 
+  DiscretizationXD my_disc(my_meshes); 
+  
+  double val_init = 6.7; 
+  my_disc.set_init(val_init); 
+
+  for(auto& val : my_disc.values()){
+    ASSERT_EQ(val, val_init); 
+  }
+}; 
+
+// Testing set_init() for callable ???????????????????? 
+// TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
+//   auto lam00 = [](){return 67.0;}; 
+//   // Euclidean norms in 1D, 2D, 3D 
+//   auto lam01 = [](double x){return std::sqrt(x*x);}; 
+//   auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
+//   auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
+
+// }
+
+// testing move assignment from Eigen::VectorXd ?????????????????
+
+// Linear Operators XD Suite ====================================================
 

@@ -38,7 +38,7 @@ struct DiscretizationXD
         for(std::size_t i=0; i<m_mesh_ptr->dims(); ++i) m_dims[i] = m_mesh_ptr->dim_size(i); 
       }
     }
-    // copy constructor --------------------------------------
+    // copy --------------------------------------
     DiscretizationXD(const DiscretizationXD& other)
       : m_mesh_ptr(other.m_mesh_ptr), m_vals(other.m_vals), m_dims(other.m_dims)
     {}; 

@@ -14,11 +14,14 @@
 #include "MeshXD.hpp"
 #include "DiscretizationXD.hpp" 
 
+#ifndef CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE
+#define CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Eigen::SparseMatrix<double, Eigen::ColMajor> 
+#endif
+
 // CTRP base for 1D differential operator -------------------------------
 template<typename Derived>
 class LinOpXDBase 
 {
-
   // type defs 
   public:
     typedef struct{} is_linopxd_tag; // to tell if a class derived from LinOpBase<> 
