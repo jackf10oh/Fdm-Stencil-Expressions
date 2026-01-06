@@ -13,13 +13,14 @@
 #include<Eigen/Sparse>
 
 // forward declaration -----------------------------------------------
-template <class ArgType>
+template<class ArgType>
 class SparseDiag;
+// using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
 
 // type traits =======================================================================
 namespace Eigen {
 namespace internal {
-template <class ArgType>
+template<class ArgType>
 struct traits<SparseDiag<ArgType> > {
   typedef Eigen::Sparse StorageKind;
   typedef Eigen::MatrixXpr XprKind;
@@ -27,17 +28,17 @@ struct traits<SparseDiag<ArgType> > {
   typedef typename ArgType::Scalar Scalar;
   enum {
     Flags = Eigen::RowMajor,
-    RowsAtCompileTime = ArgType::RowsAtCompileTime,
-    ColsAtCompileTime = ArgType::ColsAtCompileTime,
-    MaxRowsAtCompileTime = ArgType::MaxRowsAtCompileTime,
-    MaxColsAtCompileTime = ArgType::MaxColsAtCompileTime
+    RowsAtCompileTime = Eigen::Dynamic,
+    ColsAtCompileTime = Eigen::Dynamic,
+    MaxRowsAtCompileTime = Eigen::Dynamic,
+    MaxColsAtCompileTime = Eigen::Dynamic
   };
 };
 }  // namespace internal
 }  // namespace Eigen
 
 // expression class ======================================================================= 
-template <class ArgType>
+template<class ArgType>
 class SparseDiag : public Eigen::SparseMatrixBase<SparseDiag<ArgType> > {
   public:
     // typedefs 
@@ -47,8 +48,8 @@ class SparseDiag : public Eigen::SparseMatrixBase<SparseDiag<ArgType> > {
     
     // constructors 
     SparseDiag(const ArgType& arg_init, std::size_t repeats_init=1) : m_arg(arg_init), m_num_repeats(repeats_init) {
-      static_assert( std::is_same<ArgType, MatrixStorage_t>::value, "Invalid arg type. SparseDiag must be constructed from MatrixStorage_t."); 
-      if(arg_init.rows()!=1) throw std::invalid_argument("SparseDiag must be constructed from MatrixStorage_t."); 
+      // static_assert( std::is_same<ArgType, MatrixStorage_t>::value, "Invalid arg type. SparseDiag must be constructed from MatrixStorage_t."); 
+      if(arg_init.rows()!=1) throw std::invalid_argument("SparseDiag must be constructed from expr with .rows()==1"); 
       if(repeats_init<1) throw std::invalid_argument("SparseDiag must be constructed with num_repeats >= 1."); 
     }
     
@@ -65,7 +66,7 @@ class SparseDiag : public Eigen::SparseMatrixBase<SparseDiag<ArgType> > {
 // the evaluator =======================================================================
 namespace Eigen {
 namespace internal {
-template <typename ArgType>
+template<typename ArgType>
 struct evaluator<SparseDiag<ArgType> > : evaluator_base<SparseDiag<ArgType> > {
 
   // typedefs -------------------------------------------------- 
@@ -121,7 +122,7 @@ struct evaluator<SparseDiag<ArgType> > : evaluator_base<SparseDiag<ArgType> > {
 }  // namespace Eigen
 
 // the entry point ======================================================================= 
-template <class ArgType>
+template<class ArgType>
 SparseDiag<ArgType> make_SparseDiag(const Eigen::SparseMatrixBase<ArgType>& arg, std::size_t num_repeats=1) {
   return SparseDiag<ArgType>(arg.derived(), num_repeats);
 }

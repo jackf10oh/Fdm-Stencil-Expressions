@@ -11,12 +11,14 @@
 #include<tuple>
 #include<Eigen/Dense>
 
+#include "Utilities/PrintVec.hpp"
+#include "Utilities/experimental_SparseDiagExpr.hpp" 
+
 #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
 #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
 // #include "DiffOps/DiffOps/NthDerivOp.hpp" 
 #include "LinOps/All.hpp" 
 #include "LinOpsXD/All.hpp"
-#include "Utilities/PrintVec.hpp"
 
 using std::cout, std::endl;
 
@@ -31,69 +33,19 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  auto my_mesh = make_mesh(0.0, 100, 1e6);
+  auto my_mesh = make_mesh(0.0, 5, 6);
   
-  using D = NthDerivOp; 
+  MatrixStorage_t R = RandLinOp(my_mesh).GetMat().sparseView(); 
+  cout << R << endl; 
 
-  auto stencil = D(my_mesh,4); 
-  // auto A = stencil.GetMat(); 
-  // cout << A << endl; 
-  // cout << "is compessed? " << A.isCompressed() << endl;  
+  Eigen::VectorXd flat2(my_mesh->size()); 
+  for(std::size_t i=0; i<flat2.size(); i++) flat2(i) = i; 
 
-  // print_vec(A.innerIndexPtr(), A.innerIndexPtr()+A.nonZeros(), "A inner"); 
-  // print_vec(A.valuePtr(), A.valuePtr()+A.nonZeros(), "A vals"); 
-  // print_vec(A.outerIndexPtr(), A.outerIndexPtr()+A.outerSize(), "A outer"); 
+  cout << typeid(decltype(flat2.asDiagonal())).name() << endl; 
 
-  
-  // print_vec(stencil.m_inners, "A inner"); 
-  // print_vec(stencil.m_vals, "A vals"); 
-  // print_vec(stencil.m_outers, "A outer"); 
+  cout << flat2.asDiagonal() * R << endl; 
 
-  // std::vector<double> vals(A.nonZeros()); 
-  // std::copy(A.valuePtr(), A.valuePtr()+A.nonZeros(), vals.begin()); 
-
-  // std::vector<int> inners(A.nonZeros()); 
-  // std::copy(A.innerIndexPtr(), A.innerIndexPtr()+A.nonZeros(), inners.begin()); 
-
-  // std::vector<int> outers(A.outerSize()+1);
-  // std::copy(A.outerIndexPtr(), A.outerIndexPtr()+A.outerSize()+1, outers.begin()); 
-
-  
-  // Eigen::Map<Eigen::SparseMatrix<double,Eigen::RowMajor>> map(
-  //   A.rows(), A.cols(), A.nonZeros(), 
-  //   outers.data(), inners.data(), vals.data(), 
-  //   0 // 0 flags the sparse matrix as compressed 
-  // ); 
-
-  // print_vec(map.innerIndexPtr(), map.innerIndexPtr()+map.nonZeros(), "map inner"); 
-  // print_vec(map.valuePtr(), map.valuePtr()+map.nonZeros(), "map vals"); 
-  // print_vec(map.outerIndexPtr(), map.outerIndexPtr()+map.outerSize(), "map outer"); 
-
-  // cout << "--------------map------------" <<endl << map << endl;  
-
-  // cout << "map is compressed? " << map.isCompressed() << endl; 
-
-
-  // Eigen::SparseMatrix<double,Eigen::RowMajor> B; 
-  // B.resize(A.rows(),A.cols()); 
-  // B.reserve(A.nonZeros()); 
-
-  // // garbage values on init? 
-  // print_vec(B.innerIndexPtr(), B.innerIndexPtr()+A.nonZeros(), "B inner"); 
-  // print_vec(B.valuePtr(), B.valuePtr()+A.nonZeros(), "B vals"); 
-  // print_vec(B.outerIndexPtr(), B.outerIndexPtr()+B.outerSize(), "B outer"); 
-
-  // TCoeff t(my_mesh); 
-  // t.SetTime(1.0); 
-
-  // cout << t.GetMat() << endl; 
-
-  // auto sum_expr = t+t; 
-  // cout << sum_expr.GetMat() << endl; 
-  // // cout << (2.0*t).GetMat() << endl; 
-  // // cout << (t-2.0*t).GetMat() << endl; 
-
-  // read_func_obj{}(t, "foobar"); 
+  cout << typeid(decltype(flat2.asDiagonal() * R)).name() << endl; 
 
 };
 
