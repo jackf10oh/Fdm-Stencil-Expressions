@@ -9,9 +9,11 @@
 
 #include<iostream>
 #include<Eigen/Sparse> 
-#include "../LinearOpXDBase.hpp" 
+#include<unsupported/Eigen/KroneckerProduct> 
 
-class DirectionalRandOp: public LinOpXDBase<DirectionalRandOp> 
+#include "../LinearOpBaseXD.hpp" 
+
+class DirectionalRandOp: public LinOpBaseXD<DirectionalRandOp> 
 {
   private:
     // private type defs

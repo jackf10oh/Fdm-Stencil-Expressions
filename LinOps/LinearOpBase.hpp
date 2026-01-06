@@ -51,11 +51,11 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     LinOpBase(MeshPtr_t m=nullptr): LinOpMixIn<LinOpBase<Derived>>(){set_mesh(m);}; 
     // member functions -------------------------------------------------------
     // member functions. implemented by derived class -------------------------
-    auto& GetMat()
+    decltype(auto) GetMat()
     {
       return static_cast<Derived*>(this)->GetMat(); 
     };
-    const auto& GetMat() const
+    decltype(auto) GetMat() const
     {
       return static_cast<const Derived*>(this)->GetMat(); 
     };
@@ -81,6 +81,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       // m_mesh_ptr = m; // take shared ownership of mesh
       static_cast<Derived*>(this)->set_mesh(m);
     };
+    // return reference to stored MeshPtr_t
     const MeshPtr_t& mesh() const 
     { 
       return m_mesh_ptr; 

@@ -10,7 +10,7 @@
 #include<vector>
 #include<Eigen/Core>
 #include "MeshXD.hpp"
-#include "LinOpXDTraits.hpp"
+#include "LinOpTraitsXD.hpp"
 
 struct DiscretizationXD
 {

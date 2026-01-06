@@ -9,9 +9,9 @@
 
 #include<iostream>
 #include<Eigen/Sparse>
-#include "../LinearOpXDBase.hpp" 
+#include "../LinearOpBaseXD.hpp" 
 
-class IOpXD: public LinOpXDBase<IOpXD> 
+class IOpXD: public LinOpBaseXD<IOpXD> 
 {
   private:
     // private type defs

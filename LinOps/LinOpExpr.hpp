@@ -8,7 +8,6 @@
 #define LINOPEXPR_H
 
 #include<cstdint>
-#include<Eigen/Core>
 #include<type_traits>
 #include "Mesh.hpp"
 #include "Discretization.hpp" 

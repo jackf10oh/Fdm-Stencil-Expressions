@@ -1,4 +1,4 @@
-// LinearOpXDBase.hpp
+// LinearOpBaseXD.hpp
 //
 //
 //
@@ -20,7 +20,7 @@
 
 // CTRP base for 1D differential operator -------------------------------
 template<typename Derived>
-class LinOpXDBase 
+class LinOpBaseXD 
 {
   // type defs 
   public:
@@ -34,16 +34,16 @@ class LinOpXDBase
 
   public:
     // Constructors ---------------------------------------------------------- 
-    LinOpXDBase(MeshXDPtr_t m=nullptr){set_mesh(m);}; 
+    LinOpBaseXD(MeshXDPtr_t m=nullptr){set_mesh(m);}; 
     // Destructors ----------------------------------------------------------- 
-    ~LinOpXDBase()=default; 
+    ~LinOpBaseXD()=default; 
     // member functions -------------------------------------------------------
     // member functions. implemented by derived class -------------------------
-    auto& GetMat()
+    decltype(auto) GetMat()
     {
       return static_cast<Derived*>(this)->GetMat(); 
     };
-    const auto& GetMat() const
+    decltype(auto) GetMat() const
     {
       return static_cast<const Derived*>(this)->GetMat(); 
     };
@@ -120,6 +120,6 @@ class LinOpXDBase
     //   } // end else 
     // }; // end .compose_impl(other) 
 
-}; // end LinOpBase
+}; // end LinOpBaseXD
 
-#endif // LinearOpBase.hpp
+#endif // LinearOpBaseXD.hpp 

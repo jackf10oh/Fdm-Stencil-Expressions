@@ -33,24 +33,44 @@ void print_vec(const Iter& start, const Iter& stop, std::string comment="", bool
   if(new_line) std::cout << "\n";   
 };
 
-// for an eigen MatrixXd
-template<typename Cont2D>
-void print_mat(const Cont2D& A, std::string comment="")
+// for Eigen matrix 
+template<typename Derived>
+void print_mat(const Eigen::DenseBase<Derived>& A, std::string comment = "")
 {
   // print comment 
   if(!comment.empty()) std::cout << "--------------" << comment << "--------------" << "\n";
   // opening brace 
   std::cout << "["; 
   // print rows up to last row with , << \n 
-  auto it_last_row = std::for_each_n(A.begin(), A.size()-1, 
-      [](const auto& row){
-          print_vec(row,"",false); std::cout<<","<< "\n";
-      }
-  ); 
+  for(std::size_t i=0; i<A.rows()-1; i++){
+    print_vec(A.row(i), "", false); 
+    std::cout << ",\n"; 
+  }
   // print last row
-  print_vec(*it_last_row, "", false); 
+  print_vec(A.row(A.rows()-1), "", false); 
   // closing brace 
   std::cout << "]\n\n";
-}
+}; 
+
+
+// // for an STL like container 
+// template<typename Cont2D>
+// void print_mat(const Cont2D& A, std::string comment="")
+// {
+//   // print comment 
+//   if(!comment.empty()) std::cout << "--------------" << comment << "--------------" << "\n";
+//   // opening brace 
+//   std::cout << "["; 
+//   // print rows up to last row with , << \n 
+//   auto it_last_row = std::for_each_n(A.begin(), A.size()-1, 
+//       [](const auto& row){
+//           print_vec(row,"",false); std::cout<<","<< "\n";
+//       }
+//   ); 
+//   // print last row
+//   print_vec(*it_last_row, "", false); 
+//   // closing brace 
+//   std::cout << "]\n\n";
+// }
 
 #endif // PrintVec.hpp

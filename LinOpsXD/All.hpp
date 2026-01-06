@@ -7,15 +7,16 @@
 #ifndef LINOPXD_ALL_H
 #define LINOPXD_ALL_H 
 
-#include "LinOpXDTraits.hpp"
 #include "MeshXD.hpp" 
 #include "DiscretizationXD.hpp" 
 
-#include "BoundaryCondXD.hpp" 
-
-#include "LinearOpXDBase.hpp"
+#include "LinOpTraitsXD.hpp"
+#include "LinearOpBaseXD.hpp"
+#include "LinOpExprXD.hpp"
 
 #include "OperatorsXD/DirectionalRandOp.hpp"
 #include "OperatorsXD/IOpXD.hpp"
+
+#include "BoundaryCondXD.hpp" 
 
 #endif // All.hpp 

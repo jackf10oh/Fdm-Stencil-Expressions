@@ -30,28 +30,30 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 5, 2);
+  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 2);
+
+  auto A = DirectionalRandOp(my_meshes, 0); 
+  auto B = DirectionalRandOp(my_meshes, 1); 
+  // auto expr = A+B; 
+
+  cout << "---------- A --------------" << endl << A.GetMat().toDense() << endl; 
+  cout << "---------- B --------------" << endl << B.GetMat().toDense() << endl; 
+  cout << "---------- A+B --------------" << endl << (A+B).GetMat() << endl; 
+  cout << "---------- A-B --------------" << endl << (A-B).GetMat() << endl; 
+  cout << "---------- -A --------------" << endl << (-A).GetMat() << endl; 
+  cout << "---------- 2.0*A --------------" << endl << (2.0*A).GetMat() << endl; 
+
+};
 
   // discretization.
-  DiscretizationXD my_vals; 
-  my_vals.set_init(my_meshes, lam02); 
-
-  // BoundaryCondXD 
-  BoundaryCondXD bc_list; 
-  using pair_t = std::pair<BcPtr_t,BcPtr_t>; 
-  pair_t p1 = {make_dirichlet(1.0), make_dirichlet(2.0)}; 
-  pair_t p2 = {make_dirichlet(3.0), make_dirichlet(4.0)};
-  // pair_t p2 = {make_robin(1,1,3.0), make_robin(1,1,4.0)};
-  bc_list.m_bc_list = {p1,p2}; 
-
-  bc_list.SetSol(my_vals, my_meshes); 
-  // bc_list.SetImpSol(my_vals, my_meshes); 
+  // DiscretizationXD my_vals; 
+  // my_vals.set_init(my_meshes, lam02); 
 
   // print as flat vector 
   // print_vec(my_vals.values(), "flattened vals"); 
 
   // print as a 2d matrix 
-  print_mat(my_vals.OneDim_views(0), "Mapped 2D"); 
+  // print_mat(my_vals.OneDim_views(0), "Mapped 2D"); 
 
   // from a given "slice" that looks like 2d. print the matrix 
   // std::size_t ith_slice = 1; 
@@ -61,9 +63,16 @@ int main()
   // auto views = my_vals.OneDim_views(2);
   // for(auto& v : views) print_vec(v); 
 
-  // funky_print(my_vals.values()); 
+  // BoundaryCondXD 
+  // BoundaryCondXD bc_list; 
+  // using pair_t = std::pair<BcPtr_t,BcPtr_t>; 
+  // pair_t p1 = {make_dirichlet(1.0), make_dirichlet(2.0)}; 
+  // pair_t p2 = {make_dirichlet(3.0), make_dirichlet(4.0)};
+  // // pair_t p2 = {make_robin(1,1,3.0), make_robin(1,1,4.0)};
+  // bc_list.m_bc_list = {p1,p2}; 
 
-};
+  // bc_list.SetSol(my_vals, my_meshes); 
+  // bc_list.SetImpSol(my_vals, my_meshes); 
 
   // // how to iterate through dynamic multi dim meshes?
   // std::size_t end = my_meshes->sizes_product();  

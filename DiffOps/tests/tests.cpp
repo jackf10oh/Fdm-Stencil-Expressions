@@ -77,7 +77,14 @@ TEST(DirichletBcSuite, DirichletOverrides)
 // Testing TCoeff can be constructed
 TEST(CoeffOpTestSuite, TCoeffConstructible)
 {
-  TCoeff t; 
+  // default constructor 
+  TCoeff t_default; 
+
+  // make a mesh 
+  MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
+  
+  // make a TCoeff that acts on functions of mesh
+  TCoeff t(my_mesh); 
 };
 
 // Testing TCoeff methods
@@ -93,7 +100,7 @@ TEST(CoeffOpTestSuite, TCoeffSettable)
   auto check_lambda = [s = my_mesh->size()-1](const auto& expr, double val) -> void
   {
     MatrixStorage_t Mat = expr.GetMat(); 
-    // Check that entries on diag are 2
+    // Check that entries on diag are val
     ASSERT_EQ(Mat.coeff(0,0),val); 
     ASSERT_EQ(Mat.coeff(s,s),val); 
     ASSERT_EQ(Mat.coeff(s/2,s/2),val);

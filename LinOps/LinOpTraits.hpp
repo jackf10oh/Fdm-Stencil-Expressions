@@ -8,10 +8,10 @@
 #define LINOPTRAITS_H
 
 #include<type_traits>
-#include "Mesh.hpp"
-#include "Discretization.hpp"
 
 // Forward Declarations -------------------------------------------------
+class Discretization1D; 
+
 template<typename Derived>
 class LinOpBase;
 
@@ -27,8 +27,8 @@ struct OperatorAddition_t{};
 // flag for scalar multiplication. i.e c*L
 struct ScalarMultiply_t{}; 
 
-// Traits ---------------------------------------------------------------
-// given a type, detect if it is derived from linopbase<> 
+// Traits =====================================================================
+// given a type, detect if it is derived from linopbase<> ---------------------
 template<typename T, typename = void>
 struct is_linop_crtp_impl : std::false_type {};
 
@@ -38,7 +38,7 @@ struct is_linop_crtp_impl<T, std::void_t<typename T::is_linop_tag>> : std::true_
 template<typename T>
 using is_linop_crtp = is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
 
-// given a type T see if it is an expression
+// given a type T see if it is an expression ----------------------------------------
 template<typename T>
 struct is_expr_crtp_impl : public std::false_type
 {};
@@ -50,16 +50,16 @@ struct is_expr_crtp_impl<LinOpExpr<L,R,OP>>: public std::true_type
 template<typename T>
 using is_expr_crtp = is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;
 
-// given a linop expression. detect if it is a composition L1( L2( . ))
+// given a linop expression. detect if it is a composition L1( L2( . )) ---------------
 template<typename T>
 struct is_compose_expr: public std::false_type
 {};
 
 template<typename L, typename R, typename OP>
-struct is_compose_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorComposition_t, OP>
+struct is_compose_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorComposition_t, std::remove_reference_t<OP>>
 {};
 
-// given a linop expression. detect if it is a binary addition L1+L2
+// given a linop expression. detect if it is a binary addition L1+L2 ---------------------
 template<typename T>
 struct is_add_expr: public std::false_type
 {};
@@ -68,7 +68,7 @@ template<typename L, typename R, typename OP>
 struct is_add_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorAddition_t, std::remove_reference_t<OP>>
 {};
 
-// given a linop expression. detect if it is a scalar multiply c*L
+// given a linop expression. detect if it is a scalar multiply c*L ---------------------
 template<typename T>
 struct is_scalar_multiply_expr: public std::false_type
 {};
@@ -77,7 +77,7 @@ template<typename L, typename R, typename OP>
 struct is_scalar_multiply_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<ScalarMultiply_t, std::remove_reference_t<OP>>
 {};
 
-// given a base class and flags, attach flags to base class
+// given a base class and flags, attach flags to base class -------------------------
 template<typename Base, typename... Flags>
 struct make_flagged
 {
@@ -93,22 +93,25 @@ struct make_flagged
 template<typename Base, typename... Flags>
 using make_flagged_t = typename make_flagged<Base, Flags...>::type; 
 
-// given a type T we may need to store it as a reference or a value in a binary expression
-template<typename T>
-struct Storage_t
+// given a type T we may need to store it  ----------------------------------------
+// as a reference or a value in a binary expression
+template<typename T, typename = void>
+struct Storage_t 
 {
-  using type = typename std::conditional<
-  is_linop_crtp<T>::value,  // if T derives from linopbase
-  std::conditional_t<
-    std::is_lvalue_reference<T>::value && !(is_expr_crtp<T>::value),// if T is an lvalue LinOpBase
-    T, // store by reference
-    std::remove_reference_t<T> // else store rvalue by value
-  >, 
-  T // else store Non linops as is 
-  >::type; 
+  using type = T; 
 }; 
 
-// given a type T that will be a mixin, see if it has .apply() const method 
+template<typename LINOP_T>
+struct Storage_t<LINOP_T, std::enable_if_t< is_linop_crtp<LINOP_T>::value > >
+{
+  using type = std::conditional_t<
+    std::is_lvalue_reference<LINOP_T>::value && !(is_expr_crtp<LINOP_T>::value), // if T is an lvalue LinOpBase + not expression 
+    LINOP_T, // store by lvalue LINOP_T& 
+    std::remove_reference_t<LINOP_T> // else store rvalue by value
+  >; 
+}; 
+
+// given a type T that will be a mixin, see if it has .apply() const method ----------------------------------
 template<typename T, typename = void>
 struct has_apply : public std::false_type {};
 
