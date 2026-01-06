@@ -9,8 +9,12 @@
 
 #include "CoeffOpBase.hpp"
 
+struct read_func_obj; 
+
 class TCoeff : public CoeffOpBase<TCoeff>
 {
+  friend read_func_obj; 
+
   using Derived_t = TCoeff; 
   public:
     // constructors 
@@ -43,6 +47,11 @@ class TCoeff : public CoeffOpBase<TCoeff>
       m_stencil.setIdentity(); 
       m_stencil *= m_current_time; 
     }
+}; 
+
+struct read_func_obj{
+  template<typename RHS>
+  void operator()(const TCoeff& c, const RHS& rhs){std::cout << "read_func_obj called on t="<<c.m_current_time << "rhs: " << rhs << std::endl; }; 
 };
 
 #endif // TCoeff.hpp

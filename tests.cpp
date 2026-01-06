@@ -12,17 +12,18 @@
 #include<Eigen/Dense>
 
 #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
+#include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
+// #include "DiffOps/DiffOps/NthDerivOp.hpp" 
 #include "LinOps/All.hpp" 
 #include "LinOpsXD/All.hpp"
 #include "Utilities/PrintVec.hpp"
 
 using std::cout, std::endl;
 
-auto lam00 = [](){return 1.0;}; 
-auto lam01 = [](double x){return std::sqrt(x*x);}; 
-auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
-// auto lam02 = [](double x, double y){return 0.0;}; 
-auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
+// auto lam00 = [](){return 0.0;}; 
+// auto lam01 = [](double x){return std::sqrt(x*x);}; 
+// auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
+// auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
 int main()
 {
@@ -30,20 +31,83 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  MeshXDPtr_t my_meshes = std::make_shared<MeshXD>(0.0,1.0, 3, 2);
+  auto my_mesh = make_mesh(0.0, 100, 1e6);
+  
+  using D = NthDerivOp; 
 
-  auto A = DirectionalRandOp(my_meshes, 0); 
-  auto B = DirectionalRandOp(my_meshes, 1); 
-  // auto expr = A+B; 
+  auto stencil = D(my_mesh,4); 
+  // auto A = stencil.GetMat(); 
+  // cout << A << endl; 
+  // cout << "is compessed? " << A.isCompressed() << endl;  
 
-  cout << "---------- A --------------" << endl << A.GetMat().toDense() << endl; 
-  cout << "---------- B --------------" << endl << B.GetMat().toDense() << endl; 
-  cout << "---------- A+B --------------" << endl << (A+B).GetMat() << endl; 
-  cout << "---------- A-B --------------" << endl << (A-B).GetMat() << endl; 
-  cout << "---------- -A --------------" << endl << (-A).GetMat() << endl; 
-  cout << "---------- 2.0*A --------------" << endl << (2.0*A).GetMat() << endl; 
+  // print_vec(A.innerIndexPtr(), A.innerIndexPtr()+A.nonZeros(), "A inner"); 
+  // print_vec(A.valuePtr(), A.valuePtr()+A.nonZeros(), "A vals"); 
+  // print_vec(A.outerIndexPtr(), A.outerIndexPtr()+A.outerSize(), "A outer"); 
+
+  
+  // print_vec(stencil.m_inners, "A inner"); 
+  // print_vec(stencil.m_vals, "A vals"); 
+  // print_vec(stencil.m_outers, "A outer"); 
+
+  // std::vector<double> vals(A.nonZeros()); 
+  // std::copy(A.valuePtr(), A.valuePtr()+A.nonZeros(), vals.begin()); 
+
+  // std::vector<int> inners(A.nonZeros()); 
+  // std::copy(A.innerIndexPtr(), A.innerIndexPtr()+A.nonZeros(), inners.begin()); 
+
+  // std::vector<int> outers(A.outerSize()+1);
+  // std::copy(A.outerIndexPtr(), A.outerIndexPtr()+A.outerSize()+1, outers.begin()); 
+
+  
+  // Eigen::Map<Eigen::SparseMatrix<double,Eigen::RowMajor>> map(
+  //   A.rows(), A.cols(), A.nonZeros(), 
+  //   outers.data(), inners.data(), vals.data(), 
+  //   0 // 0 flags the sparse matrix as compressed 
+  // ); 
+
+  // print_vec(map.innerIndexPtr(), map.innerIndexPtr()+map.nonZeros(), "map inner"); 
+  // print_vec(map.valuePtr(), map.valuePtr()+map.nonZeros(), "map vals"); 
+  // print_vec(map.outerIndexPtr(), map.outerIndexPtr()+map.outerSize(), "map outer"); 
+
+  // cout << "--------------map------------" <<endl << map << endl;  
+
+  // cout << "map is compressed? " << map.isCompressed() << endl; 
+
+
+  // Eigen::SparseMatrix<double,Eigen::RowMajor> B; 
+  // B.resize(A.rows(),A.cols()); 
+  // B.reserve(A.nonZeros()); 
+
+  // // garbage values on init? 
+  // print_vec(B.innerIndexPtr(), B.innerIndexPtr()+A.nonZeros(), "B inner"); 
+  // print_vec(B.valuePtr(), B.valuePtr()+A.nonZeros(), "B vals"); 
+  // print_vec(B.outerIndexPtr(), B.outerIndexPtr()+B.outerSize(), "B outer"); 
+
+  // TCoeff t(my_mesh); 
+  // t.SetTime(1.0); 
+
+  // cout << t.GetMat() << endl; 
+
+  // auto sum_expr = t+t; 
+  // cout << sum_expr.GetMat() << endl; 
+  // // cout << (2.0*t).GetMat() << endl; 
+  // // cout << (t-2.0*t).GetMat() << endl; 
+
+  // read_func_obj{}(t, "foobar"); 
 
 };
+
+  // auto A = DirectionalRandOp(my_meshes, 0); 
+  // auto B = DirectionalRandOp(my_meshes, 1); 
+  // // auto expr = A+B; 
+
+  // cout << "---------- A --------------" << endl << A.GetMat().toDense() << endl; 
+  // cout << "---------- B --------------" << endl << B.GetMat().toDense() << endl; 
+  // cout << "---------- A+B --------------" << endl << (A+B).GetMat() << endl; 
+  // cout << "---------- A-B --------------" << endl << (A-B).GetMat() << endl; 
+  // cout << "---------- -A --------------" << endl << (-A).GetMat() << endl; 
+  // cout << "---------- 2.0*A --------------" << endl << (2.0*A).GetMat() << endl; 
+
 
   // discretization.
   // DiscretizationXD my_vals; 
