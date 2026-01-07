@@ -191,15 +191,99 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByConstant){
   }
 }; 
 
-// Testing set_init() for callable ???????????????????? 
-// TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
-//   auto lam00 = [](){return 67.0;}; 
-//   // Euclidean norms in 1D, 2D, 3D 
-//   auto lam01 = [](double x){return std::sqrt(x*x);}; 
-//   auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
-//   auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
+// Testing set_init() for callable  
+TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
+  auto lam00 = [](){return 67.0;}; 
+  // Euclidean norms in 1D, 2D, 3D 
+  auto lam01 = [](double x){return std::sqrt(x*x);}; 
+  auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
+  auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
-// }
+  auto my_mesh_1d = make_meshes(0.0,10.0,21, 1); 
+  auto my_mesh_2d = make_meshes(0.0,10.0,21, 2); 
+  auto my_mesh_3d = make_meshes(0.0,10.0,21, 3); 
+
+  DiscretizationXD my_disc; 
+
+  // set init 1D case 
+  my_disc.set_init(my_mesh_1d, lam01); 
+  for(std::size_t i=0; i<my_disc.dim_size(0); i++){
+    double x = my_mesh_1d->GetMeshAt(0)->at(i); 
+    double lam_val = lam01(x); 
+    double disc_val = my_disc.values()[i];  
+
+    ASSERT_NEAR(disc_val, lam_val, 1e-4); 
+  }
+
+  // set init 2D case 
+  my_disc.set_init(my_mesh_2d, lam02); 
+  for(std::size_t i=0; i<my_disc.dim_size(0); i++){
+
+    double x = my_mesh_2d->GetMeshAt(0)->at(i); 
+
+    for(std::size_t j=0; j<my_disc.dim_size(1); j++){
+
+      double y = my_mesh_2d->GetMeshAt(1)->at(j); 
+
+      double lam_val = lam02(x,y); 
+
+      std::size_t flat_idx = i + j*my_disc.sizes_middle_product(0,1); 
+      double disc_val = my_disc.values()[flat_idx];
+
+      ASSERT_NEAR(disc_val, lam_val, 1e-4); 
+
+    }
+  }
+
+  // set init 3D case 
+  my_disc.set_init(my_mesh_3d, lam03); 
+  for(std::size_t i=0; i<my_disc.dim_size(0); i++){
+
+    double x = my_mesh_3d->GetMeshAt(0)->at(i); 
+
+    for(std::size_t j=0; j<my_disc.dim_size(1); j++){
+
+      double y = my_mesh_3d->GetMeshAt(1)->at(j); 
+
+      for(std::size_t k=0; k<my_disc.dim_size(1); k++){
+
+      double z = my_mesh_3d->GetMeshAt(2)->at(k); 
+
+      double lam_val = lam03(x,y,z); 
+
+      std::size_t flat_idx = i + j*my_disc.sizes_middle_product(0,1) + k*my_disc.sizes_middle_product(0,2); 
+      double disc_val = my_disc.values()[flat_idx];
+
+      ASSERT_NEAR(disc_val, lam_val, 1e-4); 
+      }
+    }
+  }
+
+  // last case: we can use lower dimensional function on higher dimension mesh
+  // i.e. lam02 takes 2 dims but my_mesh3d has 3 dims
+  my_disc.set_init(my_mesh_3d, lam02); 
+  for(std::size_t i=0; i<my_disc.dim_size(0); i++){
+
+    double x = my_mesh_3d->GetMeshAt(0)->at(i); 
+
+    for(std::size_t j=0; j<my_disc.dim_size(1); j++){
+
+      double y = my_mesh_3d->GetMeshAt(1)->at(j); 
+
+      for(std::size_t k=0; k<my_disc.dim_size(1); k++){
+
+      double z = my_mesh_3d->GetMeshAt(2)->at(k); 
+
+      double lam_val = lam02(x,y); 
+
+      std::size_t flat_idx = i + j*my_disc.sizes_middle_product(0,1) + k*my_disc.sizes_middle_product(0,2); 
+      double disc_val = my_disc.values()[flat_idx];
+
+      ASSERT_NEAR(disc_val, lam_val, 1e-4); 
+      }
+    }
+  }
+}; 
 
 // testing move assignment from Eigen::VectorXd ?????????????????
 
