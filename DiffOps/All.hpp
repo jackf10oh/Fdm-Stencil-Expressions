@@ -18,8 +18,8 @@
 #include "DiffOps/NthDerivOp.hpp"
 
 #include "CoeffOps/CoeffOpBase.hpp"
-#include "CoeffOps/TCoeff.hpp"
-#include "CoeffOps/AutonomousCoeff.hpp"
+// #include "CoeffOps/TCoeff.hpp"
+// #include "CoeffOps/AutonomousCoeff.hpp"
 #include "CoeffOps/TimeDepCoeff.hpp"
 
 #include "../LinOps/All.hpp"

@@ -16,7 +16,7 @@
 // #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
 #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
 #include "LinOps/All.hpp" 
-#include "LinOpsXD/All.hpp"
+// #include "LinOpsXD/All.hpp"
 #include "Utilities/SparseDiagExpr.hpp"
 
 #include "DiffOps/CoeffOps/AutonomousCoeff.hpp"
@@ -35,12 +35,33 @@ int main()
 
   // mesh assembly. 2 dims 
   auto my_mesh = make_mesh(0.0, 5, 6);
-  
-  AutonomousCoeff c(lam01, my_mesh); 
 
-  cout << c.GetMat() << endl; 
+  auto func = [](double t){return t*t - 5;};
+  TimeDepCoeff coeff =  func; 
+  
+  coeff.set_mesh(my_mesh); 
+  // AutonomousCoeff c(lam01, my_mesh); 
+
+  cout << coeff.GetMat() << endl; 
+
+  coeff.SetTime(5.0); 
+  cout << coeff.GetMat() << endl; 
 
   // double val = c.GetScalar(); 
+
+  auto check_lam = [&](const auto& coeff_op, auto func){
+    MatrixStorage_t A = coeff_op.GetMat(); 
+    for(std::size_t i=0; i<A.rows(); i++){
+      if constexpr(callable_traits<decltype(func)>::num_args==2){
+        cout << A.coeff(i,i) << "=" << func(coeff_op.Time(), my_mesh->operator[](i)) << endl; 
+      } 
+      if constexpr(callable_traits<decltype(func)>::num_args==1){
+        cout << A.coeff(i,i) << "=" << func(coeff_op.Time()) << endl; 
+      } 
+    }
+  }; 
+
+  check_lam(coeff, func); 
 
 };
 

@@ -75,7 +75,7 @@ TEST(DirichletBcSuite, DirichletOverrides)
 
 // Testing TCoeff ===========================================================================  
 // Testing TCoeff can be constructed
-TEST(CoeffOpTestSuite, TCoeffConstructible)
+/* TEST(CoeffOpTestSuite, TCoeffConstructible)
 {
   // default constructor 
   TCoeff t_default; 
@@ -126,6 +126,8 @@ TEST(CoeffOpTestSuite, TCoeffSettable)
   ASSERT_EQ(4.0, t.Time()); 
 }
 
+*/ 
+
 // testing TimeDepCoeff class
 TEST(CoeffOpTestSuite, TimeDepCoeffTest)
 {
@@ -133,44 +135,55 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
   MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
 
   // some lambdas to test out 
-  auto lam01 = [](double x){return x*x;}; // x^2
-  auto lam02 = [](double x){return std::sin(x);}; // sin(x)
-  auto lam03 = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // some polynomial in x 
+  auto lam01 = [](double t){return t*t;}; // t^2
+  auto lam02 = [](double t,double x){return t * std::sin(x);}; // t*sin(x)
+  auto lam03 = [](double t,double x){return t*t+t*x+3.0*t*t*t+2*x*x*x-5*x*x+3*x-1;}; // some polynomial in t,x
   
-  // take two vectors and check each |ui-vi| < eps 
-  auto check_lamda = [](auto expr, double val){
-    MatrixStorage_t A = expr; 
-    double tol = 1e-4;  
-    for(int i=0; i<A.rows(); i++){
-      ASSERT_NEAR(A.coeff(i,i),val,tol);
+  // take 1 coeff_op and 1 lambda. check each value of diag = func(t,x) or func(t) 
+  auto check_lam = [&](const auto& coeff_op, auto func){
+    MatrixStorage_t A = coeff_op.GetMat(); 
+    for(std::size_t i=0; i<A.rows(); i++){
+      if constexpr(callable_traits<decltype(func)>::num_args==2){
+        ASSERT_EQ(     
+          A.coeff(i,i), 
+          func(coeff_op.Time(), my_mesh->operator[](i))         
+        ); 
+      } 
+      if constexpr(callable_traits<decltype(func)>::num_args==1){
+        ASSERT_EQ(    
+          A.coeff(i,i), 
+          func(coeff_op.Time())   
+        ); 
+      } 
     }
-  };
+  }; 
 
   // make coeff
   double t = 3.0; 
-  TimeDepCoeff coeff(lam01,my_mesh); 
-  coeff.SetTime(t); 
+  TimeDepCoeff coeff01(lam01,my_mesh); 
+  coeff01.SetTime(t); 
 
   // check they have the same values 
-  check_lamda(coeff.GetMat(), lam01(t)); 
+  check_lam(coeff01, lam01); 
 
   // set to new functions / discretization 
-  coeff = lam02; 
-  // check again
-  check_lamda(coeff.GetMat(), lam02(t)); 
+  TimeDepCoeff coeff02(lam02,my_mesh); 
+  coeff02.SetTime(t); 
 
+  // check they have the same values 
+  check_lam(coeff02, lam02); 
+  
   // set to new functions / discretization 
-  coeff = lam03; 
-  // check again
-  check_lamda(coeff.GetMat(), lam03(t)); 
+  TimeDepCoeff coeff03(lam03,my_mesh); 
+  coeff03.SetTime(t); 
 
-  // check the scalar val, as time 
-  ASSERT_EQ(coeff.GetScalar(), lam03(t)); 
-  ASSERT_EQ(coeff.Time(), t); 
+  // check they have the same values 
+  check_lam(coeff03, lam03); 
+  
 } 
 
 // testing AutonomousCoeff class
-TEST(CoeffOpTestSuite, AutonomousCoeffTest)
+/* TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 {
   // make a mesh 
   MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
@@ -215,6 +228,8 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
   // check again 
   check_lamda(result.values(), new_coeff.apply(ones).values()); 
 }
+
+*/
 
 // // NthDerivOp Tests =========================================================================== 
 
@@ -431,50 +446,33 @@ TEST(FdmPluginSuite, StandardLinOps)
 // testing out SetTime() hooking
 TEST(FdmPluginSuite, Method_SetTime_Hooking)
 {
-  // make a mesh 
-  MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
-  
-  // make a TCoeff that acts on functions of mesh
-  TCoeff t(my_mesh); 
+  // make a LinOP
+  IOp I; 
 
-  // lambda to check 4 corners + middle of a matrix expr
-  auto check_lambda = [s = my_mesh->size()-1](const auto& expr, double val) -> void
-  {
-    MatrixStorage_t Mat = expr.GetMat(); 
-    // Check that entries on diag are 2
-    ASSERT_EQ(Mat.coeff(0,0),val); 
-    ASSERT_EQ(Mat.coeff(s,s),val); 
-    ASSERT_EQ(Mat.coeff(s/2,s/2),val);
-
-    // of diag are zero
-    ASSERT_EQ(Mat.coeff(0,s),0); 
-    ASSERT_EQ(Mat.coeff(s,0),0); 
-  };
-
-  auto expr01 = t+t;
-  auto expr02 = t*t; 
-  auto expr03 = 3.0*t; 
-  auto expr04 = t.compose(IOp()); 
+  auto expr01 = I+I;
+  auto expr02 = I.compose(I); 
+  auto expr03 = 3.0*I; 
+  auto expr04 = I.compose(IOp()); 
 
   // set time, make sure it is equal 
-  t.SetTime(1.0);
-  ASSERT_EQ(1.0,t.Time()); 
+  I.SetTime(1.0);
+  ASSERT_EQ(1.0,I.Time()); 
 
   // set time of expression, make sure it propagates to t 
   expr01.SetTime(2.0);
-  ASSERT_EQ(2.0,t.Time()); 
+  ASSERT_EQ(2.0,I.Time()); 
 
   // set time of expression, make sure it propagates to t 
   expr02.SetTime(3.0);
-  ASSERT_EQ(3.0,t.Time()); 
+  ASSERT_EQ(3.0,I.Time()); 
 
   // set time of expression, make sure it propagates to t 
   expr03.SetTime(4.0);
-  ASSERT_EQ(4.0,t.Time()); 
+  ASSERT_EQ(4.0,I.Time()); 
 
   // set time of expression, make sure it propagates to t 
   expr04.SetTime(5.0);
-  ASSERT_EQ(5.0,t.Time()); 
+  ASSERT_EQ(5.0,I.Time()); 
 }; 
 
 // Taking 1 explicit step with a convection diffusion scheme 

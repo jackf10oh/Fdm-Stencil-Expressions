@@ -7,73 +7,62 @@
 #ifndef TIMEDEPCOEFF_H
 #define TIMEDEPCOEFF_H
 
+#include<Eigen/Core> 
 #include "CoeffOpBase.hpp"
+#include "../Traits.hpp"
+#include "../../Utilities/SparseDiagExpr.hpp"
 
-class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
+template<typename FUNC_STORAGE_T = std::function<double(double,double)>>
+class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
 {
   public:
     using Derived_t = TimeDepCoeff; 
   public:
-    std::function<double(double)> m_function;  
-    double m_val; 
+    FUNC_STORAGE_T m_function;  
+    Eigen::RowVectorXd m_diag_vals; 
   public:
     // constructors ==========================================================
     TimeDepCoeff()=delete; // no default constructor
     // from callable + mesh 
-    TimeDepCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
+    TimeDepCoeff(FUNC_STORAGE_T f_init, MeshPtr_t m=nullptr)
+      : m_function(f_init), m_diag_vals(0)
     {
-      if(!f_init) throw std::runtime_error("must assign function to AutonomousCoeff"); 
-      m_function = f_init; 
+      static_assert(callable_traits<FUNC_STORAGE_T>::num_args > 0, "Assinging functions with no arguments to TimeDepCoeff not allowed"); 
+      static_assert(callable_traits<FUNC_STORAGE_T>::num_args <=2, "In 1D, TimeDepCoeff must have form a(t,x) or a(t)");  
       set_mesh(m);
     }
     // copy constructor
-    TimeDepCoeff(const TimeDepCoeff& other) 
-    {
-      if(!other.m_function) throw std::runtime_error("must assign function to AutonomousCoeff"); 
-      m_function = other.m_function; 
-      set_mesh(other.m_mesh_ptr); 
-    }
-    // From lambdas, etc ...
-    template<
-    typename Func_t,
-    typename = std::enable_if_t<
-      std::is_same_v< 
-        double,
-        std::invoke_result_t<Func_t,double>
-        >
-      >
-    >
-    TimeDepCoeff(Func_t f){
-      m_function=f; 
-    }
+    TimeDepCoeff(const TimeDepCoeff& other)=delete; 
     // destructors =============================================================
     ~TimeDepCoeff()=default;
     // member funcs =============================================================
+    auto GetMat()
+    {
+      return SparseDiag(m_diag_vals);  
+    };
+    auto GetMat() const
+    {
+      return SparseDiag(m_diag_vals);
+    };
+    void set_mesh(const MeshPtr_t& m){
+      if(m==nullptr || m==this->m_mesh_ptr) return; 
+      m_diag_vals.resize(m->size());
+      this->m_mesh_ptr = m;  
+    }
     // update state of TimeDepCoeff from a given t 
     void SetTime_impl(double t){
       // SetTime() stores the new time... 
-      // Store the result of m_function(t) 
-      m_val = m_function(t); 
+      // Store the result of m_function(t,x)  
+      // m_val = m_function(t); 
+      if constexpr(callable_traits<FUNC_STORAGE_T>::num_args==2){
+        for(std::size_t i=0; i<m_diag_vals.size(); i++){
+          m_diag_vals[i] = m_function(t, this->m_mesh_ptr->operator[](i)); 
+        }
+      }
+      if constexpr(callable_traits<FUNC_STORAGE_T>::num_args==1){
+        m_diag_vals.setConstant( m_function(t) ); 
+      }
     };
-    // return current stored result 
-    double GetScalar() const{
-      return m_val; 
-    }
-    // operators ==================================================================
-    template<
-    typename Func_t,
-    typename = std::enable_if_t<
-      std::is_same_v< 
-        double,
-        std::invoke_result_t<Func_t,double>
-        >
-      >
-    >
-    TimeDepCoeff& operator=(Func_t f){
-      m_function=f; 
-      SetTime_impl(m_current_time); // possibly remove? 
-      return *this; 
-    }
 }; 
 
 #endif // TimeDepCoeff.hpp 
