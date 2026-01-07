@@ -9,7 +9,6 @@
 
 #include "FdmPlugin.hpp"
 #include "BoundaryCond.hpp" 
-#include "Traits.hpp"
 
 #include "BCs/Dirichlet.hpp"
 #include "BCs/Neumann.hpp"

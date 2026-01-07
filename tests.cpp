@@ -14,12 +14,12 @@
 #include "Utilities/PrintVec.hpp"
 
 // #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
-#include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
+// #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
 #include "LinOps/All.hpp" 
 // #include "LinOpsXD/All.hpp"
-#include "Utilities/SparseDiagExpr.hpp"
+// #include "Utilities/SparseDiagExpr.hpp"
 
-#include "DiffOps/CoeffOps/AutonomousCoeff.hpp"
+// #include "DiffOps/CoeffOps/AutonomousCoeff.hpp"
 
 using std::cout, std::endl;
 
@@ -27,8 +27,6 @@ auto lam00 = [](){return 0.0;};
 auto lam01 = [](double x){return x*x - x + 1.5;}; 
 auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
 auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
-
-enum class ExprFlags : 
 
 int main()
 {
@@ -38,6 +36,16 @@ int main()
   // mesh assembly. 2 dims 
   auto my_mesh = make_mesh(0.0, 5, 6);
 
+  IOp I(my_mesh); 
+  RandLinOp R(my_mesh); 
+
+  cout << I.GetMat() << endl << endl; 
+  cout << R.GetMat() << endl << endl; 
+
+  cout << (2*I).GetMat() << endl << endl; 
+  cout << (R+I).GetMat() << endl << endl; 
+
+  cout << (IOp(my_mesh) + IOp(my_mesh)).GetMat() << endl; 
 
 };
 

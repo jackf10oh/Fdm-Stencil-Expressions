@@ -88,59 +88,59 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     }
 };
 
-// operator to add linops L1+L2 
-template<
-  typename DerivedL, 
-  typename DerivedR,
-  std::enable_if_t<
-    std::conjunction_v<
-      is_linop_crtp<DerivedL>,
-      is_linop_crtp<DerivedR>
-    >,
-    int 
-  > = 0
->
-auto operator+(DerivedL&& Lhs, DerivedR&& Rhs)
-{
-  using LStorage_t = typename Storage_t<DerivedL>::type;
-  using RStorage_t = typename Storage_t<DerivedR>::type;
+// // operator to add linops L1+L2 
+// template<
+//   typename DerivedL, 
+//   typename DerivedR,
+//   std::enable_if_t<
+//     std::conjunction_v<
+//       is_linop_crtp<DerivedL>,
+//       is_linop_crtp<DerivedR>
+//     >,
+//     int 
+//   > = 0
+// >
+// auto operator+(DerivedL&& Lhs, DerivedR&& Rhs)
+// {
+//   using LStorage_t = typename Storage_t<DerivedL>::type;
+//   using RStorage_t = typename Storage_t<DerivedR>::type;
 
-  auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()+B.GetMat(); };
-  using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
+//   auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()+B.GetMat(); };
+//   using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
 
-  return LinOpExpr<DerivedL, DerivedR, Op_t>(
-    std::forward<DerivedL>(Lhs),
-    std::forward<DerivedR>(Rhs),
-    static_cast<Op_t>(bin_op)
-  );
-};
+//   return LinOpExpr<DerivedL, DerivedR, Op_t>(
+//     std::forward<DerivedL>(Lhs),
+//     std::forward<DerivedR>(Rhs),
+//     static_cast<Op_t>(bin_op)
+//   );
+// };
 
-// operator to difference linops L1-L2 
-template<
-  typename DerivedL, 
-  typename DerivedR,
-  std::enable_if_t<
-    std::conjunction_v<
-      is_linop_crtp<DerivedL>,
-      is_linop_crtp<DerivedR>
-    >,
-    int 
-  > = 0
->
-auto operator-(DerivedL&& Lhs, DerivedR&& Rhs)
-{
-  using LStorage_t = typename Storage_t<DerivedL>::type;
-  using RStorage_t = typename Storage_t<DerivedR>::type;
+// // operator to difference linops L1-L2 
+// template<
+//   typename DerivedL, 
+//   typename DerivedR,
+//   std::enable_if_t<
+//     std::conjunction_v<
+//       is_linop_crtp<DerivedL>,
+//       is_linop_crtp<DerivedR>
+//     >,
+//     int 
+//   > = 0
+// >
+// auto operator-(DerivedL&& Lhs, DerivedR&& Rhs)
+// {
+//   using LStorage_t = typename Storage_t<DerivedL>::type;
+//   using RStorage_t = typename Storage_t<DerivedR>::type;
 
-  auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()-B.GetMat(); };
-  using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
+//   auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()-B.GetMat(); };
+//   using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
 
-  return LinOpExpr<DerivedL, DerivedR, Op_t>(
-    std::forward<DerivedL>(Lhs),
-    std::forward<DerivedR>(Rhs),
-    static_cast<Op_t>(bin_op)
-  );
-};
+//   return LinOpExpr<DerivedL, DerivedR, Op_t>(
+//     std::forward<DerivedL>(Lhs),
+//     std::forward<DerivedR>(Rhs),
+//     static_cast<Op_t>(bin_op)
+//   );
+// };
 
 // operator for scalar multiplication c*L
 template<
