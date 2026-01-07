@@ -15,7 +15,7 @@
 #include "BCs/Neumann.hpp"
 #include "BCs/Robin.hpp"
 
-// #include "DiffOps/NthDerivOp.hpp"
+#include "DiffOps/NthDerivOp.hpp"
 
 #include "CoeffOps/CoeffOpBase.hpp"
 #include "CoeffOps/TCoeff.hpp"

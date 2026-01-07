@@ -19,39 +19,14 @@ class TCoeff : public CoeffOpBase<TCoeff>
   public:
     // constructors 
     TCoeff(MeshPtr_t m=nullptr)
+      : CoeffOpBase<TCoeff>(m)
+    {}; 
+    // member functions
+    double GetScalar() const
     {
-      set_mesh(m);
+      return m_current_time; 
     }
-    // member functions  
-    void SetTime_impl(double t)
-    {
-      if(m_mesh_ptr) m_stencil.resize(m_mesh_ptr->size(), m_mesh_ptr->size());
-      m_stencil.setIdentity(); 
-      m_stencil = m_current_time * m_stencil;  
-    };
-    MatrixStorage_t& GetMat(){ return m_stencil; }; 
-    const MatrixStorage_t& GetMat() const { return m_stencil; };  
-    Discretization1D apply(const Discretization1D& d){
-      Discretization1D result(d.mesh()); 
-      result = m_stencil * d.values(); 
-      return result; 
-    }
-    void set_mesh(MeshPtr_t m)
-    {
-      // do nothing on nullptr 
-      if(m==nullptr || m==m_mesh_ptr) return; 
-      // store m into m_mesh_ptr.
-      m_mesh_ptr=m; 
-      // resize current stencil 
-      m_stencil.resize(m->size(), m->size()); 
-      m_stencil.setIdentity(); 
-      m_stencil *= m_current_time; 
-    }
+    void SetTime_impl(double t){}; // m_current_time = t already handled by SetTime(); 
 }; 
-
-struct read_func_obj{
-  template<typename RHS>
-  void operator()(const TCoeff& c, const RHS& rhs){std::cout << "read_func_obj called on t="<<c.m_current_time << "rhs: " << rhs << std::endl; }; 
-};
 
 #endif // TCoeff.hpp

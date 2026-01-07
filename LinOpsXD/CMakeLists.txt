@@ -20,8 +20,8 @@ add_library(LinOpsXD
   INTERFACE
   MeshXD.hpp
   DiscretizationXD.hpp
-  LinOpXDTraits.hpp
-  LinearOpXDBase.hpp
+  LinOpTraitsXD.hpp
+  LinearOpBaseXD.hpp
   # LinOpExpr.hpp
   OperatorsXD/IOpXD.hpp
   OperatorsXD/DirectionalRandOp.hpp

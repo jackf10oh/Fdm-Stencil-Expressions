@@ -15,8 +15,9 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
     using Derived_t = TimeDepCoeff; 
   public:
     std::function<double(double)> m_function;  
+    double m_val; 
   public:
-    // constructors 
+    // constructors ==========================================================
     TimeDepCoeff()=delete; // no default constructor
     // from callable + mesh 
     TimeDepCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
@@ -45,36 +46,20 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
     TimeDepCoeff(Func_t f){
       m_function=f; 
     }
-    // destructors
+    // destructors =============================================================
     ~TimeDepCoeff()=default;
-    // member funcs 
+    // member funcs =============================================================
+    // update state of TimeDepCoeff from a given t 
     void SetTime_impl(double t){
-      // store the new time 
-      m_current_time=t; 
-      // updated current m_stencil 
-      m_stencil.setIdentity(); 
-      m_stencil *= m_function(t); 
+      // SetTime() stores the new time... 
+      // Store the result of m_function(t) 
+      m_val = m_function(t); 
     };
-    MatrixStorage_t& GetMat(){ return m_stencil; }; 
-    const MatrixStorage_t& GetMat() const { return m_stencil; };  
-    Discretization1D apply(const Discretization1D& d){
-      Discretization1D result(d.mesh()); 
-      result = m_stencil * d.values(); 
-      return result; 
-    };
-    void set_mesh(MeshPtr_t m)
-    {
-      // do nothing on nullptr or same mesh
-      if(m==nullptr || m==m_mesh_ptr) return; 
-      
-      // store m into m_mesh_ptr. checks null 
-      m_mesh_ptr = m; 
-
-      // resize stencil and set as F(t)
-      m_stencil.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
-      m_stencil.setIdentity(); 
-      m_stencil *= m_function(m_current_time); 
+    // return current stored result 
+    double GetScalar() const{
+      return m_val; 
     }
+    // operators ==================================================================
     template<
     typename Func_t,
     typename = std::enable_if_t<
@@ -86,10 +71,9 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff>
     >
     TimeDepCoeff& operator=(Func_t f){
       m_function=f; 
-      SetTime_impl(m_current_time);
+      SetTime_impl(m_current_time); // possibly remove? 
       return *this; 
     }
- 
 }; 
 
 #endif // TimeDepCoeff.hpp 

@@ -120,7 +120,7 @@ TEST(CoeffOpTestSuite, TCoeffSettable)
 
   // set diag to 4.0
   t.SetTime(4.0);
-  // check diag is 2.0, off diag is 0.0
+  // check diag is 4.0, off diag is 0.0
   check_lambda(t,4.0);
 
   ASSERT_EQ(4.0, t.Time()); 
@@ -138,30 +138,36 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
   auto lam03 = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // some polynomial in x 
   
   // take two vectors and check each |ui-vi| < eps 
-  auto check_lamda = [](Eigen::VectorXd u, double val){
+  auto check_lamda = [](auto expr, double val){
+    MatrixStorage_t A = expr; 
     double tol = 1e-4;  
-    for(int i=0; i<u.size(); i++){
-      ASSERT_NEAR(u[i],val,tol);
+    for(int i=0; i<A.rows(); i++){
+      ASSERT_NEAR(A.coeff(i,i),val,tol);
     }
   };
 
   // make coeff
+  double t = 3.0; 
   TimeDepCoeff coeff(lam01,my_mesh); 
+  coeff.SetTime(t); 
 
   // check they have the same values 
-  check_lamda(coeff.GetDiag(), lam01(coeff.Time())); 
+  check_lamda(coeff.GetMat(), lam01(t)); 
 
   // set to new functions / discretization 
   coeff = lam02; 
-  coeff.SetTime(2.0); 
   // check again
-  check_lamda(coeff.GetDiag(), lam02(coeff.Time())); 
+  check_lamda(coeff.GetMat(), lam02(t)); 
 
   // set to new functions / discretization 
   coeff = lam03; 
   // check again
-  check_lamda(coeff.GetDiag(), lam03(coeff.Time())); 
-}
+  check_lamda(coeff.GetMat(), lam03(t)); 
+
+  // check the scalar val, as time 
+  ASSERT_EQ(coeff.GetScalar(), lam03(t)); 
+  ASSERT_EQ(coeff.Time(), t); 
+} 
 
 // testing AutonomousCoeff class
 TEST(CoeffOpTestSuite, AutonomousCoeffTest)
@@ -185,24 +191,29 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
   };
 
   // make discretization + coeff
-  Discretization1D disc;
-  disc.set_init(my_mesh,lam01);
+  Discretization1D result, ones;
+  ones.match_mesh(my_mesh,1.0);
+  result.set_init(my_mesh,lam01);
+
   AutonomousCoeff coeff(lam01,my_mesh); 
 
-  // check they have the same values 
-  check_lamda(disc.values(), coeff.GetDiag()); 
+  // // check they have the same values
+  check_lamda(result.values(), coeff.apply(ones).values()); 
 
-  // set to new functions / discretization 
-  disc.set_init(lam02); 
+  // // set to new functions / discretization 
+  result.set_init(lam02); 
   coeff = lam02; 
+  coeff.set_mesh(my_mesh); 
+
   // check again
-  check_lamda(disc.values(), coeff.GetDiag()); 
+  check_lamda(result.values(), coeff.apply(ones).values()); 
 
   // set to new functions / discretization 
-  disc.set_init(lam03); 
-  coeff = lam03; 
-  // check again
-  check_lamda(disc.values(), coeff.GetDiag()); 
+  result.set_init(lam03); 
+  AutonomousCoeff new_coeff = lam03; 
+  new_coeff.set_mesh(my_mesh); 
+  // check again 
+  check_lamda(result.values(), new_coeff.apply(ones).values()); 
 }
 
 // // NthDerivOp Tests =========================================================================== 

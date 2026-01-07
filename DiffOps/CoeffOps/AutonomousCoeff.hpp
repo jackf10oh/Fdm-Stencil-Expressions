@@ -8,6 +8,7 @@
 #define AUTONOMOUSCOEFF_H
 
 #include<functional>
+#include<Eigen/Core>
 #include "CoeffOpBase.hpp"
 
 class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
@@ -16,15 +17,19 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
     using Derived_t = AutonomousCoeff; 
   public:
     std::function<double(double)> m_function;  
+    Eigen::RowVectorXd m_vals; 
   public:
-    // constructors 
-    AutonomousCoeff()=delete; // no default constructor
+    // constructors =================================================
+    // no default constructor
+    AutonomousCoeff()=delete; 
+    // from callable + mesh
     AutonomousCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
     {
       if(!f_init) throw std::runtime_error("must assign function to AutonomousCoeff"); 
       m_function = f_init; 
       set_mesh(m);
     }
+    // from callable
     AutonomousCoeff(const AutonomousCoeff& other) 
     {
       if(!other.m_function) throw std::runtime_error("must assign function to AutonomousCoeff"); 
@@ -45,33 +50,38 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
       m_function=f; 
       set_mesh(m_mesh_ptr); 
     }
-    // destructors
+    // destructors =============================================================
     ~AutonomousCoeff()=default; 
-    // member functions  
-    void SetTime_impl(double t){};
-    MatrixStorage_t& GetMat(){ return m_stencil; }; 
-    const MatrixStorage_t& GetMat() const { return m_stencil; };  
+    // member functions ========================================================
+    // Do nothing on SetTime. Autonomous depends on mesh only. 
+    void SetTime_impl(double t){}
+    // GetScalar. doesn't exist since Autonomous can't be cast -> scalar value 
+    double GetScalar() const =delete;  
+    // Matrix getters. 
+    auto GetMat(){ return SparseDiag(m_vals); }
+    const auto GetMat() const { return SparseDiag(m_vals); }
+    // apply to discretization. Override CoeffOpBase since no .GetScalar() 
     Discretization1D apply(const Discretization1D& d){
       Discretization1D result(d.mesh()); 
-      result = m_stencil * d.values(); 
+      result = GetMat() * d.values(); 
       return result; 
     };
+    // AutonomousCoeff depends on Spacial mesh as well. 
     void set_mesh(MeshPtr_t m)
     {
       // do nothing on nullptr or same mesh
-      if(m==nullptr || m==m_mesh_ptr) return; 
-
+      if(m==nullptr) return; 
       // store m into m_mesh_ptr. checks null 
       m_mesh_ptr=m; 
-
-      m_stencil.resize(m->size(), m->size()); 
-      using T = Eigen::Triplet<double>; 
-      std::vector<T> triplet_list(m->size());  
-      for(int i=0; i<m->size(); i++){
-        triplet_list[i] = T(i,i,m_function((*m)[i])); 
-      }; 
-      m_stencil.setFromTriplets(triplet_list.begin(), triplet_list.end()); 
+      std::size_t s1 = m_mesh_ptr->size(); 
+      m_vals.resize(s1); 
+      for(std::size_t i=0; i<s1; i++){
+        m_vals[i] = m_function(m_mesh_ptr->operator[](i)); 
+      }
     }
+    
+    // operators ========================================================
+    // assignment by callable 
     template<
     typename Func_t,
     typename = std::enable_if_t<
@@ -83,13 +93,6 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
     >
     AutonomousCoeff& operator=(Func_t f){
       m_function=f; 
-      m_stencil.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
-      using T = Eigen::Triplet<double>; 
-      std::vector<T> triplet_list(m_mesh_ptr->size());  
-      for(int i=0; i<m_mesh_ptr->size(); i++){
-        triplet_list[i] = T(i,i,m_function((*m_mesh_ptr)[i])); 
-      }; 
-      m_stencil.setFromTriplets(triplet_list.begin(), triplet_list.end()); 
       return *this; 
     }
 };

@@ -111,6 +111,9 @@ struct evaluator<SparseDiag<ArgType> > : evaluator_base<SparseDiag<ArgType> > {
   // member functions ------------------------------------------------------
   Index rows() const {return m_rows; }; 
   Index cols() const {return m_cols; }; 
+  Index outerSize() const { return m_rows; }
+  Index innerSize() const { return m_rows; }
+  Index nonZerosEstimate() const { return m_rows; }
  
   // member data ------------------------------------------------------
   evaluator<ArgTypeNestedCleaned> m_argImpl;
@@ -126,5 +129,10 @@ template<class ArgType>
 SparseDiag<ArgType> make_SparseDiag(const Eigen::SparseMatrixBase<ArgType>& arg, std::size_t num_repeats=1) {
   return SparseDiag<ArgType>(arg.derived(), num_repeats);
 }
+
+// template<class ArgType>
+// SparseDiag<ArgType> make_SparseDiag(const Eigen::SparseMatrixBase<ArgType>& arg, std::size_t num_repeats=1) {
+//   return SparseDiag<ArgType>(arg.derived(), num_repeats);
+// }
 
 #endif // SparseDiagExpr.hpp

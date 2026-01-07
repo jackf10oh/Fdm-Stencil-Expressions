@@ -12,20 +12,21 @@
 #include<Eigen/Dense>
 
 #include "Utilities/PrintVec.hpp"
-#include "Utilities/experimental_SparseDiagExpr.hpp" 
 
+// #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
 #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
-#include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
-// #include "DiffOps/DiffOps/NthDerivOp.hpp" 
 #include "LinOps/All.hpp" 
 #include "LinOpsXD/All.hpp"
+#include "Utilities/SparseDiagExpr.hpp"
+
+#include "DiffOps/CoeffOps/AutonomousCoeff.hpp"
 
 using std::cout, std::endl;
 
-// auto lam00 = [](){return 0.0;}; 
-// auto lam01 = [](double x){return std::sqrt(x*x);}; 
-// auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
-// auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
+auto lam00 = [](){return 0.0;}; 
+auto lam01 = [](double x){return x*x - x + 1.5;}; 
+auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
+auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
 int main()
 {
@@ -35,17 +36,11 @@ int main()
   // mesh assembly. 2 dims 
   auto my_mesh = make_mesh(0.0, 5, 6);
   
-  MatrixStorage_t R = RandLinOp(my_mesh).GetMat().sparseView(); 
-  cout << R << endl; 
+  AutonomousCoeff c(lam01, my_mesh); 
 
-  Eigen::VectorXd flat2(my_mesh->size()); 
-  for(std::size_t i=0; i<flat2.size(); i++) flat2(i) = i; 
+  cout << c.GetMat() << endl; 
 
-  cout << typeid(decltype(flat2.asDiagonal())).name() << endl; 
-
-  cout << flat2.asDiagonal() * R << endl; 
-
-  cout << typeid(decltype(flat2.asDiagonal() * R)).name() << endl; 
+  // double val = c.GetScalar(); 
 
 };
 
