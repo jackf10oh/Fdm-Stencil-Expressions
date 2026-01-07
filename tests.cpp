@@ -28,6 +28,8 @@ auto lam01 = [](double x){return x*x - x + 1.5;};
 auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
 auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
+enum class ExprFlags : 
+
 int main()
 {
   // // iomanip 
@@ -36,32 +38,6 @@ int main()
   // mesh assembly. 2 dims 
   auto my_mesh = make_mesh(0.0, 5, 6);
 
-  auto func = [](double t){return t*t - 5;};
-  TimeDepCoeff coeff =  func; 
-  
-  coeff.set_mesh(my_mesh); 
-  // AutonomousCoeff c(lam01, my_mesh); 
-
-  cout << coeff.GetMat() << endl; 
-
-  coeff.SetTime(5.0); 
-  cout << coeff.GetMat() << endl; 
-
-  // double val = c.GetScalar(); 
-
-  auto check_lam = [&](const auto& coeff_op, auto func){
-    MatrixStorage_t A = coeff_op.GetMat(); 
-    for(std::size_t i=0; i<A.rows(); i++){
-      if constexpr(callable_traits<decltype(func)>::num_args==2){
-        cout << A.coeff(i,i) << "=" << func(coeff_op.Time(), my_mesh->operator[](i)) << endl; 
-      } 
-      if constexpr(callable_traits<decltype(func)>::num_args==1){
-        cout << A.coeff(i,i) << "=" << func(coeff_op.Time()) << endl; 
-      } 
-    }
-  }; 
-
-  check_lam(coeff, func); 
 
 };
 

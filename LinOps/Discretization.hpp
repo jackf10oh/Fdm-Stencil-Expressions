@@ -14,6 +14,7 @@
 #include<Eigen/Core>
 
 #include "Mesh.hpp"
+#include "LinOpTraits.hpp"
 
 class Discretization1D
 {
@@ -69,10 +70,9 @@ class Discretization1D
     // set vector to same size as mesh and set as value of callable
     template<
     typename F,
-    typename = std::enable_if_t<
-      std::is_same_v< 
-        double,
-        std::invoke_result_t<F,double>
+    typename = std::enable_if_t<std::conjunction_v<
+        std::is_same<typename callable_traits<F>::result_type, double>, 
+        std::bool_constant<callable_traits<F>::num_args == 1>
         >
       >
     >
@@ -87,10 +87,9 @@ class Discretization1D
     // set vector to same size as mesh and set as value of callable
     template<
     typename F,
-    typename = std::enable_if_t<
-      std::is_same_v< 
-        double,
-        std::invoke_result_t<F,double>
+    typename = std::enable_if_t<std::conjunction_v<
+        std::is_same<typename callable_traits<F>::result_type, double>, 
+        std::bool_constant<callable_traits<F>::num_args == 1>
         >
       >
     >

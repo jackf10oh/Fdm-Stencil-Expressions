@@ -9,7 +9,7 @@
 
 #include<Eigen/Core> 
 #include "CoeffOpBase.hpp"
-#include "../Traits.hpp"
+#include "../../LinOps/LinOpTraits.hpp" // callable_traits<F> 
 #include "../../Utilities/SparseDiagExpr.hpp"
 
 template<typename FUNC_STORAGE_T = std::function<double(double,double)>>

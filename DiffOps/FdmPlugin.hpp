@@ -22,6 +22,15 @@
 #include "../LinOps/LinOpTraits.hpp"
 #include "BoundaryCond.hpp"
 
+// TRAITS =====================================================
+// given a type, see if it has a .sparseView() method ---------------------------------------------------
+template<typename T, typename = void>
+struct has_sparseview_method : std::false_type{}; 
+
+template<typename T>
+struct has_sparseview_method<T, std::void_t<decltype(std::declval<T>().sparseView())>> : std::true_type{}; 
+
+// PLUGIN DEF ================================================= 
 // also declared in BoundaryCond.hpp 
 using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
