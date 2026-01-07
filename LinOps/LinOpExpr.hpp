@@ -142,33 +142,33 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
 //   );
 // };
 
-// operator for scalar multiplication c*L
-template<
-  typename Scalar_t, 
-  typename Derived,
-  std::enable_if_t<
-    std::conjunction_v<
-      std::is_convertible<Scalar_t,double>,
-      is_linop_crtp<Derived>
-    >,
-    int 
-  > = 0
->
-auto operator*(Scalar_t c, Derived&& L)
-{
-  using LStorage_t = double;
-  using RStorage_t = typename Storage_t<Derived>::type;
-  // using RStorage_t = typename Storage_t<std::remove_reference_t<Derived>>::type;
+// // operator for scalar multiplication c*L
+// template<
+//   typename Scalar_t, 
+//   typename Derived,
+//   std::enable_if_t<
+//     std::conjunction_v<
+//       std::is_convertible<Scalar_t,double>,
+//       is_linop_crtp<Derived>
+//     >,
+//     int 
+//   > = 0
+// >
+// auto operator*(Scalar_t c, Derived&& L)
+// {
+//   using LStorage_t = double;
+//   using RStorage_t = typename Storage_t<Derived>::type;
+//   // using RStorage_t = typename Storage_t<std::remove_reference_t<Derived>>::type;
 
-  auto bin_op = [](const LStorage_t& scalar, const RStorage_t& Mat){ return scalar*Mat.GetMat(); };
-  using Op_t = make_flagged_t<decltype(bin_op), ScalarMultiply_t>;
+//   auto bin_op = [](const LStorage_t& scalar, const RStorage_t& Mat){ return scalar*Mat.GetMat(); };
+//   using Op_t = make_flagged_t<decltype(bin_op), ScalarMultiply_t>;
 
-  return LinOpExpr<double, RStorage_t, Op_t>(
-    static_cast<double>(c),
-    std::forward<Derived>(L),
-    static_cast<Op_t>(bin_op)
-  );
-};
+//   return LinOpExpr<double, RStorage_t, Op_t>(
+//     static_cast<double>(c),
+//     std::forward<Derived>(L),
+//     static_cast<Op_t>(bin_op)
+//   );
+// };
 
 template<
   typename Derived, 

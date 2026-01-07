@@ -130,14 +130,23 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         ); 
       } // end else 
     }; // end .compose_impl(other) 
-    // Left multiply by a scalar: i.e. c*L 
-    // auto left_scalar_mult_impl(double c) & {
+    // Left multiply by a scalar: i.e. c*L ------------------------------------------------------------------------- 
+    auto left_scalar_mult_impl(double c) & {
+      return LinOpExpr<double, Derived&, scalar_left_mult_op>(
+        c,
+        static_cast<Derived&>(*this), 
+        scalar_left_mult_op{}
+      );
+    }
+    // Left multiply by a scalar: i.e. c*L (rval)
+    auto left_scalar_mult_impl(double c) && {
+      return LinOpExpr<double, Derived&&, scalar_left_mult_op>(
+        c,
+        static_cast<Derived&&>(*this), 
+        scalar_left_mult_op{}
+      );
+    }
 
-    // }
-    // Left multiply by a scalar: i.e. c*L 
-    // auto left_scalar_mult_impl(double c) && {
-
-    // }
   private:  
     // Structs for binary operations f(L1,L2) to get matrix of expression
     // L1 + L2 
@@ -151,6 +160,11 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     {
       template<typename L1, typename L2>
       auto operator()(const L1& A, const L2& B) const { return A.GetMat() - B.GetMat(); }
+    }; 
+    struct scalar_left_mult_op : public ScalarMultiply_t
+    {
+      template<typename L2>
+      auto operator()(const double& c, const L2& B) const { return  c*B.GetMat(); }
     }; 
   public:
     // Operators ================================================================================ 
@@ -190,7 +204,17 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         linop_bin_subtract_op{}
       );
     }
+    // riend declare c * L (lval + rval) 
+    template<typename LINOP_T, typename>
+    friend auto operator*(double scalar, LINOP_T&& rhs); 
 
-}; // end LinOpBase
+    // unary operator-() 
+
+  }; // end LinOpBase
+
+template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
+auto operator*(double c, LINOP_T&& rhs){
+  return std::forward<LINOP_T>(rhs).left_scalar_mult_impl(c); 
+}
 
 #endif // LinearOpBase.hpp
