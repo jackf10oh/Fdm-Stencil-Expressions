@@ -21,11 +21,17 @@ class LinOpExpr;
 // flag for composition. i.e. L1( L2( . ) )
 struct OperatorComposition_t{}; 
 
-// flag type for composition. i.e. L1( L2( . ) )
+// flag type for composition. i.e. L1 + L2 
 struct OperatorAddition_t{}; 
+
+// flag type for composition. i.e. L1 - L2 
+struct OperatorSubtraction_t{}; 
 
 // flag for scalar multiplication. i.e c*L
 struct ScalarMultiply_t{}; 
+
+// flag type for negation. i.e. -L1
+struct OperatorNegation_t{}; 
 
 // Traits =====================================================================
 // given a type, detect if it is derived from linopbase<> ---------------------
@@ -76,6 +82,25 @@ struct is_scalar_multiply_expr: public std::false_type
 template<typename L, typename R, typename OP>
 struct is_scalar_multiply_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<ScalarMultiply_t, std::remove_reference_t<OP>>
 {};
+
+// given a linop expression. detect if it is unary negation  -L ---------------------
+template<typename T>
+struct is_negation_expr: public std::false_type
+{};
+
+template<typename L, typename R, typename OP>
+struct is_negation_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorNegation_t, std::remove_reference_t<OP>>
+{};
+
+// given a linop expression. detect if it is binary subtraction L1-L2 ---------------------
+template<typename T>
+struct is_subtraction_expr: public std::false_type
+{};
+
+template<typename L, typename R, typename OP>
+struct is_subtraction_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorSubtraction_t, std::remove_reference_t<OP>>
+{};
+
 
 // given a base class and flags, attach flags to base class -------------------------
 template<typename Base, typename... Flags>

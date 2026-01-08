@@ -45,21 +45,11 @@ int main()
   cout << R.GetMat() << endl << endl; 
   cout << expr.GetMat() << endl << endl; 
 
-  Discretization1D my_disc; 
-  my_disc.match_mesh(my_mesh, 1.0); 
-  cout << my_disc.values().transpose() << endl <<endl; 
-
-  auto r1 = I.apply(my_disc); 
-  cout << r1.values().transpose() << endl <<endl; 
-
-  auto r2 = R.apply(my_disc); 
-  cout << r2.values().transpose() << endl <<endl; 
-
-  auto r3 = expr.apply(my_disc); 
-  cout << r3.values().transpose() << endl <<endl; 
-
-  r3 = deep_expr.apply(my_disc); 
-  cout << r3.values().transpose() << endl <<endl; 
+  cout << is_add_expr<decltype(I+R)>::value << endl; 
+  cout << is_scalar_multiply_expr<decltype(3.0*R)>::value << endl; 
+  cout << is_negation_expr<decltype(-I)>::value << endl; 
+  cout << is_subtraction_expr<decltype(I-I)>::value << endl; 
+  cout << is_compose_expr<decltype(I.compose(I))>::value <<endl; 
 };
 
   // auto A = DirectionalRandOp(my_meshes, 0); 

@@ -88,7 +88,6 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     } 
 
     // Composition of Linear Ops L1(L2( . )) ---------------------------------------------------
-    // composition of linear of L1(L2( . ))
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp) &
     {
@@ -111,22 +110,24 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     auto compose_impl(DerivedInner&& InnerOp)
     {
       static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-      using Rhs_t = std::remove_reference_t<DerivedInner>;
-      using LStorage_t = typename Storage_t<Lhs_t>::type;
-      using RStorage_t = typename Storage_t<Rhs_t>::type;
       if constexpr(is_add_expr<std::remove_reference_t<DerivedInner>>::value){
         return compose(InnerOp.Lhs())+compose(InnerOp.Rhs());
+      }
+      else if constexpr(is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
+        return compose(InnerOp.Lhs())-compose(InnerOp.Rhs());
+      }
+      else if constexpr(is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
+        return -compose(InnerOp.Lhs());
       }
       else if constexpr(is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
         return InnerOp.Lhs() * compose(InnerOp.Rhs()); 
       }
       else{
-        auto bin_op = [](const LStorage_t& A, const RStorage_t& B){return A.GetMat()*B.GetMat(); };
-        using Op_t = make_flagged_t<decltype(bin_op), OperatorComposition_t>;
-        return LinOpExpr<Lhs_t, Rhs_t, Op_t>(
+        using Rhs_t = std::remove_reference_t<DerivedInner>;
+        return LinOpExpr<Lhs_t, Rhs_t, linopXlinop_mult_op>(
         std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), 
         std::forward<DerivedInner>(InnerOp), 
-        static_cast<Op_t>(bin_op)
+        linopXlinop_mult_op{}
         ); 
       } // end else 
     }; // end .compose_impl(other) 
@@ -156,7 +157,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) + (B.GetMat()); }
     }; 
     // L1 - L2 
-    struct linop_bin_subtract_op // : public OperatorAddition_t
+    struct linop_bin_subtract_op : public OperatorSubtraction_t
     {
       template<typename L1, typename L2>
       auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
@@ -166,11 +167,17 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       template<typename L2>
       auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
     }; 
-    struct unary_negate_op
+    struct unary_negate_op : public OperatorNegation_t
     {
       template<typename L1>
       auto operator()(const L1& B) const { return  -(B.GetMat()); }
     }; 
+    struct linopXlinop_mult_op : public OperatorComposition_t
+    {
+      template<typename L1, typename L2>
+      auto operator()(const L1& A, const L2& B) const { return  (A.GetMat())*(B.GetMat()); }
+    }; 
+    
   public:
     // Operators ================================================================================ 
     // L1 + L2 (lval) ---------------------------------------------- 
