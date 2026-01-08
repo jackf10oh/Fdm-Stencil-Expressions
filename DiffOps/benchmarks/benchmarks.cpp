@@ -9,6 +9,7 @@
 
 #include<benchmark/benchmark.h>
 
+#include "../DiffOps/experimental_NthDerivOp.hpp"
 #include "../All.hpp"
 
 static void BENCHMARK_NthDerivOp_set_mesh(benchmark::State &state)
@@ -17,8 +18,9 @@ static void BENCHMARK_NthDerivOp_set_mesh(benchmark::State &state)
   {
     state.PauseTiming();
     int r = state.range(0);  
+    std::size_t order_n = 1; 
     auto my_mesh = make_mesh(0.0,double(r), r+1); 
-    NthDerivOp D(1); 
+    NthDerivOp D(order_n); 
     state.ResumeTiming(); 
     D.set_mesh(my_mesh); 
   }
@@ -175,8 +177,8 @@ static void BENCHMARK_ConvectionDiffusionExpression_N_Manual_explicit_steps(benc
       // my_vals = fdm_scheme.explicit_step(my_vals); // copies an empty shared_ptr<Mesd1D> to my_vals 
       
       // use BCs manually. 
-      left->SetSolL(my_vals,my_mesh); 
-      right->SetSolR(my_vals,my_mesh); 
+      left->SetSolL(my_vals.values(),my_mesh); 
+      right->SetSolR(my_vals.values(),my_mesh); 
     }
 
   };

@@ -48,7 +48,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 
   public:
     // Constructors ---------------------------------------------------------- 
-    LinOpBase(MeshPtr_t m=nullptr): LinOpMixIn<LinOpBase<Derived>>(){set_mesh(m);}; 
+    // LinOpBase(MeshPtr_t m=nullptr): LinOpMixIn<LinOpBase<Derived>>(){set_mesh(m);}; 
     // member functions -------------------------------------------------------
     // member functions. implemented by derived class -------------------------
     decltype(auto) GetMat()

@@ -13,7 +13,7 @@
 
 #include "Utilities/PrintVec.hpp"
 
-// #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
+// #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp"
 #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
 #include "LinOps/All.hpp" 
 #include "LinOpsXD/All.hpp"
@@ -33,15 +33,24 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  auto my_mesh = make_mesh(0.0, 5, 6);
+  std::size_t r = 10; 
+  auto my_mesh = make_mesh(0.0, r, r+1);
 
-  AutonomousCoeff a = [](double x){return x*x;}; 
-  // AutonomousCoeff b = [](double t, double x){return t*t + x;};
+    using D = NthDerivOp; 
+    // double dt = 0.01;
+    // auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2) + 0.5*D(1));
+    auto fdm_scheme = IOp() + D(1) + 4.0 * D(2) + IOp(); 
 
-  std::cout << a.GetMat() << endl; 
+    cout <<  "-------------------" << endl; 
+    cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
 
-  a.set_mesh(my_mesh); 
-  std::cout << a.GetMat() << endl; 
+    fdm_scheme.set_mesh(my_mesh); 
+
+    cout <<  "-------------------" << endl; 
+    cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
+    fdm_scheme.set_mesh(my_mesh); 
+
+    // cout << fdm_scheme.GetMat() << endl; 
 
 };
 

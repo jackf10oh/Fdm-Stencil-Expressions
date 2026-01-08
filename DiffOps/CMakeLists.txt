@@ -6,19 +6,22 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# define the library as DiffOps
+add_library(DiffOps INTERFACE)
+
 # options 
-option(USE_OPENMP "Enable OpenMP Parallelization" ON) 
+option(USE_OPENMP "Enable OpenMP Parallelization" OFF) 
 
 # adding OpenMP is enable 
 if(USE_OPENMP)
   find_package(OpenMP)
   if(OpenMP_FOUND)
     message(STATUS "OpenMP found successfully!")
+    target_link_libraries(DiffOps INTERFACE OpenMP::OpenMP_CXX)
   endif()
 else()
   message(STATUS "Cmake args disabling OpenMP...")
 endif()
-
 
 # adding Eigenlib to compiler
 find_package(Eigen3 REQUIRED)
@@ -29,9 +32,6 @@ target_link_libraries(LinOps
  INTERFACE Eigen3::Eigen 
 )
 
-# define the library as FdmStencilExressions
-add_library(DiffOps INTERFACE)
-
 target_include_directories(DiffOps 
   INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -39,8 +39,13 @@ target_include_directories(DiffOps
 
 target_link_libraries(DiffOps
   INTERFACE LinOps
-  INTERFACE OpenMP::OpenMP_CXX
 )
+
+# if(OpenMP_FOUND)
+#   target_link_libraries(DiffOps
+#     PUBLIC OpenMP::OpenMP_CXX
+#   )
+# endif()
 
 # adding  google test
 enable_testing()
@@ -64,6 +69,13 @@ else()
     PRIVATE GTest::gtest_main 
     PRIVATE pthread # required by GTest
   )
+
+  if(USE_OPENMP)
+    target_link_libraries(benchmarks
+      PRIVATE OpenMP::OpenMP_CXX
+    )
+  endif()
+
 endif()
 
 if(NOT GTest_FOUND)
