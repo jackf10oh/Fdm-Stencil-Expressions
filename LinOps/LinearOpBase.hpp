@@ -43,7 +43,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 
   protected:
     // member data
-    MeshPtr_t m_mesh_ptr; // all LinOps keep pointers to mesh they operate on 
+    MeshPtr_t m_mesh_ptr; // all LinOps keep weak pointers to mesh they operate on
     // member data for matrix kept in derived classes
 
   public:

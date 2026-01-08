@@ -8,14 +8,13 @@
 #define LINOP_ALL_H
 
 #include "Mesh.hpp"
-#include "Discretization.hpp"
+// #include "Discretization.hpp"
 
-#include "LinOpTraits.hpp"
-#include "LinearOpBase.hpp"
-#include "experimental_LinOpExpr.hpp"
+// #include "LinOpTraits.hpp"
+// #include "LinearOpBase.hpp"
 // #include "LinOpExpr.hpp"
 
-#include "Operators/RandLinOp.hpp"
-#include "Operators/IOp.hpp"
+// #include "Operators/RandLinOp.hpp"
+// #include "Operators/IOp.hpp"
 
 #endif // All.hpp

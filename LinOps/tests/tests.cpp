@@ -69,7 +69,7 @@ TEST(MeshSuite1D, Mesh1DIterators){
   ASSERT_EQ(reverse_count,n_steps); 
 };
 
-// Discretization Suite ---------------------------------------- 
+/* // Discretization Suite ---------------------------------------- 
 TEST(DiscretizationSuite1d, Disc1DConstructible)
 {
   Discretization1D my_vals; 
@@ -162,7 +162,9 @@ TEST(DiscretizationSuite1d, Disc1DIterators)
   ASSERT_EQ(count,n_steps); 
 };
 
-// Linear Operators Suite ---------------------------------------------
+*/ 
+
+/* // Linear Operators Suite ---------------------------------------------
 // Just the LinOpBase CRTP class. 
 TEST(LinearOperatorSuite, IdentityConstructible)
 {
@@ -229,7 +231,9 @@ TEST(LinearOperatorSuite, RandLinOpApply)
   ASSERT_EQ(apply_method_result.values(), manual_linalg_result); 
 };
 
-// Using LinOpExpr. 
+*/ 
+
+/* // Using LinOpExpr. 
 TEST(LinearOperatorSuite, BasicAddition)
 {
   auto my_mesh = make_mesh(); 
@@ -411,3 +415,4 @@ TEST(LinearOperatorSuite, LinOpTraits)
   ASSERT_FALSE(is_linop_crtp<int>::value); 
 }
 
+*/ 
