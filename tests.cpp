@@ -14,10 +14,9 @@
 #include "Utilities/PrintVec.hpp"
 
 // #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp" 
-// #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
+#include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
 #include "LinOps/All.hpp" 
-// #include "LinOpsXD/All.hpp"
-// #include "Utilities/SparseDiagExpr.hpp"
+#include "LinOpsXD/All.hpp"
 
 // #include "DiffOps/CoeffOps/AutonomousCoeff.hpp"
 
@@ -36,20 +35,27 @@ int main()
   // mesh assembly. 2 dims 
   auto my_mesh = make_mesh(0.0, 5, 6);
 
-  IOp I(my_mesh); 
-  RandLinOp R(my_mesh); 
-  auto expr = I+R; 
-  auto deep_expr = (2.0*expr+expr).compose(R); 
+  TimeDepCoeff a = [](double t){return t*t;}; 
+  TimeDepCoeff b = [](double t, double x){return t*t + x;};
+  
+  NthDerivOp D(1); 
 
-  cout << I.GetMat() << endl << endl; 
-  cout << R.GetMat() << endl << endl; 
-  cout << expr.GetMat() << endl << endl; 
+  auto expr = a*D; 
+  auto expr2 = b*D; 
 
-  cout << is_add_expr<decltype(I+R)>::value << endl; 
-  cout << is_scalar_multiply_expr<decltype(3.0*R)>::value << endl; 
-  cout << is_negation_expr<decltype(-I)>::value << endl; 
-  cout << is_subtraction_expr<decltype(I-I)>::value << endl; 
-  cout << is_compose_expr<decltype(I.compose(I))>::value <<endl; 
+  expr.set_mesh(my_mesh); 
+  expr.SetTime(2.0); 
+  cout << expr.GetMat() << endl; 
+
+  expr2.set_mesh(my_mesh); 
+  expr2.SetTime(2.0); 
+  cout << expr2.GetMat() << endl; 
+
+  cout << typeid(decltype(b.GetMat())).name() << endl; 
+
+  // a+b; 
+  a*b; 
+
 };
 
   // auto A = DirectionalRandOp(my_meshes, 0); 

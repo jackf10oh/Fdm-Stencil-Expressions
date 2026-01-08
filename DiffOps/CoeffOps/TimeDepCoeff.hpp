@@ -33,9 +33,12 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     }
     // copy constructor
     TimeDepCoeff(const TimeDepCoeff& other)=delete; 
+    
     // destructors =============================================================
     ~TimeDepCoeff()=default;
+
     // member funcs =============================================================
+    // Matrix getters 
     auto GetMat()
     {
       return SparseDiag(m_diag_vals);  
@@ -44,10 +47,11 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     {
       return SparseDiag(m_diag_vals);
     };
-    void set_mesh(const MeshPtr_t& m){
+    // updated m_mesh_ptr, resize m_diag_vals
+    void set_mesh(MeshPtr_t m){
       if(m==nullptr || m==this->m_mesh_ptr) return; 
-      m_diag_vals.resize(m->size());
       this->m_mesh_ptr = m;  
+      m_diag_vals.resize(m->size());
     }
     // update state of TimeDepCoeff from a given t 
     void SetTime_impl(double t){

@@ -30,10 +30,12 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     // use member types so FdmPlugin can access grandchildren 
     using Derived_t = Derived;
   public:
-    // Constructors
+    // Constructors ============================================================== 
     CoeffOpBase(MeshPtr_t m=nullptr){ set_mesh(m); };
+
     // Member functions ========================================================
-    // have default implementations --------------------------------------------
+    // must be implemented by derived classes -----------------------------------
+    // Get underlying matrix.............. 
     decltype(auto) GetMat()
     {
       return static_cast<Derived*>(this)->GetMat();
@@ -42,31 +44,45 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     {
       return static_cast<const Derived*>(this)->GetMat();
     };
-    void set_mesh(const MeshPtr_t& m)
+    // set stencil to new mesh............
+    void set_mesh(MeshPtr_t m)
     {
       static_cast<Derived*>(this)->set_mesh(m); 
       // if(m==nullptr || m==this->m_mesh_ptr) return; // do nothing on nullptr or copy of m_mesh_ptr 
       // this->m_mesh_ptr = m; // just store it. expecting coeff ops to not depend on mesh 
     }
-    // must be implemented by derived classes -----------------------------------
+    // set stencil to new time..............
     void SetTime_impl(double t)
     {
       static_cast<Derived*>(this)->SetTime_impl(t); 
     }
+    
+    // Operators ================================================================== 
     // composition c * L ( Lval overload)
-    template<typename DerivedR>
-    auto operator*(DerivedR&& RHS) &
+    template<typename LINOP_T>
+    auto operator*(LINOP_T&& rhs) &
     {
-      return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<DerivedR>(RHS));
+      static_assert(!is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
     };
     // operator for scalar multiplication c * L ( Rval overload)
-    template<typename DerivedR>
-    auto operator*(DerivedR&& RHS) &&
+    template<typename LINOP_T>
+    auto operator*(LINOP_T&& rhs) &&
     {
-      return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<DerivedR>(RHS));
+      static_assert(!is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
     };
+    
+    // delting a ton of operators out of LinOpBase =====================================
+    // so that you can't make expressions of coefficients
+    auto operator-()=delete;
+    template<typename RHS>
+    auto operator-(RHS&& rhs)=delete;
+    template<typename RHS>
+    auto operator+(RHS&& rhs)=delete; 
+    template<typename RHS>
+    auto compose(RHS&& InnerOp)=delete; 
+    auto left_scalar_mult_impl(double c)=delete; 
 };
 
-// operator+ should be deleted for coeffopbase LHS/RHS... 
-
-#endif
+#endif // CoeffOpBase.hpp 

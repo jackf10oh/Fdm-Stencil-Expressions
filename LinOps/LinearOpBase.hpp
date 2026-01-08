@@ -165,16 +165,19 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       template<typename L1, typename L2>
       auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
     }; 
+    // c * L
     struct scalar_left_mult_op : public ScalarMultiply_t
     {
       template<typename L2>
       auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
     }; 
+    // -L 
     struct unary_negate_op : public OperatorNegation_t
     {
       template<typename L1>
       auto operator()(const L1& B) const { return  -(B.GetMat()); }
     }; 
+    // composition: L1( L2( . ) )
     struct linopXlinop_mult_op : public OperatorComposition_t
     {
       template<typename L1, typename L2>
