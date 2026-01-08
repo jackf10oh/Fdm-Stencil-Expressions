@@ -35,26 +35,13 @@ int main()
   // mesh assembly. 2 dims 
   auto my_mesh = make_mesh(0.0, 5, 6);
 
-  TimeDepCoeff a = [](double t){return t*t;}; 
-  TimeDepCoeff b = [](double t, double x){return t*t + x;};
-  
-  NthDerivOp D(1); 
+  AutonomousCoeff a = [](double x){return x*x;}; 
+  // AutonomousCoeff b = [](double t, double x){return t*t + x;};
 
-  auto expr = a*D; 
-  auto expr2 = b*D; 
+  std::cout << a.GetMat() << endl; 
 
-  expr.set_mesh(my_mesh); 
-  expr.SetTime(2.0); 
-  cout << expr.GetMat() << endl; 
-
-  expr2.set_mesh(my_mesh); 
-  expr2.SetTime(2.0); 
-  cout << expr2.GetMat() << endl; 
-
-  cout << typeid(decltype(b.GetMat())).name() << endl; 
-
-  // a+b; 
-  a*b; 
+  a.set_mesh(my_mesh); 
+  std::cout << a.GetMat() << endl; 
 
 };
 

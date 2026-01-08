@@ -183,7 +183,7 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
 } 
 
 // testing AutonomousCoeff class
-/* TEST(CoeffOpTestSuite, AutonomousCoeffTest)
+TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 {
   // make a mesh 
   MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
@@ -193,43 +193,45 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
   auto lam02 = [](double x){return std::sin(x);}; // sin(x)
   auto lam03 = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // some polynomial in x 
   
-  // take two vectors and check each |ui-vi| < eps 
-  auto check_lamda = [](Eigen::VectorXd u, Eigen::VectorXd v){
-    int s=u.size(), s2=v.size();
-    ASSERT_EQ(s,s2);
-    double tol = 1e-4;  
-    for(int i=0; i<s; i++){
-      ASSERT_NEAR(u[i],v[i],tol);
+  
+  // take 1 coeff_op and 1 lambda. 
+  auto check_lam = [&](const auto& coeff_op, auto func){
+    MatrixStorage_t A = coeff_op.GetMat(); 
+    // check each value of diag = func(t,x) or func(t) 
+    for(std::size_t i=0; i<A.rows(); i++){
+      ASSERT_EQ(    
+        A.coeff(i,i), 
+        func(my_mesh->at(i))    
+      ); 
     }
-  };
+    // A is NxN where n = mesh size
+    ASSERT_EQ(A.rows(),my_mesh->size()); 
+    ASSERT_EQ(A.cols(),my_mesh->size());
+    
+    // of diag is zero 
+    ASSERT_EQ(A.coeff(0, A.cols()-1), 0.0); 
+    ASSERT_EQ(A.coeff(A.rows()-1, 0), 0.0); 
+  }; 
 
-  // make discretization + coeff
-  Discretization1D result, ones;
-  ones.match_mesh(my_mesh,1.0);
-  result.set_init(my_mesh,lam01);
-
-  AutonomousCoeff coeff(lam01,my_mesh); 
-
+  // create AutonomoousCoeff
+  AutonomousCoeff coeff01(lam01,my_mesh); 
   // // check they have the same values
-  check_lamda(result.values(), coeff.apply(ones).values()); 
+  check_lam(coeff01, lam01);
+  
 
-  // // set to new functions / discretization 
-  result.set_init(lam02); 
-  coeff = lam02; 
-  coeff.set_mesh(my_mesh); 
-
-  // check again
-  check_lamda(result.values(), coeff.apply(ones).values()); 
-
-  // set to new functions / discretization 
-  result.set_init(lam03); 
-  AutonomousCoeff new_coeff = lam03; 
-  new_coeff.set_mesh(my_mesh); 
-  // check again 
-  check_lamda(result.values(), new_coeff.apply(ones).values()); 
+  // create AutonomoousCoeff
+  AutonomousCoeff coeff02(lam02,my_mesh); 
+  // // check they have the same values
+  check_lam(coeff02, lam02);
+  
+  // create AutonomoousCoeff
+  AutonomousCoeff coeff03(lam03,my_mesh); 
+  // // check they have the same values
+  check_lam(coeff03, lam03);
+  
 }
 
-*/
+
 
 // // NthDerivOp Tests =========================================================================== 
 

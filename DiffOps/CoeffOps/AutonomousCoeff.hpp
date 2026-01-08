@@ -7,94 +7,58 @@
 #ifndef AUTONOMOUSCOEFF_H
 #define AUTONOMOUSCOEFF_H
 
-#include<functional>
-#include<Eigen/Core>
+#include<Eigen/Core> 
 #include "CoeffOpBase.hpp"
+#include "../../LinOps/LinOpTraits.hpp" // callable_traits<F> 
+#include "../../Utilities/SparseDiagExpr.hpp"
 
-class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff>
+// AutonomousCoeff
+
+template<typename FUNC_STORAGE_T = std::function<double(double,double)>>
+class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
 {
   public:
     using Derived_t = AutonomousCoeff; 
   public:
-    std::function<double(double)> m_function;  
-    Eigen::RowVectorXd m_vals; 
+    FUNC_STORAGE_T m_function;  
+    Eigen::RowVectorXd m_diag_vals; 
   public:
-    // constructors =================================================
-    // no default constructor
-    AutonomousCoeff()=delete; 
-    // from callable + mesh
-    AutonomousCoeff(const std::function<double(double)>& f_init, MeshPtr_t m=nullptr)
+    // constructors ==========================================================
+    AutonomousCoeff()=delete; // no default constructor
+    // from callable + mesh 
+    AutonomousCoeff(FUNC_STORAGE_T f_init, MeshPtr_t m=nullptr)
+      : m_function(f_init), m_diag_vals(0)
     {
-      if(!f_init) throw std::runtime_error("must assign function to AutonomousCoeff"); 
-      m_function = f_init; 
+      static_assert(callable_traits<FUNC_STORAGE_T>::num_args==1, "In 1D, AutonomousCoeff must have form a(x)");  
       set_mesh(m);
     }
-    // from callable
-    AutonomousCoeff(const AutonomousCoeff& other) 
-    {
-      if(!other.m_function) throw std::runtime_error("must assign function to AutonomousCoeff"); 
-      m_function = other.m_function; 
-      set_mesh(other.m_mesh_ptr); 
-    }
-    // From lambdas, etc ...
-    template<
-    typename Func_t,
-    typename = std::enable_if_t<
-      std::is_same_v< 
-        double,
-        std::invoke_result_t<Func_t,double>
-        >
-      >
-    >
-    AutonomousCoeff(Func_t f){
-      m_function=f; 
-      set_mesh(m_mesh_ptr); 
-    }
+    // copy constructor
+    AutonomousCoeff(const AutonomousCoeff& other)=delete; 
+    
     // destructors =============================================================
-    ~AutonomousCoeff()=default; 
-    // member functions ========================================================
-    // Do nothing on SetTime. Autonomous depends on mesh only. 
-    void SetTime_impl(double t){}
-    // GetScalar. doesn't exist since Autonomous can't be cast -> scalar value 
-    double GetScalar() const =delete;  
-    // Matrix getters. 
-    auto GetMat(){ return SparseDiag(m_vals); }
-    const auto GetMat() const { return SparseDiag(m_vals); }
-    // apply to discretization. Override CoeffOpBase since no .GetScalar() 
-    Discretization1D apply(const Discretization1D& d){
-      Discretization1D result(d.mesh()); 
-      result = GetMat() * d.values(); 
-      return result; 
-    };
-    // AutonomousCoeff depends on Spacial mesh as well. 
-    void set_mesh(MeshPtr_t m)
+    ~AutonomousCoeff()=default;
+
+    // member funcs =============================================================
+    // Matrix getters 
+    auto GetMat()
     {
-      // do nothing on nullptr or same mesh
-      if(m==nullptr) return; 
-      // store m into m_mesh_ptr. checks null 
-      m_mesh_ptr=m; 
-      std::size_t s1 = m_mesh_ptr->size(); 
-      m_vals.resize(s1); 
-      for(std::size_t i=0; i<s1; i++){
-        m_vals[i] = m_function(m_mesh_ptr->operator[](i)); 
+      return SparseDiag(m_diag_vals);  
+    };
+    auto GetMat() const
+    {
+      return SparseDiag(m_diag_vals);
+    };
+    // updated m_mesh_ptr, resize m_diag_vals
+    void set_mesh(MeshPtr_t m){
+      if(m==nullptr || m==this->m_mesh_ptr) return; 
+      this->m_mesh_ptr = m;  
+      m_diag_vals.resize(m->size()); 
+      for(std::size_t i=0; i<m_diag_vals.size(); i++){
+        m_diag_vals[i] = m_function(this->m_mesh_ptr->operator[](i)); 
       }
     }
-    
-    // operators ========================================================
-    // assignment by callable 
-    template<
-    typename Func_t,
-    typename = std::enable_if_t<
-      std::is_same_v< 
-        double,
-        std::invoke_result_t<Func_t,double>
-        >
-      >
-    >
-    AutonomousCoeff& operator=(Func_t f){
-      m_function=f; 
-      return *this; 
-    }
-};
+    // update state of AutonomousCoeff from a given t 
+    void SetTime_impl(double t){};
+}; 
 
 #endif // AutonomousCoeff.hpp 
