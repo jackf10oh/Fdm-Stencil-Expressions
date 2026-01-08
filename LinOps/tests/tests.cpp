@@ -69,7 +69,7 @@ TEST(MeshSuite1D, Mesh1DIterators){
   ASSERT_EQ(reverse_count,n_steps); 
 };
 
-/* // Discretization Suite ---------------------------------------- 
+// Discretization Suite ---------------------------------------- 
 TEST(DiscretizationSuite1d, Disc1DConstructible)
 {
   Discretization1D my_vals; 
@@ -81,19 +81,19 @@ TEST(DiscretizationSuite1d, Disc1DMovable)
   auto my_mesh = make_mesh(0.0,10.0,n_steps); 
   Discretization1D moved_from(my_mesh);
   Discretization1D moved_to(std::move(moved_from));  
-  ASSERT_EQ(moved_from.mesh(), nullptr); 
+  ASSERT_TRUE(moved_from.mesh().expired()); 
   ASSERT_EQ(moved_from.values().data(),nullptr); // moved from now has invalid eigen::vectorxd 
   ASSERT_EQ(moved_to.size(), n_steps); 
-  ASSERT_EQ(moved_to.mesh(), my_mesh); 
+  ASSERT_EQ(moved_to.mesh().lock(), my_mesh); 
 }
 
 TEST(DiscretizationSuite1d, Disc1DSetMesh)
 {
   auto my_mesh = make_mesh(); 
   Discretization1D my_vals; 
-  ASSERT_EQ(my_vals.mesh(), nullptr); 
+  ASSERT_TRUE(my_vals.mesh().expired()); 
   Discretization1D discretization_w_stored_mesh(my_mesh); 
-  ASSERT_FALSE(discretization_w_stored_mesh.mesh()==nullptr);
+  ASSERT_FALSE(discretization_w_stored_mesh.mesh().expired());
 }
 
 TEST(DiscretizationSuite1d, Disc1DSetCosntant)
@@ -161,8 +161,6 @@ TEST(DiscretizationSuite1d, Disc1DIterators)
   while(it!= my_vals.end()){ count++; it++;}; 
   ASSERT_EQ(count,n_steps); 
 };
-
-*/ 
 
 /* // Linear Operators Suite ---------------------------------------------
 // Just the LinOpBase CRTP class. 
@@ -350,7 +348,7 @@ TEST(LinearOperatorSuite, ExpressionChaining)
 
   // test the expression still has a .apply() method 
   Discretization1D disc; 
-  disc.match_mesh(my_mesh, 1.0); 
+  disc.set_init(my_mesh, 1.0); 
 
   my_expr2.set_mesh(my_mesh); 
   Discretization1D result = my_expr2.apply(disc); 

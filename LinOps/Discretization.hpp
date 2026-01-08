@@ -29,7 +29,7 @@ class Discretization1D
     // from mesh
     // Discretization1D(MeshPtr_t mesh_init): m_mesh_ptr(mesh_init), m_vals(mesh_init ? mesh_init->size() : 0){};
     // from const mesh ptr
-    Discretization1D(const MeshPtr_t& mesh_init) : m_mesh_ptr(mesh_init), m_vals(mesh_init ? mesh_init->size() : 0){}
+    Discretization1D(const std::shared_ptr<const Mesh1D>& mesh_init) : m_mesh_ptr(mesh_init), m_vals(mesh_init ? mesh_init->size() : 0){}
     // Copy 
     Discretization1D(const Discretization1D& other)
       : m_mesh_ptr(other.m_mesh_ptr), m_vals(other.m_vals)
@@ -37,7 +37,7 @@ class Discretization1D
     // Move 
     Discretization1D(Discretization1D&& other)
       : m_mesh_ptr(std::move(other.m_mesh_ptr)), m_vals(std::move(other.m_vals))
-    {other.m_mesh_ptr=nullptr;};
+    {other.m_mesh_ptr=MeshPtr_t{};};
 
     // destructors ------------------------------------------
     virtual ~Discretization1D()=default; 
@@ -57,15 +57,19 @@ class Discretization1D
     const double& at(std::size_t i) const { assert(i<size()); return m_vals[i]; }
 
     // get underlying mesh
-    auto mesh(){return m_mesh_ptr; }; 
-    const auto& mesh() const{return m_mesh_ptr; }
+    // const auto mesh(){return m_mesh_ptr.lock(); }; 
+    MeshPtr_t mesh() const{return m_mesh_ptr; }
 
     // set vector to same size as mesh
-    void match_mesh(MeshPtr_t m) { m_mesh_ptr=m; m_vals.resize(m->size()); }
+    void match_mesh(MeshPtr_t m) { 
+      m_mesh_ptr=m;
+      if(!m.expired()) m_vals.resize(0);
+      else m_vals.resize(m.lock()->size()); 
+    }
     // set vector to a constant
     void set_init(double val){ m_vals.setConstant(val);}
     // set vector to match a mesh size and set it constant 
-    void match_mesh(MeshPtr_t m, double val){ match_mesh(m), m_vals.setConstant(val); }
+    void set_init(MeshPtr_t m, double val){ match_mesh(m), m_vals.setConstant(val); }
 
     // set vector to same size as mesh and set as value of callable
     template<
@@ -78,8 +82,9 @@ class Discretization1D
     >
     void set_init(F func)
     {
-      if(m_mesh_ptr==nullptr) return; 
-      std::transform(m_mesh_ptr->cbegin(), m_mesh_ptr->cend(), 
+      if(m_mesh_ptr.expired()) return; 
+      const std::shared_ptr<const Mesh1D> m = m_mesh_ptr.lock(); 
+      std::transform(m->cbegin(), m->cend(), 
                     m_vals.begin(), 
                     [&func](const double x){return func(x);}
       ); 
@@ -95,8 +100,15 @@ class Discretization1D
     >
     void set_init(MeshPtr_t m, F func)
     {
-      match_mesh(m); 
-      std::transform(m->cbegin(), m->cend(), 
+      const std::shared_ptr<const Mesh1D> locked_ptr = m.lock(); 
+      if(m.expired()){
+        m_vals.resize(0);
+        return; 
+      } 
+      const auto locked = m.lock(); 
+      m_mesh_ptr = locked; 
+      m_vals.resize(locked->size()); 
+      std::transform(locked->cbegin(), locked->cend(), 
                     m_vals.begin(), 
                     [&func](const double x){return func(x);}
       ); 
@@ -115,7 +127,7 @@ class Discretization1D
     Discretization1D& operator=(const Discretization1D& other) = default;
     Discretization1D& operator=(Discretization1D&& other){
       m_mesh_ptr = std::move(other.m_mesh_ptr); 
-      other.m_mesh_ptr=nullptr; 
+      other.m_mesh_ptr=MeshPtr_t{}; 
       m_vals=std::move(other.m_vals); 
       return *this;
     }; 
