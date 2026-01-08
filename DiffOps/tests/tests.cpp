@@ -74,60 +74,6 @@ TEST(DirichletBcSuite, DirichletOverrides)
 }
 
 // Testing TCoeff ===========================================================================  
-// Testing TCoeff can be constructed
-/* TEST(CoeffOpTestSuite, TCoeffConstructible)
-{
-  // default constructor 
-  TCoeff t_default; 
-
-  // make a mesh 
-  MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
-  
-  // make a TCoeff that acts on functions of mesh
-  TCoeff t(my_mesh); 
-};
-
-// Testing TCoeff methods
-TEST(CoeffOpTestSuite, TCoeffSettable)
-{
-  // make a mesh 
-  MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
-  
-  // make a TCoeff that acts on functions of mesh
-  TCoeff t(my_mesh); 
-
-  // lambda to check 4 corners + middle of a matrix expr
-  auto check_lambda = [s = my_mesh->size()-1](const auto& expr, double val) -> void
-  {
-    MatrixStorage_t Mat = expr.GetMat(); 
-    // Check that entries on diag are val
-    ASSERT_EQ(Mat.coeff(0,0),val); 
-    ASSERT_EQ(Mat.coeff(s,s),val); 
-    ASSERT_EQ(Mat.coeff(s/2,s/2),val);
-
-    // of diag are zero
-    ASSERT_EQ(Mat.coeff(0,s),0); 
-    ASSERT_EQ(Mat.coeff(s,0),0); 
-  };
-
-  // check diag is 0.0, off diag is 0.0
-  check_lambda(t,0.0); 
-
-  // set diag to 2.0 
-  t.SetTime(2.0);
-  // check diag is 2.0, off diag is 0.0
-  check_lambda(t,2.0);
-
-  // set diag to 4.0
-  t.SetTime(4.0);
-  // check diag is 4.0, off diag is 0.0
-  check_lambda(t,4.0);
-
-  ASSERT_EQ(4.0, t.Time()); 
-}
-
-*/ 
-
 // testing TimeDepCoeff class
 TEST(CoeffOpTestSuite, TimeDepCoeffTest)
 {
@@ -230,8 +176,6 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
   check_lam(coeff03, lam03);
   
 }
-
-
 
 // // NthDerivOp Tests =========================================================================== 
 
