@@ -213,7 +213,6 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename LINOP_T, typename>
     friend auto operator*(double scalar, LINOP_T&& rhs); 
 
-
     // unary operator-() (lval) ---------------------------------------------- 
     auto operator-() & {
         return LinOpExpr<Derived&, void, unary_negate_op>(

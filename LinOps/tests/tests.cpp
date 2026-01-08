@@ -343,6 +343,14 @@ TEST(LinearOperatorSuite, ExpressionChaining)
   auto rhs4 = rhs3 - RandLinOp(my_mesh).compose(IOp(my_mesh));
 
   auto my_expr2 = tmp4.compose(rhs4); // all temporaries still alive
+
+  // test the expression still has a .apply() method 
+  Discretization1D disc; 
+  disc.match_mesh(my_mesh, 1.0); 
+
+  my_expr2.set_mesh(my_mesh); 
+  Discretization1D result = my_expr2.apply(disc); 
+  
 }
 
 TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
