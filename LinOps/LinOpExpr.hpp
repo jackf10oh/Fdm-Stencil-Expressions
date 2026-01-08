@@ -51,15 +51,12 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
       return m_BinOp(m_Lhs, m_Rhs); 
     };
     // apply bin_op(A,B) * x --------------------
-    Discretization1D apply(const Discretization1D& d_arr) const 
-    {
-      // we might constexpr branch this to L.apply(R.apply(d.values())) later ...
-      // potentially introduces bug if 
-      // R(.) maps boundaries -> L(.) uses boundaries 
-      Discretization1D result(d_arr.mesh()); 
-      result = GetMat()*d_arr.values(); 
-      return result; 
-    };
+    // Discretization1D apply(const Discretization1D& d_arr) const 
+    // {
+    //   // we might constexpr branch this to L.apply(R.apply(d.values())) later ...
+    //   // potentially introduces bug if 
+    //   // R(.) maps boundaries -> L(.) uses boundaries 
+    // };
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshPtr_t m)
     {
@@ -128,15 +125,12 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase<LinOpExpr<Lhs_t, void
       return m_UnarOp(m_Lhs); 
     };
     // apply bin_op(A,B) * x --------------------
-    Discretization1D apply(const Discretization1D& d_arr) const 
-    {
-      // we might constexpr branch this to L.apply(R.apply(d.values())) later ...
-      // potentially introduces bug if 
-      // R(.) maps boundaries -> L(.) uses boundaries 
-      Discretization1D result(d_arr.mesh()); 
-      result = GetMat()*d_arr.values(); 
-      return result; 
-    };
+    // Discretization1D apply(const Discretization1D& d_arr) const 
+    // {
+    //   // we might constexpr branch this to L.apply(R.apply(d.values())) later ...
+    //   // potentially introduces bug if 
+    //   // R(.) maps boundaries -> L(.) uses boundaries 
+    // };
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshPtr_t m)
     {

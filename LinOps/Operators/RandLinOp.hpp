@@ -30,12 +30,6 @@ class RandLinOp : public LinOpBase<RandLinOp>
     // member funcs
     Eigen::MatrixXd& GetMat() { return m_Mat; };
     const Eigen::MatrixXd& GetMat() const { return m_Mat; };
-    Discretization1D apply(const Discretization1D& d_arr) const 
-    { 
-      Discretization1D result(d_arr.mesh()); 
-      result = m_Mat * d_arr.values(); 
-      return result; 
-    }; 
     void set_mesh(MeshPtr_t m)
     {
       // check m isnt nullptr or == current

@@ -69,7 +69,10 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
       else
       {
-        return static_cast<const Derived_t*>(this)->apply(d);
+        Discretization1D result; 
+        result = GetMat()*d.values(); // assign to values in result. 
+        result.match_mesh(d.mesh()); // set mesh in result to be same as d_arr 
+        return result; 
       }
     };
 
