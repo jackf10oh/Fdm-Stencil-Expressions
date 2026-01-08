@@ -88,98 +88,81 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     }
 };
 
-// // operator to add linops L1+L2 
-// template<
-//   typename DerivedL, 
-//   typename DerivedR,
-//   std::enable_if_t<
-//     std::conjunction_v<
-//       is_linop_crtp<DerivedL>,
-//       is_linop_crtp<DerivedR>
-//     >,
-//     int 
-//   > = 0
-// >
-// auto operator+(DerivedL&& Lhs, DerivedR&& Rhs)
-// {
-//   using LStorage_t = typename Storage_t<DerivedL>::type;
-//   using RStorage_t = typename Storage_t<DerivedR>::type;
-
-//   auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()+B.GetMat(); };
-//   using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
-
-//   return LinOpExpr<DerivedL, DerivedR, Op_t>(
-//     std::forward<DerivedL>(Lhs),
-//     std::forward<DerivedR>(Rhs),
-//     static_cast<Op_t>(bin_op)
-//   );
-// };
-
-// // operator to difference linops L1-L2 
-// template<
-//   typename DerivedL, 
-//   typename DerivedR,
-//   std::enable_if_t<
-//     std::conjunction_v<
-//       is_linop_crtp<DerivedL>,
-//       is_linop_crtp<DerivedR>
-//     >,
-//     int 
-//   > = 0
-// >
-// auto operator-(DerivedL&& Lhs, DerivedR&& Rhs)
-// {
-//   using LStorage_t = typename Storage_t<DerivedL>::type;
-//   using RStorage_t = typename Storage_t<DerivedR>::type;
-
-//   auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()-B.GetMat(); };
-//   using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
-
-//   return LinOpExpr<DerivedL, DerivedR, Op_t>(
-//     std::forward<DerivedL>(Lhs),
-//     std::forward<DerivedR>(Rhs),
-//     static_cast<Op_t>(bin_op)
-//   );
-// };
-
-// // operator for scalar multiplication c*L
-// template<
-//   typename Scalar_t, 
-//   typename Derived,
-//   std::enable_if_t<
-//     std::conjunction_v<
-//       std::is_convertible<Scalar_t,double>,
-//       is_linop_crtp<Derived>
-//     >,
-//     int 
-//   > = 0
-// >
-// auto operator*(Scalar_t c, Derived&& L)
-// {
-//   using LStorage_t = double;
-//   using RStorage_t = typename Storage_t<Derived>::type;
-//   // using RStorage_t = typename Storage_t<std::remove_reference_t<Derived>>::type;
-
-//   auto bin_op = [](const LStorage_t& scalar, const RStorage_t& Mat){ return scalar*Mat.GetMat(); };
-//   using Op_t = make_flagged_t<decltype(bin_op), ScalarMultiply_t>;
-
-//   return LinOpExpr<double, RStorage_t, Op_t>(
-//     static_cast<double>(c),
-//     std::forward<Derived>(L),
-//     static_cast<Op_t>(bin_op)
-//   );
-// };
-
-template<
-  typename Derived, 
-  std::enable_if_t<
-    is_linop_crtp<Derived>::value,
-    int 
-  > = 0
->
-auto operator-(Derived&& L)
+// Specialization for Unary operators --------------------------------------------
+template<typename Lhs_t, typename UnaryOp_t>
+class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase<LinOpExpr<Lhs_t, void, UnaryOp_t>>
 {
-  return (-1.0) * std::forward<Derived>(L); 
-}
+  public:
+    // types and constexpr flags
+    using LStorage_t = typename Storage_t<Lhs_t>::type;
+    // using RStorage_t = typename Storage_t<Rhs_t>::type; // not storing a second argument anymore 
+  private:
+    // member data   
+    LStorage_t m_Lhs;
+    // RStorage_t m_Rhs; // not storing a second argument anymore 
+    UnaryOp_t m_UnarOp; 
+    
+  public:
+    // Constructors 
+    LinOpExpr(LStorage_t A, UnaryOp_t unar_op)
+      : m_Lhs(A), m_UnarOp(unar_op)
+    {};
+
+    // destructors
+    ~LinOpExpr()=default;
+
+    // member funcs
+    // getters
+    LStorage_t& Lhs(){ return m_Lhs; }; 
+    // RStorage_t& Rhs(){ return m_Rhs; }; 
+    void Rhs(){}; // since nothing is stored. but still declared so that decltype(Rhs()) is still usable   
+    // returns combination bin_op(A,B) of 2 stored LinOps----------------
+    decltype(auto) GetMat()
+    {
+      // return m_BinOp(m_Lhs, m_Rhs); 
+      return m_UnarOp(m_Lhs); 
+    };
+    decltype(auto) GetMat() const
+    {
+      // return m_BinOp(m_Lhs, m_Rhs); 
+      return m_UnarOp(m_Lhs); 
+    };
+    // apply bin_op(A,B) * x --------------------
+    Discretization1D apply(const Discretization1D& d_arr) const 
+    {
+      // we might constexpr branch this to L.apply(R.apply(d.values())) later ...
+      // potentially introduces bug if 
+      // R(.) maps boundaries -> L(.) uses boundaries 
+      Discretization1D result(d_arr.mesh()); 
+      result = GetMat()*d_arr.values(); 
+      return result; 
+    };
+    // sets both stored diffops to work on a mesh ------------------
+    void set_mesh(MeshPtr_t m)
+    {
+      // LinOpBase::set_mesh(m); 
+      if constexpr(is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
+      // if constexpr(is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m); // no longer altering a RHS anymore 
+    }; 
+    const MeshPtr_t& mesh() const 
+    {
+      // if LHS is from linop base. given priority over RHS 
+      if constexpr(is_linop_crtp<LStorage_t>::value)
+      {
+        // and it has a mesh 
+        const MeshPtr_t& result = m_Lhs.mesh(); 
+        if(result) return result; 
+      }
+      // // if RHS is from linop base. dont need to check RHS anymore  
+      // if constexpr(is_linop_crtp<RStorage_t>::value)
+      // {
+      //   // and it has a mesh 
+      //   const MeshPtr_t& result = m_Rhs.mesh(); 
+      //   if(result) return result; 
+      // }
+      // any other other cases give the stored mesh in the expression. presumably a nullptr. 
+      return this->m_mesh_ptr; 
+    }
+};
 
 #endif // LinOpExpr.hpp

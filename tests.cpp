@@ -38,15 +38,28 @@ int main()
 
   IOp I(my_mesh); 
   RandLinOp R(my_mesh); 
+  auto expr = I+R; 
+  auto deep_expr = (2.0*expr+expr).compose(R); 
 
   cout << I.GetMat() << endl << endl; 
   cout << R.GetMat() << endl << endl; 
+  cout << expr.GetMat() << endl << endl; 
 
-  cout << (2*I).GetMat() << endl << endl; 
-  cout << (R+I).GetMat() << endl << endl; 
+  Discretization1D my_disc; 
+  my_disc.match_mesh(my_mesh, 1.0); 
+  cout << my_disc.values().transpose() << endl <<endl; 
 
-  cout << (IOp(my_mesh) + IOp(my_mesh)).GetMat() << endl; 
+  auto r1 = I.apply(my_disc); 
+  cout << r1.values().transpose() << endl <<endl; 
 
+  auto r2 = R.apply(my_disc); 
+  cout << r2.values().transpose() << endl <<endl; 
+
+  auto r3 = expr.apply(my_disc); 
+  cout << r3.values().transpose() << endl <<endl; 
+
+  r3 = deep_expr.apply(my_disc); 
+  cout << r3.values().transpose() << endl <<endl; 
 };
 
   // auto A = DirectionalRandOp(my_meshes, 0); 

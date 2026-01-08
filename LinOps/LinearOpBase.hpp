@@ -153,18 +153,23 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     struct linop_bin_add_op : public OperatorAddition_t
     {
       template<typename L1, typename L2>
-      auto operator()(const L1& A, const L2& B) const { return A.GetMat() + B.GetMat(); }
+      auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) + (B.GetMat()); }
     }; 
     // L1 - L2 
     struct linop_bin_subtract_op // : public OperatorAddition_t
     {
       template<typename L1, typename L2>
-      auto operator()(const L1& A, const L2& B) const { return A.GetMat() - B.GetMat(); }
+      auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
     }; 
     struct scalar_left_mult_op : public ScalarMultiply_t
     {
       template<typename L2>
-      auto operator()(const double& c, const L2& B) const { return  c*B.GetMat(); }
+      auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
+    }; 
+    struct unary_negate_op
+    {
+      template<typename L1>
+      auto operator()(const L1& B) const { return  -(B.GetMat()); }
     }; 
   public:
     // Operators ================================================================================ 
@@ -208,8 +213,21 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename LINOP_T, typename>
     friend auto operator*(double scalar, LINOP_T&& rhs); 
 
-    // unary operator-() 
 
+    // unary operator-() (lval) ---------------------------------------------- 
+    auto operator-() & {
+        return LinOpExpr<Derived&, void, unary_negate_op>(
+        static_cast<Derived&>(*this), 
+        unary_negate_op{}
+      );
+    }
+    // unary operator-() (rval) 
+    auto operator-() && {
+        return LinOpExpr<Derived&&, void, unary_negate_op>(
+        static_cast<Derived&&>(*this), 
+        unary_negate_op{}
+      );
+    }
   }; // end LinOpBase
 
 template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
