@@ -14,11 +14,14 @@
 #include "Utilities/PrintVec.hpp"
 
 // #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp"
-#include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
-#include "LinOps/All.hpp" 
-#include "LinOpsXD/All.hpp"
+// #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
+// #include "LinOps/All.hpp" 
+// #include "LinOpsXD/All.hpp"
 
 // #include "DiffOps/CoeffOps/AutonomousCoeff.hpp"
+
+#include "LinOps/Mesh.hpp"
+#include "LinOps/Discretization.hpp"
 
 using std::cout, std::endl;
 
@@ -36,21 +39,35 @@ int main()
   std::size_t r = 10; 
   auto my_mesh = make_mesh(0.0, r, r+1);
 
-    using D = NthDerivOp; 
+  Discretization1D disc(my_mesh); 
+
+  cout << disc.values().transpose() << endl; 
+
+  Discretization1D moved_from(my_mesh);
+  Discretization1D moved_to(std::move(moved_from));  
+
+  cout << "empty" << moved_from.values().transpose() << endl; 
+
+  cout << "dest " << moved_to.values().transpose() << endl; 
+
+  cout << "empty's mesh == nullptr: " << (moved_from.mesh().expired()) << endl; 
+  cout << "empty's mesh == nullptr: " << (moved_to.mesh().expired()) << endl; 
+
+    // using D = NthDerivOp; 
     // double dt = 0.01;
     // auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2) + 0.5*D(1));
-    auto fdm_scheme = IOp() + D(1) + 4.0 * D(2) + IOp(); 
+    // auto fdm_scheme = IOp() + D(1) + 4.0 * D(2) + IOp(); 
 
-    cout <<  "-------------------" << endl; 
-    cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
+    // cout <<  "-------------------" << endl; 
+    // cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
 
-    fdm_scheme.set_mesh(my_mesh); 
+    // fdm_scheme.set_mesh(my_mesh); 
 
-    cout <<  "-------------------" << endl; 
-    cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
-    fdm_scheme.set_mesh(my_mesh); 
+    // cout <<  "-------------------" << endl; 
+    // cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
+    // fdm_scheme.set_mesh(my_mesh); 
 
-    // cout << fdm_scheme.GetMat() << endl; 
+    // // cout << fdm_scheme.GetMat() << endl; 
 
 };
 

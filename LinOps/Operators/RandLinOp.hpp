@@ -32,12 +32,13 @@ class RandLinOp : public LinOpBase<RandLinOp>
     const Eigen::MatrixXd& GetMat() const { return m_Mat; };
     void set_mesh(MeshPtr_t m)
     {
-      // check m isnt nullptr or == current
-      if(m==nullptr || m==m_mesh_ptr) return; 
-      // store the new mesh 
-      m_mesh_ptr=m; 
+      // ensure we aren't resetting the mesh again, or setting to nullptr
+      auto locked = m.lock(); 
+      if(!locked) return; // do nothing on nullptr. or throw an error 
+      if(locked == m_mesh_ptr.lock()) return; // do nothing if m,m_mesh_ptr both point to same mesh 
+      m_mesh_ptr = m; // store the mesh  
       // file matrix with random entries 
-      m_Mat = Eigen::MatrixXd::Random(m_mesh_ptr->size(),m_mesh_ptr->size()); 
+      m_Mat = Eigen::MatrixXd::Random(locked->size(),locked->size()); 
     };
     void resize(std::size_t s)
     {

@@ -25,7 +25,7 @@ class IOp : public LinOpBase<IOp>
     CustomStorage_t m_Mat; 
   public: 
     // Constructors --------------------------
-    IOp(MeshPtr_t m=nullptr)
+    IOp(MeshPtr_t m = MeshPtr_t{})
     {
       set_mesh(m);
     } 
@@ -40,16 +40,13 @@ class IOp : public LinOpBase<IOp>
     }; 
     void set_mesh(MeshPtr_t m)
     {
-      // store m into inherited m_mesh_ptr data member
-      // checks null type
-      // LinOpBase::set_mesh(m);
-
-      // check null type, or same ptr 
-      if(m==nullptr || m==m_mesh_ptr) return; 
-      // store the new mesh 
-      m_mesh_ptr=m; 
+      // ensure we aren't resetting the mesh again, or setting to nullptr
+      auto locked = m.lock(); 
+      if(!locked) return; // do nothing on nullptr. or throw an error 
+      if(locked == m_mesh_ptr.lock()) return; // do nothing if m,m_mesh_ptr both point to same mesh 
+      m_mesh_ptr = m; // store the mesh  
       // pointer isn't null -> resize m_Mat
-      m_Mat.resize(m_mesh_ptr->size(), m_mesh_ptr->size()); 
+      m_Mat.resize(locked->size(), locked->size()); 
       m_Mat.setIdentity(); 
     };
     void resize(std::size_t s=0)

@@ -80,12 +80,15 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     void set_mesh(MeshPtr_t m) 
     {
       // ensure we aren't resetting the mesh again, or setting to nullptr
-      // if((m==nullptr)||(m==m_mesh_ptr)) return; 
-      // m_mesh_ptr = m; // take shared ownership of mesh
+      // auto locked = m.lock(); 
+      // if(!locked) return; // do nothing on nullptr. or throw an error 
+      // if(locked == m_mesh_ptr.lock()) return; // do nothing if m,m_mesh_ptr both point to same mesh 
+      // m_mesh_ptr = m; // store the mesh  
+      // perform work on locked 
       static_cast<Derived*>(this)->set_mesh(m);
     };
     // return reference to stored MeshPtr_t
-    const MeshPtr_t& mesh() const 
+    MeshPtr_t mesh() const 
     { 
       return m_mesh_ptr; 
     } 

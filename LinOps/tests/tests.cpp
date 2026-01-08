@@ -69,6 +69,8 @@ TEST(MeshSuite1D, Mesh1DIterators){
   ASSERT_EQ(reverse_count,n_steps); 
 };
 
+
+
 // Discretization Suite ---------------------------------------- 
 TEST(DiscretizationSuite1d, Disc1DConstructible)
 {
@@ -162,18 +164,20 @@ TEST(DiscretizationSuite1d, Disc1DIterators)
   ASSERT_EQ(count,n_steps); 
 };
 
-/* // Linear Operators Suite ---------------------------------------------
+
+
+// Linear Operators Suite ---------------------------------------------
 // Just the LinOpBase CRTP class. 
 TEST(LinearOperatorSuite, IdentityConstructible)
 {
   // default construct uses nullptr
   IOp Identity01;
-  ASSERT_EQ(Identity01.mesh(),nullptr);
+  ASSERT_EQ(Identity01.mesh().lock(),nullptr);
 
   // construct with ptr arg
   auto my_mesh = make_mesh(); 
   IOp Identity02(my_mesh);
-  ASSERT_EQ(Identity02.mesh(), my_mesh);   
+  ASSERT_EQ(Identity02.mesh().lock(), my_mesh);   
 
   // Check that entries on diag are 1
   int s = my_mesh->size()-1; 
@@ -190,12 +194,12 @@ TEST(LinearOperatorSuite, RandLinOpConstructible)
 {
   // default construct uses nullptr
   RandLinOp Rand01;
-  ASSERT_EQ(Rand01.mesh(),nullptr);
+  ASSERT_EQ(Rand01.mesh().lock(),nullptr);
 
   // construct with ptr arg
   auto my_mesh = make_mesh(); 
   RandLinOp Rand02(my_mesh);
-  ASSERT_EQ(Rand02.mesh(), my_mesh);   
+  ASSERT_EQ(Rand02.mesh().lock(), my_mesh);   
 };
 
 TEST(LinearOperatorSuite, RandLinOpGetMat)
@@ -204,7 +208,7 @@ TEST(LinearOperatorSuite, RandLinOpGetMat)
   auto my_mesh = make_mesh(); 
   RandLinOp Rand01(my_mesh);
 
-  ASSERT_EQ(Rand01.mesh(), my_mesh);   
+  ASSERT_EQ(Rand01.mesh().lock(), my_mesh);   
 
   Eigen::MatrixXd result = Rand01.GetMat(); 
 };
@@ -226,10 +230,10 @@ TEST(LinearOperatorSuite, RandLinOpApply)
   // make sure .apply() gives the same as A*v 
   Discretization1D apply_method_result = Rand01.apply(my_vals); 
   Eigen::VectorXd manual_linalg_result = matrix_rep * my_vals.values(); 
-  ASSERT_EQ(apply_method_result.values(), manual_linalg_result); 
+  for(std::size_t i=0; i<apply_method_result.size(); i++){
+    ASSERT_EQ(apply_method_result[i], manual_linalg_result[i]); 
+  }
 };
-
-*/ 
 
 /* // Using LinOpExpr. 
 TEST(LinearOperatorSuite, BasicAddition)
