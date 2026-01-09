@@ -30,7 +30,7 @@ class Discretization1D
     // from mesh
     // Discretization1D(MeshPtr_t mesh_init): m_mesh_ptr(mesh_init), m_vals(mesh_init ? mesh_init->size() : 0){};
     // from const shared_ptr<Mesh1D>
-    Discretization1D(const std::shared_ptr<const Mesh1D>& mesh_init) : m_mesh_ptr(mesh_init), m_vals(mesh_init ? mesh_init->size() : 0){}
+    Discretization1D(MeshPtr_t mesh_init) : m_mesh_ptr(mesh_init){resize(mesh_init);}
     
     // Copy -----------------------------
     Discretization1D(const Discretization1D& other)
@@ -103,10 +103,9 @@ class Discretization1D
     >
     void set_init(F func)
     {
-      if(m_mesh_ptr.expired()) return; 
       auto locked = m_mesh_ptr.lock(); 
       if(!locked) return; 
-      auto s1 = locked->size();
+      std::size_t s1 = locked->size();
       auto data = locked->cbegin(); 
       m_vals.resize(s1); 
       for(auto i=0; i<s1; i++) m_vals[i] = func(data[i]); 

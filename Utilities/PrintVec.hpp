@@ -17,7 +17,7 @@ void print_vec(const Cont& v, std::string comment="", bool new_line=true){
   // print comment 
   if(!comment.empty()) std::cout << comment << ": ";
   // print [ x0, x1, ..., xn] 
-  std::cout << "[" << *std::for_each_n(v.begin(), v.size()-1, [](const auto& x){std::cout << x << ", ";}) << "]"; 
+  std::cout << "[" << *std::for_each_n(v.cbegin(), v.size()-1, [](const auto& x){std::cout << x << ", ";}) << "]"; 
   // print new line 
   if(new_line) std::cout << "\n";   
 };
