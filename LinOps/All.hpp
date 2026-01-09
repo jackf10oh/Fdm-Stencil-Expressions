@@ -12,7 +12,7 @@
 
 #include "LinOpTraits.hpp"
 #include "LinearOpBase.hpp"
-// #include "LinOpExpr.hpp"
+#include "LinOpExpr.hpp"
 
 #include "Operators/RandLinOp.hpp"
 #include "Operators/IOp.hpp"

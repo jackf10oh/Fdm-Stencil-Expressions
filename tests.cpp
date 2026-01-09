@@ -13,15 +13,10 @@
 
 #include "Utilities/PrintVec.hpp"
 
-// #include "DiffOps/DiffOps/experimental_NthDerivOp.hpp"
 // #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
-// #include "LinOps/All.hpp" 
+#include "LinOps/All.hpp" 
 // #include "LinOpsXD/All.hpp"
 
-// #include "DiffOps/CoeffOps/AutonomousCoeff.hpp"
-
-#include "LinOps/Mesh.hpp"
-#include "LinOps/Discretization.hpp"
 
 using std::cout, std::endl;
 
@@ -36,38 +31,34 @@ int main()
   std::cout << std::setprecision(2); 
 
   // mesh assembly. 2 dims 
-  std::size_t r = 10; 
+  std::size_t r = 4; 
   auto my_mesh = make_mesh(0.0, r, r+1);
 
   Discretization1D disc(my_mesh); 
+  disc.set_init(1.0); 
 
-  cout << disc.values().transpose() << endl; 
+  RandLinOp L1(my_mesh); 
 
-  Discretization1D moved_from(my_mesh);
-  Discretization1D moved_to(std::move(moved_from));  
+  cout << "v: " << disc.values().transpose() << endl; 
 
-  cout << "empty" << moved_from.values().transpose() << endl; 
+  Eigen::VectorXd w(r+1);
+  w <<  0.0, 1.0, 2.0, 3.0, 4.0; 
 
-  cout << "dest " << moved_to.values().transpose() << endl; 
+  Discretization1D u = std::move(disc); 
+  cout << "v: " << disc.values().transpose() << endl; 
+  cout << "u: " << u.values().transpose() << endl; 
 
-  cout << "empty's mesh == nullptr: " << (moved_from.mesh().expired()) << endl; 
-  cout << "empty's mesh == nullptr: " << (moved_to.mesh().expired()) << endl; 
 
-    // using D = NthDerivOp; 
-    // double dt = 0.01;
-    // auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2) + 0.5*D(1));
-    // auto fdm_scheme = IOp() + D(1) + 4.0 * D(2) + IOp(); 
+  cout << "w: " << w.transpose() << endl; 
 
-    // cout <<  "-------------------" << endl; 
-    // cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
+  u = std::move(w); 
+  cout << "w: " << w.transpose() << endl; 
+  cout << "u: " << u.values().transpose() << endl; 
 
-    // fdm_scheme.set_mesh(my_mesh); 
+  Discretization1D foo = std::move(w); 
 
-    // cout <<  "-------------------" << endl; 
-    // cout << "num leaves: " << expr_traits<decltype(fdm_scheme)>::num_leaves << endl; 
-    // fdm_scheme.set_mesh(my_mesh); 
+  Discretization1D bar = w; 
 
-    // // cout << fdm_scheme.GetMat() << endl; 
 
 };
 

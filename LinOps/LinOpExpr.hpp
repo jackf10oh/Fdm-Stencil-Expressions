@@ -30,8 +30,8 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     
   public:
     // Constructors 
-    LinOpExpr(LStorage_t A, RStorage_t B, BinaryOp_t bin_op)
-      : m_Lhs(A), m_Rhs(B), m_BinOp(bin_op)
+    LinOpExpr(LStorage_t A, RStorage_t B, BinaryOp_t bin_op, MeshPtr_t m)
+      : m_Lhs(A), m_Rhs(B), m_BinOp(bin_op), LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>(m) 
     {};
 
     // destructors
@@ -60,29 +60,29 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshPtr_t m)
     {
-      // LinOpBase::set_mesh(m); 
+      this->m_mesh_ptr=m; 
       if constexpr(is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
       if constexpr(is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
     }; 
-    const MeshPtr_t& mesh() const 
-    {
-      // if LHS is from linop base. given priority over RHS 
-      if constexpr(is_linop_crtp<LStorage_t>::value)
-      {
-        // and it has a mesh 
-        const MeshPtr_t& result = m_Lhs.mesh(); 
-        if(result) return result; 
-      }
-      // if RHS is from linop base. 
-      if constexpr(is_linop_crtp<RStorage_t>::value)
-      {
-        // and it has a mesh 
-        const MeshPtr_t& result = m_Rhs.mesh(); 
-        if(result) return result; 
-      }
-      // any other other cases give the stored mesh in the expression. presumably a nullptr. 
-      return this->m_mesh_ptr; 
-    }
+    // MeshPtr_t mesh() const 
+    // {
+    //   // if LHS is from linop base. given priority over RHS 
+    //   if constexpr(is_linop_crtp<LStorage_t>::value)
+    //   {
+    //     // and it has a mesh 
+    //     auto result = m_Lhs.mesh().lock(); 
+    //     if(result) return result; 
+    //   }
+    //   // if RHS is from linop base. 
+    //   if constexpr(is_linop_crtp<RStorage_t>::value)
+    //   {
+    //     // and it has a mesh 
+    //     auto result = m_Lhs.mesh().lock(); 
+    //     if(result) return result; 
+    //   }
+    //   // any other other cases give the stored mesh in the expression. presumably a nullptr. 
+    //   return this->m_mesh_ptr; 
+    // }
 };
 
 // Specialization for Unary operators --------------------------------------------
@@ -101,8 +101,8 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase<LinOpExpr<Lhs_t, void
     
   public:
     // Constructors 
-    LinOpExpr(LStorage_t A, UnaryOp_t unar_op)
-      : m_Lhs(A), m_UnarOp(unar_op)
+    LinOpExpr(LStorage_t A, UnaryOp_t unar_op, MeshPtr_t m)
+      : m_Lhs(A), m_UnarOp(unar_op), LinOpBase<LinOpExpr<Lhs_t, void, UnaryOp_t>>(m)
     {};
 
     // destructors
@@ -134,29 +134,31 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase<LinOpExpr<Lhs_t, void
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshPtr_t m)
     {
-      // LinOpBase::set_mesh(m); 
+      // store mesh into expression 
+      this->m_mesh_ptr=m; 
+      // if Lhs is linop, call its set_mesh() as well
       if constexpr(is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
       // if constexpr(is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m); // no longer altering a RHS anymore 
     }; 
-    const MeshPtr_t& mesh() const 
-    {
-      // if LHS is from linop base. given priority over RHS 
-      if constexpr(is_linop_crtp<LStorage_t>::value)
-      {
-        // and it has a mesh 
-        const MeshPtr_t& result = m_Lhs.mesh(); 
-        if(result) return result; 
-      }
-      // // if RHS is from linop base. dont need to check RHS anymore  
-      // if constexpr(is_linop_crtp<RStorage_t>::value)
-      // {
-      //   // and it has a mesh 
-      //   const MeshPtr_t& result = m_Rhs.mesh(); 
-      //   if(result) return result; 
-      // }
-      // any other other cases give the stored mesh in the expression. presumably a nullptr. 
-      return this->m_mesh_ptr; 
-    }
+    // MeshPtr_t mesh() const 
+    // {
+    //   // if LHS is from linop base. given priority over RHS 
+    //   if constexpr(is_linop_crtp<LStorage_t>::value)
+    //   {
+    //     // and it has a mesh 
+    //     auto result = m_Lhs.mesh().lock(); 
+    //     if(result) return result; 
+    //   }
+    //   // // if RHS is from linop base. dont need to check RHS anymore  
+    //   // if constexpr(is_linop_crtp<RStorage_t>::value)
+    //   // {
+    //   //   // and it has a mesh 
+    //   //   const MeshPtr_t& result = m_Rhs.mesh(); 
+    //   //   if(result) return result; 
+    //   // }
+    //   // any other other cases give the stored mesh in the expression. presumably a nullptr. 
+    //   return this->m_mesh_ptr; 
+    // }
 };
 
 #endif // LinOpExpr.hpp

@@ -40,12 +40,13 @@ class IOp : public LinOpBase<IOp>
     }; 
     void set_mesh(MeshPtr_t m)
     {
-      // ensure we aren't resetting the mesh again, or setting to nullptr
+      // ensure we aren't resetting the mesh again
+      if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+      // do nothing on nullptr. or throw an error 
       auto locked = m.lock(); 
-      if(!locked) return; // do nothing on nullptr. or throw an error 
-      if(locked == m_mesh_ptr.lock()) return; // do nothing if m,m_mesh_ptr both point to same mesh 
+      if(!locked) return; 
       m_mesh_ptr = m; // store the mesh  
-      // pointer isn't null -> resize m_Mat
+      // set m_Mat to I(s,s) 
       m_Mat.resize(locked->size(), locked->size()); 
       m_Mat.setIdentity(); 
     };

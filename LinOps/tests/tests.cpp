@@ -235,7 +235,7 @@ TEST(LinearOperatorSuite, RandLinOpApply)
   }
 };
 
-/* // Using LinOpExpr. 
+// Using LinOpExpr. 
 TEST(LinearOperatorSuite, BasicAddition)
 {
   auto my_mesh = make_mesh(); 
@@ -318,11 +318,22 @@ TEST(LinearOperatorSuite, Composition)
   // composition L1( L2(.) ) 
   auto Expr = L1.compose(L2); 
 
+  // // PRINT ---------------------------
+  // using std::cout, std::endl; 
+  // cout << "my_vals: " << my_vals.values().transpose() << endl; 
+  // cout << "L1 -------" <<endl << L1.GetMat() << endl; 
+  // cout << "L2 -------" <<endl << L2.GetMat() << endl; 
+  // // cout << "expr-----" << endl << Expr.GetMat() << endl; 
+  // // PRINT ---------------------------
+
   // get underlying Eigen::VectorXd results of .apply() 
-  auto expression_result = Expr.apply(my_vals).values(); 
+  auto expression_result = Expr.apply(my_vals); 
+  // composition by hand 
   auto manual_result = L1.apply(L2.apply(my_vals)).values(); 
 
+  // size is ==
   ASSERT_EQ(expression_result.size(), manual_result.size()); 
+  // assert each value is == 
   for(int i=0; i< expression_result.size(); i++){
     ASSERT_NEAR(expression_result[i], manual_result[i], 1e-4);
   }
@@ -365,40 +376,40 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   // should pass the mesh to L1.set_mesh() and L2.set_mesh() 
    
   // construct without mesh ptrs 
-  IOp I_lval(nullptr);
-  auto Expr = I_lval + IOp(nullptr);
+  IOp I_lval;
+  auto Expr = I_lval + IOp();
 
   // make mesh and give it to expression
   auto my_mesh = make_mesh();
   Expr.set_mesh(my_mesh); 
 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I_lval.mesh(), my_mesh);
-  ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I_lval.mesh().lock(), my_mesh);
+  ASSERT_EQ(Expr.Rhs().mesh().lock(), my_mesh);
 
   // test again for scalar multiply  // construct without mesh ptrs 
-  IOp I2_lval(nullptr);
+  IOp I2_lval;
   double c=2.0; 
   auto Expr2 = 2.0* I2_lval;
-  auto Expr3 = c*IOp(nullptr);
+  auto Expr3 = c*IOp();
   Expr2.set_mesh(my_mesh); 
   Expr3.set_mesh(my_mesh); 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I2_lval.mesh(), my_mesh);
-  ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
-  ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I2_lval.mesh().lock(), my_mesh);
+  ASSERT_EQ(Expr2.Rhs().mesh().lock(), my_mesh);
+  ASSERT_EQ(Expr3.Rhs().mesh().lock(), my_mesh);
 
   // test again for composition 
-  RandLinOp I3_lval(nullptr); 
-  IOp I4_lval(nullptr);
+  RandLinOp I3_lval; 
+  IOp I4_lval;
   auto Expr4 = I3_lval.compose(I3_lval); 
-  auto Expr5 = Expr4.compose(IOp(nullptr));
+  auto Expr5 = Expr4.compose(IOp());
   // Expr4.set_mesh(my_mesh); 
   Expr5.set_mesh(my_mesh); 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I3_lval.mesh(), my_mesh);
+  ASSERT_EQ(I3_lval.mesh().lock(), my_mesh);
   // ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
-  ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(Expr5.Rhs().mesh().lock(), my_mesh);
 }
 
 TEST(LinearOperatorSuite, LinOpTraits)
@@ -417,4 +428,4 @@ TEST(LinearOperatorSuite, LinOpTraits)
   ASSERT_FALSE(is_linop_crtp<int>::value); 
 }
 
-*/ 
+

@@ -48,7 +48,8 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 
   public:
     // Constructors ---------------------------------------------------------- 
-    // LinOpBase(MeshPtr_t m=nullptr): LinOpMixIn<LinOpBase<Derived>>(){set_mesh(m);}; 
+    LinOpBase()=default; 
+    LinOpBase(MeshPtr_t m) : m_mesh_ptr(m){}; 
     // member functions -------------------------------------------------------
     // member functions. implemented by derived class -------------------------
     decltype(auto) GetMat()
@@ -69,28 +70,33 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
       else
       {
-        Discretization1D result; 
-        result = GetMat()*d.values(); // assign to values in result. 
-        result.match_mesh(d.mesh()); // set mesh in result to be same as d_arr 
-        return result; 
+        MeshPtr_t m = d.mesh(); 
+        if(m_mesh_ptr.owner_before(m) || m.owner_before(m_mesh_ptr)){
+          throw std::runtime_error("Linear Operator L and discretization d point to different Mesh1D!");
+        }
+        Eigen::VectorXd v = GetMat() * d.values();  // calculate A*b
+        Discretization1D result = std::move(v); // move A*b into result's values 
+        result.set_mesh(m); // make result point to same mesh as d 
+        return result;
       }
     };
 
     // fit operator to a mesh of rectangular domain.
     void set_mesh(MeshPtr_t m) 
     {
-      // ensure we aren't resetting the mesh again, or setting to nullptr
+      // // ensure we aren't resetting the mesh again
+      // if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+      // // do nothing on nullptr. or throw an error 
       // auto locked = m.lock(); 
-      // if(!locked) return; // do nothing on nullptr. or throw an error 
-      // if(locked == m_mesh_ptr.lock()) return; // do nothing if m,m_mesh_ptr both point to same mesh 
+      // if(!locked) return; 
       // m_mesh_ptr = m; // store the mesh  
-      // perform work on locked 
+      // // perform work on locked 
       static_cast<Derived*>(this)->set_mesh(m);
     };
     // return reference to stored MeshPtr_t
     MeshPtr_t mesh() const 
     { 
-      return m_mesh_ptr; 
+      return this->m_mesh_ptr; 
     } 
 
     // Composition of Linear Ops L1(L2( . )) ---------------------------------------------------
@@ -131,26 +137,29 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       else{
         using Rhs_t = std::remove_reference_t<DerivedInner>;
         return LinOpExpr<Lhs_t, Rhs_t, linopXlinop_mult_op>(
-        std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), 
-        std::forward<DerivedInner>(InnerOp), 
-        linopXlinop_mult_op{}
+        std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
+        std::forward<DerivedInner>(InnerOp), // rhs 
+        linopXlinop_mult_op{}, // bin_op
+        m_mesh_ptr // lhs's mesh
         ); 
       } // end else 
     }; // end .compose_impl(other) 
     // Left multiply by a scalar: i.e. c*L ------------------------------------------------------------------------- 
     auto left_scalar_mult_impl(double c) & {
       return LinOpExpr<double, Derived&, scalar_left_mult_op>(
-        c,
-        static_cast<Derived&>(*this), 
-        scalar_left_mult_op{}
+        c, // lhs scalar
+        static_cast<Derived&>(*this), // rhs 
+        scalar_left_mult_op{}, // unary_op
+        m_mesh_ptr // rhs's mesh 
       );
     }
     // Left multiply by a scalar: i.e. c*L (rval)
     auto left_scalar_mult_impl(double c) && {
       return LinOpExpr<double, Derived&&, scalar_left_mult_op>(
-        c,
-        static_cast<Derived&&>(*this), 
-        scalar_left_mult_op{}
+        c, // lhs scalar
+        static_cast<Derived&&>(*this), // rhs 
+        scalar_left_mult_op{}, // unary_op,
+        m_mesh_ptr // rhs's mesh
       );
     }
 
@@ -193,36 +202,40 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) & {
         return LinOpExpr<Derived&, LINOP_T, linop_bin_add_op>(
-        static_cast<Derived&>(*this), 
-        std::forward<LINOP_T>(rhs),
-        linop_bin_add_op{}
+        static_cast<Derived&>(*this),  // lhs
+        std::forward<LINOP_T>(rhs), // rhs 
+        linop_bin_add_op{}, // bin_op
+        m_mesh_ptr
       );
     }
     // L1 + L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) && {
         return LinOpExpr<Derived&&, LINOP_T, linop_bin_add_op>(
-        static_cast<Derived&&>(*this), 
-        std::forward<LINOP_T>(rhs),
-        linop_bin_add_op{}
+        static_cast<Derived&&>(*this), // lhs 
+        std::forward<LINOP_T>(rhs), // rhs
+        linop_bin_add_op{}, // bin_op
+        m_mesh_ptr // lhs's mesh
       );
     }
     // L1 - L2 (lval) ---------------------------------------------- 
     template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) & {
         return LinOpExpr<Derived&, LINOP_T, linop_bin_subtract_op>(
-        static_cast<Derived&>(*this), 
-        std::forward<LINOP_T>(rhs),
-        linop_bin_subtract_op{}
+        static_cast<Derived&>(*this), //lhs
+        std::forward<LINOP_T>(rhs), //rhs
+        linop_bin_subtract_op{}, //bin_op
+        m_mesh_ptr
       );
     }
     // L1 - L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) && {
         return LinOpExpr<Derived&&, LINOP_T, linop_bin_subtract_op>(
-        static_cast<Derived&&>(*this), 
-        std::forward<LINOP_T>(rhs),
-        linop_bin_subtract_op{}
+        static_cast<Derived&&>(*this), // lhs
+        std::forward<LINOP_T>(rhs), // rhs 
+        linop_bin_subtract_op{}, // bin_op
+        m_mesh_ptr // lhs's mesh
       );
     }
     // riend declare c * L (lval + rval) 
@@ -232,15 +245,17 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // unary operator-() (lval) ---------------------------------------------- 
     auto operator-() & {
         return LinOpExpr<Derived&, void, unary_negate_op>(
-        static_cast<Derived&>(*this), 
-        unary_negate_op{}
+        static_cast<Derived&>(*this), // rhs 
+        unary_negate_op{}, // unary op 
+        m_mesh_ptr // rhs mesh 
       );
     }
     // unary operator-() (rval) 
     auto operator-() && {
         return LinOpExpr<Derived&&, void, unary_negate_op>(
-        static_cast<Derived&&>(*this), 
-        unary_negate_op{}
+        static_cast<Derived&&>(*this), // rhs
+        unary_negate_op{}, // unary_op
+        m_mesh_ptr
       );
     }
   }; // end LinOpBase
