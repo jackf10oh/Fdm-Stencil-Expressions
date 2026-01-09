@@ -1,6 +1,7 @@
 // LinearOpBase.hpp
 //
-//
+// CTRP base for 1D differential operator L
+// where L works on function discretizations across x0 , ..., xN 
 //
 // JAF 12/7/2025
 
@@ -29,29 +30,32 @@ using LinOpMixIn = LINOP_PLUGIN<T>;
 #define CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Eigen::SparseMatrix<double, Eigen::ColMajor>
 #endif 
 
-// CTRP base for 1D differential operator -------------------------------
 template<typename Derived>
 class LinOpBase : public LinOpMixIn<LinOpBase<Derived>> 
 {
   // friend classes. LINOP_PLUGIN<T> can use private members of T 
   friend LinOpMixIn<LinOpBase>; 
 
-  // type defs 
+  // Type Defs -----------------------------------------------------
   public:
     typedef struct{} is_linop_tag; // to tell if a class derived from LinOpBase<> 
     using Derived_t = Derived; // so Plugin can access grand child class
 
   protected:
-    // member data
+    // Member Data -------------------------------------------------
     MeshPtr_t m_mesh_ptr; // all LinOps keep weak pointers to mesh they operate on
     // member data for matrix kept in derived classes
 
   public:
-    // Constructors ---------------------------------------------------------- 
+    // Constructors / destructors ============================================================ 
     LinOpBase()=default; 
     LinOpBase(MeshPtr_t m) : m_mesh_ptr(m){}; 
-    // member functions -------------------------------------------------------
-    // member functions. implemented by derived class -------------------------
+    LinOpBase(const LinOpBase& other)=default; 
+    ~LinOpBase()=default; 
+    // member functions ============================================================
+    // must be implemented by derived class =====================================
+    
+    // get the matrix form of linear operator ---------------------------------
     decltype(auto) GetMat()
     {
       return static_cast<Derived*>(this)->GetMat(); 
@@ -61,6 +65,8 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       return static_cast<const Derived*>(this)->GetMat(); 
     };
 
+    // defaults given. can be overriden =====================================
+    
     // multiply the underlying expression with Discretization's underlying vecXd
     Discretization1D apply(const Discretization1D& d) const 
     {
@@ -81,7 +87,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
     };
 
-    // fit operator to a mesh of rectangular domain.
+    // fit operator to a mesh of rectangular domain ----------------------------------------
     void set_mesh(MeshPtr_t m) 
     {
       // // ensure we aren't resetting the mesh again
@@ -93,13 +99,14 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       // // perform work on locked 
       static_cast<Derived*>(this)->set_mesh(m);
     };
-    // return reference to stored MeshPtr_t
+    
+    // return reference to stored MeshPtr_t ----------------------------------------------
     MeshPtr_t mesh() const 
     { 
       return this->m_mesh_ptr; 
     } 
 
-    // Composition of Linear Ops L1(L2( . )) ---------------------------------------------------
+    // Composition of Linear Ops L1(L2( . )) (lval) ---------------------------------------------------
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp) &
     {
@@ -107,7 +114,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       return compose_impl<DerivedInner,Derived_t&>(std::forward<DerivedInner>(InnerOp)); 
     }; // end .compose(other) & lvalue overload 
 
-    // // composition of linear of L1(L2( . ))
+    // // composition of linear of L1(L2( . )) (rval)
     template<typename DerivedInner>
     auto compose(DerivedInner&& InnerOp) && 
     {
@@ -116,8 +123,8 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }; // end .compose(other) && rvalue overload  
 
   private:
-    // not accessibles --------------------------------------------------------------------------------------------
-    // composition of linear Ops L1(L2( . ))
+    // not accessibles ==============================================================================
+    // composition of linear Ops L1(L2( . )) --------------------------------------------------------
     template<typename DerivedInner, typename Lhs_t = Derived_t> 
     auto compose_impl(DerivedInner&& InnerOp)
     {
@@ -144,7 +151,8 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         ); 
       } // end else 
     }; // end .compose_impl(other) 
-    // Left multiply by a scalar: i.e. c*L ------------------------------------------------------------------------- 
+    
+    // Left multiply by a scalar: i.e. c*L (lval)------------------------------------------------------------------------- 
     auto left_scalar_mult_impl(double c) & {
       return LinOpExpr<double, Derived&, scalar_left_mult_op>(
         c, // lhs scalar
@@ -153,6 +161,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         m_mesh_ptr // rhs's mesh 
       );
     }
+    
     // Left multiply by a scalar: i.e. c*L (rval)
     auto left_scalar_mult_impl(double c) && {
       return LinOpExpr<double, Derived&&, scalar_left_mult_op>(
@@ -164,7 +173,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }
 
   private:  
-    // Structs for binary operations f(L1,L2) to get matrix of expression
+    // Structs for binary operations f(L1,L2) to get matrix of expression =========================================
     // L1 + L2 
     struct linop_bin_add_op : public OperatorAddition_t
     {
@@ -208,6 +217,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         m_mesh_ptr
       );
     }
+    
     // L1 + L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) && {
@@ -218,6 +228,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         m_mesh_ptr // lhs's mesh
       );
     }
+    
     // L1 - L2 (lval) ---------------------------------------------- 
     template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) & {
@@ -228,6 +239,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         m_mesh_ptr
       );
     }
+    
     // L1 - L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) && {
@@ -238,7 +250,8 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         m_mesh_ptr // lhs's mesh
       );
     }
-    // riend declare c * L (lval + rval) 
+    
+    // riend declare c * L (lval + rval) -------------------------------------------
     template<typename LINOP_T, typename>
     friend auto operator*(double scalar, LINOP_T&& rhs); 
 
@@ -258,8 +271,9 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
         m_mesh_ptr
       );
     }
-  }; // end LinOpBase
+}; // end LinOpBase
 
+// operator*(c,L) outside of class .... 
 template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
 auto operator*(double c, LINOP_T&& rhs){
   return std::forward<LINOP_T>(rhs).left_scalar_mult_impl(c); 

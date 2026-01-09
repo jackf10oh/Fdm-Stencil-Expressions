@@ -1,6 +1,6 @@
 // LinOpTraits.hpp
 //
-//
+// List of TMP functions for LinOps 
 //
 // JAF 12/7/2025
 

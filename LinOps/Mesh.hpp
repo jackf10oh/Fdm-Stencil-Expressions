@@ -1,6 +1,8 @@
 // Mesh.hpp
 //
 // 1D Mesh classes for rectangular domains
+// representing Domain x0 , ..., xN 
+// that Function Discretizations / Linear Operators (integration/derivative) work on
 //
 // JAF 12/5/2025
 
@@ -19,10 +21,10 @@ using MeshPtr_t = std::weak_ptr<const Mesh1D>;
 class Mesh1D
 {
   protected:
-    // member data ------------------------------------------------------------------------
+    // Member Data ------------------------------------------------------------------------
     std::vector<double> m_vals;
   public:
-    // constructors ------------------------------------------------------------------------
+    // Constructors / Destructor =========================================================================
     // uniformly on interval [x1,x2] 
     Mesh1D(double x1=0.0, double x2=1.0, std::size_t n_steps=11)
       : m_vals(n_steps)
@@ -36,34 +38,34 @@ class Mesh1D
     // copy constructors
     Mesh1D(const Mesh1D& other): m_vals(other.m_vals){}; 
 
-    // destructors  ---------------------------------------------------------------------------
+    // destructors 
     virtual ~Mesh1D()=default; 
 
-    // member functions ------------------------------------------------------------------------
-    // size of mesh
+    // Member Functions ========================================================================
+    // size of mesh ---------------------------
     std::size_t size() const { return m_vals.size(); }
-    // indexing
+    
+    // indexing ----------------------------
     double& operator[](std::size_t i){ return m_vals[i]; }
     const double& operator[](std::size_t i) const { return m_vals[i]; } 
     double& at(std::size_t i){ return m_vals.at(i); }
     const double& at(std::size_t i) const { return m_vals.at(i); }
-    // forward iterators 
+    
+    // forward iterators --------------------------
     auto begin(){ return m_vals.begin(); }
     auto end(){ return m_vals.end(); }
-    auto begin() const { return m_vals.begin(); }
-    auto end() const { return m_vals.end(); }
-    // forward citerators
+    
+    // forward citerators ------------------------
     auto cbegin() const { return m_vals.cbegin(); }
     auto cend() const { return m_vals.cend(); }
-    // reverse iterators 
+    
+    // reverse iterators --------------------
     auto rbegin(){ return m_vals.rbegin(); }
     auto rend(){ return m_vals.rend(); }
-    auto rbegin() const { return m_vals.rbegin(); }
-    auto rend() const { return m_vals.rend(); }
-    // reverse citerators
+
+    // reverse citerators -------------------------------------------
     auto crbegin() const { return m_vals.crbegin(); }
     auto crend() const { return m_vals.crend(); }  
-    // set vals / size from std vector or iterators? 
 };
 
 // quick helper to wrap std::make_shared<Mesh1D> or other Mesh1D derived types  

@@ -11,10 +11,10 @@
 #include<tuple>
 #include<Eigen/Dense>
 
-#include "Utilities/PrintVec.hpp"
+// #include "Utilities/PrintVec.hpp"
 
 // #include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
-#include "LinOps/All.hpp" 
+// #include "LinOps/All.hpp" 
 // #include "LinOpsXD/All.hpp"
 
 
@@ -30,35 +30,19 @@ int main()
   // // iomanip 
   std::cout << std::setprecision(2); 
 
-  // mesh assembly. 2 dims 
-  std::size_t r = 4; 
-  auto my_mesh = make_mesh(0.0, r, r+1);
+  // // mesh assembly. 2 dims 
+  // std::size_t r = 4; 
+  // auto my_mesh = make_mesh(0.0, r, r+1);
 
-  Discretization1D disc(my_mesh); 
-  disc.set_init(1.0); 
+  // Discretization1D disc(my_mesh); 
+  // disc.set_init(1.0); 
 
-  RandLinOp L1(my_mesh); 
+  Eigen::VectorXd v(5); 
+  v << 1.0, 2.0, 3.0, 4.0, 5.0; 
 
-  cout << "v: " << disc.values().transpose() << endl; 
+  cout << "v: "<< v.transpose() << endl;  
 
-  Eigen::VectorXd w(r+1);
-  w <<  0.0, 1.0, 2.0, 3.0, 4.0; 
-
-  Discretization1D u = std::move(disc); 
-  cout << "v: " << disc.values().transpose() << endl; 
-  cout << "u: " << u.values().transpose() << endl; 
-
-
-  cout << "w: " << w.transpose() << endl; 
-
-  u = std::move(w); 
-  cout << "w: " << w.transpose() << endl; 
-  cout << "u: " << u.values().transpose() << endl; 
-
-  Discretization1D foo = std::move(w); 
-
-  Discretization1D bar = w; 
-
+  v.cbegin(); 
 
 };
 
