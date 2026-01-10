@@ -122,31 +122,30 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
       m_stencil.setFromTriplets(tripletList.begin(), tripletList.end()); 
     }
 
-    /* // Operators (overrides LinOpBase)
+    // "Operators" (overrides LinOpBase)
     // composition of linear of L1(L2( . ))
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp)
     {
       // derivative of a scalar multiple 
-      if constexpr(is_scalar_multiply_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
+      using cleaned_rhs_t = std::remove_cv_t<std::remove_reference_t<DerivedInner>>; 
+      if constexpr(is_scalar_multiply_expr<cleaned_rhs_t>::value){
         double c = InnerOp.Lhs(); 
         return c * compose(InnerOp.Rhs()); 
       }
-      if constexpr(is_add_expr<std::remove_cv_t<std::remove_reference_t<DerivedInner>>>::value){
+      else if constexpr(is_add_expr<cleaned_rhs_t>::value){
         return compose(InnerOp.Lhs()) + compose(InnerOp.Rhs()); 
       }
+      else if constexpr(is_subtraction_expr<cleaned_rhs_t>::value){
+        return compose(InnerOp.Lhs()) - compose(InnerOp.Rhs()); 
+      }
+      else if constexpr(is_negation_expr<cleaned_rhs_t>::value){
+        return - compose(InnerOp.Lhs()); 
+      }
       // if taking derivative of another derivative 
-      else if constexpr(std::is_same<std::remove_cv_t<std::remove_reference_t<DerivedInner>>,NthDerivOp>::value){
+      else if constexpr(std::is_same<cleaned_rhs_t,NthDerivOp>::value){
         // specialize composing to Derivatives to add order
-        auto result =  NthDerivOp(m_order+InnerOp.Order(), m_mesh_ptr); 
-        // if i have left a BC give it to result 
-        if(lbc_ptr) result.lbc_ptr=lbc_ptr; 
-        else result.lbc_ptr = InnerOp.lbc_ptr;
-        // if i have a right BC give it to result 
-        if(rbc_ptr) result.rbc_ptr=rbc_ptr; 
-        else result.rbc_ptr = InnerOp.rbc_ptr;  
-        // NthDerivOp result fully constructed
-        return result; 
+        return NthDerivOp(m_order+InnerOp.Order(), m_mesh_ptr); 
       }
       // all other cases use default LinOpBase implementation 
       else{
@@ -154,7 +153,6 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
         // return LinOpBase::compose(std::forward<DerivedInner>(InnerOp)); 
       }
     }; 
-    */ 
 
 }; 
 
