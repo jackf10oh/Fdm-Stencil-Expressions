@@ -20,6 +20,7 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
 {
   public:
     // Type Defs --------------------------------------
+    using Derived_t = LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>; 
     using LStorage_t = typename Storage_t<Lhs_t>::type;
     using RStorage_t = typename Storage_t<Rhs_t>::type;
   private:
@@ -42,8 +43,10 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     // Lhs/Rhs getters --------------------------------------------------
     // Lhs 
     LStorage_t& Lhs(){ return m_Lhs; }; 
+    const LStorage_t& Lhs() const { return m_Lhs; }; 
     // rhs 
     RStorage_t& Rhs(){ return m_Rhs; }; 
+    const RStorage_t& Rhs() const { return m_Rhs; }; 
    
     // Must be implemented ========================================================
     // returns combination bin_op(A,B) of 2 stored LinOps ----------------
@@ -71,6 +74,7 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase<LinOpExpr<Lhs_t, void
 {
   public:
     // Type Defs ------------------------------------------------------------------
+    using Derived_t = LinOpExpr<Lhs_t, void, UnaryOp_t>; 
     using LStorage_t = typename Storage_t<Lhs_t>::type;
     using RStorage_t = void; // not storing a second argument anymore 
   private:

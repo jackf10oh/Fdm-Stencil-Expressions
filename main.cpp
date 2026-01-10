@@ -8,80 +8,77 @@
 #include<iostream>
 #include<iomanip>
 #include<vector>
+#include<tuple>
 #include<Eigen/Dense>
-// #include<unsupported/Eigen/KroneckerProduct>
-#include "DiffOps/All.hpp"
-#include "LinOps/All.hpp"
 
-typedef double Real;
+#include "Utilities/PrintVec.hpp"
+
+#include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
+// #include "Diffops/FdmPlugin.hpp" 
+// #include "DiffOps/DiffOps/NthDerivOp.hpp"
+#include "LinOps/All.hpp" 
+// #include "LinOpsXD/All.hpp"
+
+#include "DiffOps/Solver1D.hpp"
+
 using std::cout, std::endl;
 
 int main()
 {
+  // iomanip 
   std::cout << std::setprecision(2); 
 
   // defining Domain Mesh --------------------------------------
   auto r = 10.0; 
   int n_gridpoints = 101;
-  MeshPtr_t my_mesh = make_mesh(0.0,r,n_gridpoints); 
-  
+  // mesh in space 
+  auto my_mesh = make_mesh(0.0,r,n_gridpoints); 
+  // mesh in time 
+  auto time_mesh = make_mesh(0.0, 1.0, 11); 
+
   // Initializing IC discretizations -------------------------------------------------------
   Discretization1D my_vals;
   // Bump centered at r/2. Zero at 0.0 and r. 
   auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);};  
   my_vals.set_init(my_mesh, func); 
-  // print to cout 
-  print_vec(my_vals.begin(),my_vals.end(), "t=t0");  
+  print_vec(my_vals, "t=t0");  
 
-  // defining boundary of T + meshing in time  ----------------------------------------------
-  double T = 5.0;
-  int NSteps = 300; 
-  double dt = T/NSteps;
-
-  // assembling scheme -----------------------------------------------------------
+  // building RHS expression -----------------------------------------------------
   using D = NthDerivOp;
-  auto fdm_scheme = IOp(my_mesh) + (dt) * (-0.2*D(2)); // + 0.5*D(1)
+  auto expr = 0.2 * D(2) - 0.5 * D(1); 
+  // expr.set_mesh(my_mesh); 
+  // cout << expr.GetMat() << endl; 
 
-  // setting boundary condition --------------------------------------------------------
-  auto left = std::make_shared<DirichletBC>(0.0);; 
-  auto right = std::make_shared<RobinBC>(1.0,1.0,0.0); 
-  fdm_scheme.lbc_ptr = left; 
-  fdm_scheme.rbc_ptr = right;
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  auto left_bc = make_dirichlet(0.0); 
+  auto right_bc = make_dirichlet(0.0); 
 
-  // set mesh -----------------------------------------------------------------------
-  fdm_scheme.set_mesh(my_mesh);
-
-
-  // execute -----------------------------------------
-  for(int n=0; n<NSteps; n++)
+  // Solving --------------------------------------------------------------------- 
+  SolverArgs1D args 
   {
-    // explcit euler 
-    // my_vals = fdm_scheme.explicit_step(my_vals); 
+    .domain_mesh_ptr   = my_mesh,  
+    .time_mesh_ptr     = time_mesh, 
+    .bcs_pair          = { left_bc, right_bc},  
+    .ICs               = my_vals, 
+    .time_dep_flag     = false 
+  };
 
-    //implicit euler
-    my_vals = fdm_scheme.solve_implicit(my_vals);
-  }
+  Solver1D s(expr); 
+  // auto result = s.Calculate( args );
+  auto result = s.CalculateImp( args );
+  print_vec(result, "solution"); 
 
-  // output -------------------------------------------------
-  print_vec(my_vals.begin(),my_vals.end(), "t=T");
-  
 };
 
-  // auto Diffusion = IOp() + (dt)*(-0.2*D(2)); 
-  // auto Convection = IOp() + (dt)*(-0.5*D(1)); 
+// explicit step 
+// U(t+1) - U(t) / dt = D * U(t) 
+// U(t+1) = U(t) + dt * D * U(t) 
 
-  // Diffusion.lbc_ptr = left; 
-  // Diffusion.rbc_ptr = right;
-  // Convection.lbc_ptr = left; 
-  // Convection.rbc_ptr = right;
- 
 
-  // Diffusion.set_mesh(my_mesh); 
-  // Convection.set_mesh(my_mesh); 
+// implicit step 
+// U(t+1) - U(t) / dt = D * U(t+1) 
+// U(t+1) - U(t) = dt * D * U(t+1) 
+// I * U(t+1) - dt * D * U(n+1) = U(t) 
+// ( I - dt * D) * U(t+1) = U(t) 
+// U(t+1) = (I - dt * D).inv(U(t)) 
 
-  //implicit euler
-  // my_vals = fdm_scheme.solve_implicit(my_vals);
-
-  // Operator splitting methods
-  // auto temp = Convection.apply(my_vals); 
-  // my_vals = Diffusion.solve_implicit(temp); 
