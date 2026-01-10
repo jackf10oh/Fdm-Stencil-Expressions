@@ -23,6 +23,9 @@
 #include "../LinOps/Operators/IOp.hpp"
 #include "../Utilities/FillStencil.hpp"
 
+namespace Fds{
+using namespace LinOps; 
+
 // Type Defs -------- 
 using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
@@ -202,5 +205,7 @@ class Solver1D{
       return solution; 
     }
 };
+
+} // end namespace Fds 
 
 #endif // Solver1D.hpp

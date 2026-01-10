@@ -13,6 +13,9 @@
 #include "../LinOps/Discretization.hpp"
 #include "../LinOps/Mesh.hpp"
 
+namespace Fds{
+using namespace LinOps; 
+
 // forward declaration -> type alias 
 class IBoundaryCond; 
 using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
@@ -49,5 +52,7 @@ class IBoundaryCond
     virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
     virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
 };
+
+} // end namespace Fds 
 
 #endif // BoundaryCond.hpp

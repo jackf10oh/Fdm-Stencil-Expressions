@@ -10,6 +10,9 @@
 
 #include "../BoundaryCond.hpp"
 
+namespace Fds{
+using namespace LinOps; 
+
 class DirichletBC : public IBoundaryCond
 {
   public:  
@@ -46,5 +49,7 @@ class DirichletBC : public IBoundaryCond
 
 template<typename... Args>
 auto make_dirichlet(Args... args){ return std::make_shared<DirichletBC>(args...); }; 
+
+} // end namespace Fds 
 
 #endif

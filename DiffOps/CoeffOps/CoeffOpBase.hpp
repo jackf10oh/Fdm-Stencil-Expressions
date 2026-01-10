@@ -12,18 +12,22 @@
 #include "../../LinOps/LinearOpBase.hpp"
 #include "../../Utilities/SparseDiagExpr.hpp"
 
-// TRAITS ===============================================
-// Given a type, see if it is derived from CoeffOpBase's crtp scheme ------------------------------------
-template<typename T, typename = void> 
-struct is_coeffop_crtp : std::false_type{}; 
-
-template<typename T>
-struct is_coeffop_crtp<T, std::void_t<typename std::remove_cv_t<std::remove_reference_t<T>>::is_coeff_flag>>: std::true_type{}; 
+namespace Fds{
+using namespace LinOps; 
 
 // BASE INTERFACE ===============================================
 template<typename Derived>
 class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
 {
+  private:
+    // Private Traits ---------------------------------------------
+    // Given a type, see if it is derived from CoeffOpBase's crtp scheme ------------------------------------
+    template<typename T, typename = void> 
+    struct is_coeffop_crtp : std::false_type{}; 
+
+    template<typename T>
+    struct is_coeffop_crtp<T, std::void_t<typename std::remove_cv_t<std::remove_reference_t<T>>::is_coeff_flag>>: std::true_type{}; 
+
   public:
     // flag type for any derived class to be picked up by is_coeffop_crtp<>::value trait 
     struct is_coeff_flag{}; 
@@ -86,5 +90,7 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     auto compose(RHS&& InnerOp)=delete; 
     auto left_scalar_mult_impl(double c)=delete; 
 };
+
+} // end namespace Fds 
 
 #endif // CoeffOpBase.hpp 

@@ -12,7 +12,8 @@
 #include "../../LinOps/LinOpTraits.hpp" // callable_traits<F> 
 #include "../../Utilities/SparseDiagExpr.hpp"
 
-// AutonomousCoeff
+namespace Fds{
+using namespace LinOps; 
 
 template<typename FUNC_STORAGE_T = std::function<double(double,double)>>
 class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
@@ -29,7 +30,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
     AutonomousCoeff(FUNC_STORAGE_T f_init, MeshPtr_t m = MeshPtr_t{})
       : m_function(f_init), m_diag_vals(0)
     {
-      static_assert(callable_traits<FUNC_STORAGE_T>::num_args==1, "In 1D, AutonomousCoeff must have form a(x)");  
+      static_assert(internal::callable_traits<FUNC_STORAGE_T>::num_args==1, "In 1D, AutonomousCoeff must have form a(x)");  
       set_mesh(m);
     }
     // copy constructor
@@ -67,5 +68,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
     // update state of AutonomousCoeff from a given t 
     void SetTime_impl(double t){};
 }; 
+
+} // end namespace Fds 
 
 #endif // AutonomousCoeff.hpp 

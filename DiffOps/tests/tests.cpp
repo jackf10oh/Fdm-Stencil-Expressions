@@ -15,6 +15,8 @@
 
 #include "../All.hpp"
 
+using namespace Fds; 
+
 // testing dirichlet boundary conditions ===========================================================================
 // can be constructed from args, default args
 TEST(DirichletBcSuite, DirichletConstructible)
@@ -89,13 +91,13 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
   auto check_lam = [&](const auto& coeff_op, auto func){
     MatrixStorage_t A = coeff_op.GetMat(); 
     for(std::size_t i=0; i<A.rows(); i++){
-      if constexpr(callable_traits<decltype(func)>::num_args==2){
+      if constexpr(internal::callable_traits<decltype(func)>::num_args==2){
         ASSERT_EQ(     
           A.coeff(i,i), 
           func(coeff_op.Time(), my_mesh->operator[](i))         
         ); 
       } 
-      if constexpr(callable_traits<decltype(func)>::num_args==1){
+      if constexpr(internal::callable_traits<decltype(func)>::num_args==1){
         ASSERT_EQ(    
           A.coeff(i,i), 
           func(coeff_op.Time())   

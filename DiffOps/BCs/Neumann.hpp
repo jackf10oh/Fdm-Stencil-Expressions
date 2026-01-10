@@ -11,6 +11,9 @@
 #include "../BoundaryCond.hpp"
 #include "../../Utilities/FornbergCalc.hpp"
 
+namespace Fds{
+using namespace LinOps; 
+
 class NeumannBC : public IBoundaryCond
 {
   public:  
@@ -93,5 +96,7 @@ class NeumannBC : public IBoundaryCond
 
 template<typename... Args>
 auto make_neumann(Args... args){ return std::make_shared<NeumannBC>(args...); }; 
+
+} // end namespace Fds 
 
 #endif

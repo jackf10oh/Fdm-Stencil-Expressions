@@ -21,5 +21,8 @@
 #include "CoeffOps/TimeDepCoeff.hpp"
 
 #include "../LinOps/All.hpp"
+namespace Fds{
+  using namespace LinOps; 
+} // end namespace Fds 
 
 #endif 

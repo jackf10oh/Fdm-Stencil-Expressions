@@ -11,6 +11,8 @@
 #include "../BoundaryCond.hpp"
 #include "../../Utilities/FornbergCalc.hpp"
 
+namespace Fds{
+using namespace LinOps; 
 
 class RobinBC : public IBoundaryCond
 {
@@ -99,5 +101,7 @@ class RobinBC : public IBoundaryCond
 
 template<typename... Args>
 auto make_robin(Args... args){ return std::make_shared<RobinBC>(args...); }; 
+
+} // end namespace Fds 
 
 #endif // Robin.hpp

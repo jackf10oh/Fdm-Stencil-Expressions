@@ -14,6 +14,9 @@
 #include "../FdmPlugin.hpp"
 #include "../../LinOps/LinearOpBase.hpp"
 
+namespace Fds{
+using namespace LinOps; 
+
 class NthDerivOp : public LinOpBase<NthDerivOp>
 {
   private:
@@ -129,17 +132,17 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     {
       // derivative of a scalar multiple 
       using cleaned_rhs_t = std::remove_cv_t<std::remove_reference_t<DerivedInner>>; 
-      if constexpr(is_scalar_multiply_expr<cleaned_rhs_t>::value){
+      if constexpr(internal::is_scalar_multiply_expr<cleaned_rhs_t>::value){
         double c = InnerOp.Lhs(); 
         return c * compose(InnerOp.Rhs()); 
       }
-      else if constexpr(is_add_expr<cleaned_rhs_t>::value){
+      else if constexpr(internal::is_add_expr<cleaned_rhs_t>::value){
         return compose(InnerOp.Lhs()) + compose(InnerOp.Rhs()); 
       }
-      else if constexpr(is_subtraction_expr<cleaned_rhs_t>::value){
+      else if constexpr(internal::is_subtraction_expr<cleaned_rhs_t>::value){
         return compose(InnerOp.Lhs()) - compose(InnerOp.Rhs()); 
       }
-      else if constexpr(is_negation_expr<cleaned_rhs_t>::value){
+      else if constexpr(internal::is_negation_expr<cleaned_rhs_t>::value){
         return - compose(InnerOp.Lhs()); 
       }
       // if taking derivative of another derivative 
@@ -155,5 +158,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     }; 
 
 }; 
+
+} // end namespace Fds 
 
 #endif // NthDerivOp.hpp
