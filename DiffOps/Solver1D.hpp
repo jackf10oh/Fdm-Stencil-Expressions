@@ -16,24 +16,23 @@
 #include<Eigen/SparseLU> 
 #include<Eigen/IterativeLinearSolvers> // BICGSTAB
 
+#include "FdmPlugin.hpp"
 #include "BoundaryCond.hpp"
 #include "../LinOps/Mesh.hpp"
 #include "../LinOps/Discretization.hpp"
+#include "../LinOps/Operators/IOp.hpp"
 #include "../Utilities/FillStencil.hpp"
-// #include "../LinOps/LinOpTraits.hpp"
 
 // Type Defs -------- 
 using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
-class IPdeInner{};
-
 struct SolverArgs1D{
   // Member Data -------------------
-  const std::shared_ptr<const Mesh1D> domain_mesh_ptr; 
-  const std::shared_ptr<const Mesh1D> time_mesh_ptr; 
-  std::pair<BcPtr_t, BcPtr_t> bcs_pair; // will need .SetTime(t) -> non const
-  const Discretization1D ICs;
-  const bool time_dep_flag=true; 
+  std::shared_ptr<const Mesh1D> domain_mesh_ptr; 
+  std::shared_ptr<const Mesh1D> time_mesh_ptr; 
+  std::pair<BcPtr_t, BcPtr_t> bcs_pair; 
+  Discretization1D ICs;
+  bool time_dep_flag=true; 
 }; 
 
 template<typename EXPR_T>
