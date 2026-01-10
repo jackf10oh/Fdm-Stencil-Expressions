@@ -22,6 +22,7 @@ class LinOpExpr;
 
 namespace internal{
 
+// Flags for binary + unary ops -----------------------------------------------------------------------
 // flag for composition. i.e. L1( L2( . ) )
 struct OperatorComposition_t{}; 
 
@@ -36,6 +37,39 @@ struct ScalarMultiply_t{};
 
 // flag type for negation. i.e. -L1
 struct OperatorNegation_t{}; 
+
+// Structs for binary operations f(L1,L2) to get matrix of expression -----------------------------------------------------------------------
+// L1 + L2 
+struct linop_bin_add_op : public internal::OperatorAddition_t
+{
+  template<typename L1, typename L2>
+  auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) + (B.GetMat()); }
+}; 
+// L1 - L2 
+struct linop_bin_subtract_op : public internal::OperatorSubtraction_t
+{
+  template<typename L1, typename L2>
+  auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
+}; 
+// c * L
+struct scalar_left_mult_op : public internal::ScalarMultiply_t
+{
+  template<typename L2>
+  auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
+}; 
+// -L 
+struct unary_negate_op : public internal::OperatorNegation_t
+{
+  template<typename L1>
+  auto operator()(const L1& B) const { return  -(B.GetMat()); }
+}; 
+// composition: L1( L2( . ) )
+struct linopXlinop_mult_op : public internal::OperatorComposition_t
+{
+  template<typename L1, typename L2>
+  auto operator()(const L1& A, const L2& B) const { return  (A.GetMat())*(B.GetMat()); }
+}; 
+
 
 // Traits =====================================================================
 // given a type, detect if it is derived from linopbase<> ---------------------

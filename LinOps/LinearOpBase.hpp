@@ -146,10 +146,10 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
       }
       else{
         using Rhs_t = std::remove_reference_t<DerivedInner>;
-        return LinOpExpr<Lhs_t, Rhs_t, linopXlinop_mult_op>(
+        return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
         std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
         std::forward<DerivedInner>(InnerOp), // rhs 
-        linopXlinop_mult_op{}, // bin_op
+        internal::linopXlinop_mult_op{}, // bin_op
         m_mesh_ptr // lhs's mesh
         ); 
       } // end else 
@@ -157,66 +157,33 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     
     // Left multiply by a scalar: i.e. c*L (lval)------------------------------------------------------------------------- 
     auto left_scalar_mult_impl(double c) & {
-      return LinOpExpr<double, Derived&, scalar_left_mult_op>(
+      return LinOpExpr<double, Derived&, internal::scalar_left_mult_op>(
         c, // lhs scalar
         static_cast<Derived&>(*this), // rhs 
-        scalar_left_mult_op{}, // unary_op
+        internal::scalar_left_mult_op{}, // unary_op
         m_mesh_ptr // rhs's mesh 
       );
     }
     
     // Left multiply by a scalar: i.e. c*L (rval)
     auto left_scalar_mult_impl(double c) && {
-      return LinOpExpr<double, Derived&&, scalar_left_mult_op>(
+      return LinOpExpr<double, Derived&&, internal::scalar_left_mult_op>(
         c, // lhs scalar
         static_cast<Derived&&>(*this), // rhs 
-        scalar_left_mult_op{}, // unary_op,
+        internal::scalar_left_mult_op{}, // unary_op,
         m_mesh_ptr // rhs's mesh
       );
     }
 
-  private:  
-    // Structs for binary operations f(L1,L2) to get matrix of expression =========================================
-    // L1 + L2 
-    struct linop_bin_add_op : public internal::OperatorAddition_t
-    {
-      template<typename L1, typename L2>
-      auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) + (B.GetMat()); }
-    }; 
-    // L1 - L2 
-    struct linop_bin_subtract_op : public internal::OperatorSubtraction_t
-    {
-      template<typename L1, typename L2>
-      auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
-    }; 
-    // c * L
-    struct scalar_left_mult_op : public internal::ScalarMultiply_t
-    {
-      template<typename L2>
-      auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
-    }; 
-    // -L 
-    struct unary_negate_op : public internal::OperatorNegation_t
-    {
-      template<typename L1>
-      auto operator()(const L1& B) const { return  -(B.GetMat()); }
-    }; 
-    // composition: L1( L2( . ) )
-    struct linopXlinop_mult_op : public internal::OperatorComposition_t
-    {
-      template<typename L1, typename L2>
-      auto operator()(const L1& A, const L2& B) const { return  (A.GetMat())*(B.GetMat()); }
-    }; 
-    
   public:
     // Operators ================================================================================ 
     // L1 + L2 (lval) ---------------------------------------------- 
     template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) & {
-        return LinOpExpr<Derived&, LINOP_T, linop_bin_add_op>(
+        return LinOpExpr<Derived&, LINOP_T, internal::linop_bin_add_op>(
         static_cast<Derived&>(*this),  // lhs
         std::forward<LINOP_T>(rhs), // rhs 
-        linop_bin_add_op{}, // bin_op
+        internal::linop_bin_add_op{}, // bin_op
         m_mesh_ptr
       );
     }
@@ -224,10 +191,10 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // L1 + L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) && {
-        return LinOpExpr<Derived&&, LINOP_T, linop_bin_add_op>(
+        return LinOpExpr<Derived&&, LINOP_T, internal::linop_bin_add_op>(
         static_cast<Derived&&>(*this), // lhs 
         std::forward<LINOP_T>(rhs), // rhs
-        linop_bin_add_op{}, // bin_op
+        internal::linop_bin_add_op{}, // bin_op
         m_mesh_ptr // lhs's mesh
       );
     }
@@ -235,10 +202,10 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // L1 - L2 (lval) ---------------------------------------------- 
     template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) & {
-        return LinOpExpr<Derived&, LINOP_T, linop_bin_subtract_op>(
+        return LinOpExpr<Derived&, LINOP_T, internal::linop_bin_subtract_op>(
         static_cast<Derived&>(*this), //lhs
         std::forward<LINOP_T>(rhs), //rhs
-        linop_bin_subtract_op{}, //bin_op
+        internal::linop_bin_subtract_op{}, //bin_op
         m_mesh_ptr
       );
     }
@@ -246,10 +213,10 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // L1 - L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) && {
-        return LinOpExpr<Derived&&, LINOP_T, linop_bin_subtract_op>(
+        return LinOpExpr<Derived&&, LINOP_T, internal::linop_bin_subtract_op>(
         static_cast<Derived&&>(*this), // lhs
         std::forward<LINOP_T>(rhs), // rhs 
-        linop_bin_subtract_op{}, // bin_op
+        internal::linop_bin_subtract_op{}, // bin_op
         m_mesh_ptr // lhs's mesh
       );
     }
@@ -260,17 +227,17 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 
     // unary operator-() (lval) ---------------------------------------------- 
     auto operator-() & {
-        return LinOpExpr<Derived&, void, unary_negate_op>(
+        return LinOpExpr<Derived&, void, internal::unary_negate_op>(
         static_cast<Derived&>(*this), // rhs 
-        unary_negate_op{}, // unary op 
+        internal::unary_negate_op{}, // unary op 
         m_mesh_ptr // rhs mesh 
       );
     }
     // unary operator-() (rval) 
     auto operator-() && {
-        return LinOpExpr<Derived&&, void, unary_negate_op>(
+        return LinOpExpr<Derived&&, void, internal::unary_negate_op>(
         static_cast<Derived&&>(*this), // rhs
-        unary_negate_op{}, // unary_op
+        internal::unary_negate_op{}, // unary_op
         m_mesh_ptr
       );
     }
