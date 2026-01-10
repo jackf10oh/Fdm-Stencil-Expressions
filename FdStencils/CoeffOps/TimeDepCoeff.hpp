@@ -8,7 +8,7 @@
 #define TIMEDEPCOEFF_H
 
 #include<Eigen/Core> 
-#include "CoeffOpBase.hpp"
+#include "../CoeffOpBase.hpp"
 #include "../../LinOps/LinOpTraits.hpp" // callable_traits<F> 
 #include "../../Utilities/SparseDiagExpr.hpp"
 
