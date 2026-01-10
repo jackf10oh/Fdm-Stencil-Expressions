@@ -15,6 +15,9 @@
 #include "Mesh.hpp"
 #include "Discretization.hpp" 
 #include "LinOpTraits.hpp"
+#include "LinOpExpr.hpp"
+
+namespace LinOps{
 
 #ifndef LINOP_PLUGIN
 // use an empty struct if no plugin given.
@@ -70,7 +73,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // multiply the underlying expression with Discretization's underlying vecXd
     Discretization1D apply(const Discretization1D& d) const 
     {
-      if constexpr (has_apply<LinOpMixIn<LinOpBase<Derived>>>::value)
+      if constexpr (internal::has_apply<LinOpMixIn<LinOpBase<Derived>>>::value)
       {
         return LinOpMixIn<LinOpBase<Derived>>::apply(d);
       }
@@ -110,7 +113,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp) &
     {
-      static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      static_assert(internal::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
       return compose_impl<DerivedInner,Derived_t&>(std::forward<DerivedInner>(InnerOp)); 
     }; // end .compose(other) & lvalue overload 
 
@@ -118,7 +121,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename DerivedInner>
     auto compose(DerivedInner&& InnerOp) && 
     {
-      static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      static_assert(internal::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
       return compose_impl<DerivedInner,Derived_t&&>(std::forward<DerivedInner>(InnerOp)); 
     }; // end .compose(other) && rvalue overload  
 
@@ -128,17 +131,17 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename DerivedInner, typename Lhs_t = Derived_t> 
     auto compose_impl(DerivedInner&& InnerOp)
     {
-      static_assert(is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-      if constexpr(is_add_expr<std::remove_reference_t<DerivedInner>>::value){
+      static_assert(internal::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      if constexpr(internal::is_add_expr<std::remove_reference_t<DerivedInner>>::value){
         return compose(InnerOp.Lhs())+compose(InnerOp.Rhs());
       }
-      else if constexpr(is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(internal::is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
         return compose(InnerOp.Lhs())-compose(InnerOp.Rhs());
       }
-      else if constexpr(is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(internal::is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
         return -compose(InnerOp.Lhs());
       }
-      else if constexpr(is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(internal::is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
         return InnerOp.Lhs() * compose(InnerOp.Rhs()); 
       }
       else{
@@ -175,31 +178,31 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
   private:  
     // Structs for binary operations f(L1,L2) to get matrix of expression =========================================
     // L1 + L2 
-    struct linop_bin_add_op : public OperatorAddition_t
+    struct linop_bin_add_op : public internal::OperatorAddition_t
     {
       template<typename L1, typename L2>
       auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) + (B.GetMat()); }
     }; 
     // L1 - L2 
-    struct linop_bin_subtract_op : public OperatorSubtraction_t
+    struct linop_bin_subtract_op : public internal::OperatorSubtraction_t
     {
       template<typename L1, typename L2>
       auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
     }; 
     // c * L
-    struct scalar_left_mult_op : public ScalarMultiply_t
+    struct scalar_left_mult_op : public internal::ScalarMultiply_t
     {
       template<typename L2>
       auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
     }; 
     // -L 
-    struct unary_negate_op : public OperatorNegation_t
+    struct unary_negate_op : public internal::OperatorNegation_t
     {
       template<typename L1>
       auto operator()(const L1& B) const { return  -(B.GetMat()); }
     }; 
     // composition: L1( L2( . ) )
-    struct linopXlinop_mult_op : public OperatorComposition_t
+    struct linopXlinop_mult_op : public internal::OperatorComposition_t
     {
       template<typename L1, typename L2>
       auto operator()(const L1& A, const L2& B) const { return  (A.GetMat())*(B.GetMat()); }
@@ -208,7 +211,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
   public:
     // Operators ================================================================================ 
     // L1 + L2 (lval) ---------------------------------------------- 
-    template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) & {
         return LinOpExpr<Derived&, LINOP_T, linop_bin_add_op>(
         static_cast<Derived&>(*this),  // lhs
@@ -219,7 +222,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }
     
     // L1 + L2 (rval)  
-    template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) && {
         return LinOpExpr<Derived&&, LINOP_T, linop_bin_add_op>(
         static_cast<Derived&&>(*this), // lhs 
@@ -230,7 +233,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }
     
     // L1 - L2 (lval) ---------------------------------------------- 
-    template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) & {
         return LinOpExpr<Derived&, LINOP_T, linop_bin_subtract_op>(
         static_cast<Derived&>(*this), //lhs
@@ -241,7 +244,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }
     
     // L1 - L2 (rval)  
-    template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) && {
         return LinOpExpr<Derived&&, LINOP_T, linop_bin_subtract_op>(
         static_cast<Derived&&>(*this), // lhs
@@ -274,9 +277,11 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 }; // end LinOpBase
 
 // operator*(c,L) outside of class .... 
-template<typename LINOP_T, typename = std::enable_if_t<is_linop_crtp<LINOP_T>::value>>
+template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
 auto operator*(double c, LINOP_T&& rhs){
   return std::forward<LINOP_T>(rhs).left_scalar_mult_impl(c); 
 }
+
+} // end namespace LinOps 
 
 #endif // LinearOpBase.hpp

@@ -13,6 +13,9 @@
 
 #include "../All.hpp"
 
+using namespace LinOps; 
+using namespace LinOps::internal; 
+
 // Mesh Suite ---------------------------------------- 
 TEST(MeshSuite1D, Mesh1DConstructible){
   // simply make a mesh and do nothing with it

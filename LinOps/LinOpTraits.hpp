@@ -9,6 +9,8 @@
 
 #include<type_traits>
 
+namespace LinOps{
+
 // Forward Declarations -------------------------------------------------
 class Discretization1D; 
 
@@ -17,6 +19,8 @@ class LinOpBase;
 
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
 class LinOpExpr; 
+
+namespace internal{
 
 // flag for composition. i.e. L1( L2( . ) )
 struct OperatorComposition_t{}; 
@@ -204,5 +208,8 @@ class callable_traits
   constexpr static std::size_t num_args = arg_traits<F>::num_args(); 
   using result_type = typename result_traits<F, num_args>::result_type; 
 }; // end callable_traits<F> 
+
+} // end namespace internal 
+} // end namespace LinOps 
 
 #endif // LinOpTraits.hpp

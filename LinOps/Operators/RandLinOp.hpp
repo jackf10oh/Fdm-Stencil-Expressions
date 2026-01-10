@@ -11,6 +11,8 @@
 
 #include "../LinearOpBase.hpp"
 
+namespace LinOps{
+
 class RandLinOp : public LinOpBase<RandLinOp>
 {
   private:
@@ -50,5 +52,7 @@ class RandLinOp : public LinOpBase<RandLinOp>
       m_Mat = Eigen::MatrixXd::Random(s1,s2);
     }
 };
+
+} // end namespace LinOps 
 
 #endif // RandLinOp.hpp

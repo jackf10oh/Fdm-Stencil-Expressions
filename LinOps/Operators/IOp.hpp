@@ -13,6 +13,8 @@
 
 #include "../LinearOpBase.hpp"
 
+namespace LinOps{
+
 #ifndef CUSTOM_IDENTITY_MATRIX_STORAGE
 using CustomStorage_t = Eigen::MatrixXd;
 #else
@@ -61,5 +63,7 @@ class IOp : public LinOpBase<IOp>
       m_Mat.setIdentity(); 
     };
 };
+
+} // end namespace LinOps 
 
 #endif

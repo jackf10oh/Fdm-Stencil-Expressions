@@ -14,6 +14,8 @@
 #include<memory> 
 #include<type_traits>
 
+namespace LinOps{
+
 // forward declaration -> aliases
 class Mesh1D; 
 using MeshPtr_t = std::weak_ptr<const Mesh1D>;
@@ -75,5 +77,7 @@ auto make_mesh(Args... args)
   static_assert(std::is_base_of<Mesh1D,Mesh_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
   return std::make_shared<const Mesh_t>(args...); 
 }
+
+} // end namespace LinOps 
 
 #endif // Mesh.hpp
