@@ -71,12 +71,12 @@ int main()
 };
 
 // explicit step 
-// U(t+1) - U(t) / dt = D * U(t) 
+// [U(t+1) - U(t)] / dt = D * U(t) 
 // U(t+1) = U(t) + dt * D * U(t) 
 
 
 // implicit step 
-// U(t+1) - U(t) / dt = D * U(t+1) 
+// [U(t+1) - U(t)] / dt = D * U(t+1) 
 // U(t+1) - U(t) = dt * D * U(t+1) 
 // I * U(t+1) - dt * D * U(n+1) = U(t) 
 // ( I - dt * D) * U(t+1) = U(t) 

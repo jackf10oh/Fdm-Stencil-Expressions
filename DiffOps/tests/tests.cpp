@@ -73,12 +73,12 @@ TEST(DirichletBcSuite, DirichletOverrides)
   ASSERT_EQ(A.coeff(s-1,s-1),1.0); 
 }
 
-// Testing TCoeff ===========================================================================  
+// Testing Coefficient operators ===========================================================================  
 // testing TimeDepCoeff class
 TEST(CoeffOpTestSuite, TimeDepCoeffTest)
 {
   // make a mesh 
-  MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
+  auto my_mesh = make_mesh(0.0,4.0,5); 
 
   // some lambdas to test out 
   auto lam01 = [](double t){return t*t;}; // t^2
@@ -132,7 +132,7 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
 TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 {
   // make a mesh 
-  MeshPtr_t my_mesh = make_mesh(0.0,4.0,5); 
+  auto my_mesh = make_mesh(0.0,4.0,5); 
 
   // some lambdas to test out 
   auto lam01 = [](double x){return x*x;}; // x^2
@@ -177,6 +177,8 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
   
 }
 
+
+
 // // NthDerivOp Tests =========================================================================== 
 
 // // // testing Fornberg algorithm 
@@ -191,8 +193,11 @@ TEST(CoeffOpTestSuite, AutonomousCoeffTest)
 TEST(NthDerivOpSuite, NthDerivOpConstructible)
 {
   NthDerivOp my_deriv; 
+  NthDerivOp order_2(2); 
+  NthDerivOp from_mesh(MeshPtr_t{}, 2); 
 }
 
+// testing set_mesh() completes with no errors. 
 TEST(NthDerivOpSuite, Method_set_mesh_completing)
 {
   auto my_mesh_01 = make_mesh(0.0,10.0,11);
@@ -246,6 +251,8 @@ TEST(NthDerivOpSuite, NthDerivOpCompose)
   // ASSERT_EQ(D(n).compose(mult_expr).Rhs().Order(), n+n);
 }
 
+
+
 // Plugin Tests ===========================================================================
 // make sure functionality of standard linops still works 
 TEST(FdmPluginSuite, StandardLinOps)
@@ -254,12 +261,12 @@ TEST(FdmPluginSuite, StandardLinOps)
   {
     // default construct uses nullptr
     IOp Identity01;
-    ASSERT_EQ(Identity01.mesh(),nullptr);
+    ASSERT_EQ(Identity01.mesh().lock(), nullptr);
 
     // construct with ptr arg
     auto my_mesh = make_mesh(); 
     IOp Identity02(my_mesh);
-    ASSERT_EQ(Identity02.mesh(), my_mesh);   
+    ASSERT_EQ(Identity02.mesh().lock(), my_mesh);   
 
     // Check that entries on diag are 1
     int s = my_mesh->size()-1; 
@@ -276,12 +283,12 @@ TEST(FdmPluginSuite, StandardLinOps)
   {
     // default construct uses nullptr
     RandLinOp Rand01;
-    ASSERT_EQ(Rand01.mesh(),nullptr);
+    ASSERT_FALSE(Rand01.mesh().lock());
 
     // construct with ptr arg
     auto my_mesh = make_mesh(); 
     RandLinOp Rand02(my_mesh);
-    ASSERT_EQ(Rand02.mesh(), my_mesh);   
+    ASSERT_EQ(Rand02.mesh().lock(), my_mesh);   
   };
 
   // /*TEST(LinearOperatorSuite, RandLinOpGetMat)*/ 
@@ -290,7 +297,7 @@ TEST(FdmPluginSuite, StandardLinOps)
     auto my_mesh = make_mesh(); 
     RandLinOp Rand01(my_mesh);
 
-    ASSERT_EQ(Rand01.mesh(), my_mesh);   
+    ASSERT_EQ(Rand01.mesh().lock(), my_mesh);   
 
     Eigen::MatrixXd result = Rand01.GetMat(); 
   };
@@ -352,40 +359,40 @@ TEST(FdmPluginSuite, StandardLinOps)
     // should pass the mesh to L1.set_mesh() and L2.set_mesh() 
     
     // construct without mesh ptrs 
-    IOp I_lval(nullptr);
-    auto Expr = I_lval + IOp(nullptr);
+    IOp I_lval;
+    auto Expr = I_lval + IOp();
 
     // make mesh and give it to expression
     auto my_mesh = make_mesh();
     Expr.set_mesh(my_mesh); 
 
     // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-    ASSERT_EQ(I_lval.mesh(), my_mesh);
-    ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
+    ASSERT_EQ(I_lval.mesh().lock(), my_mesh);
+    ASSERT_EQ(Expr.Rhs().mesh().lock(), my_mesh);
 
     // test again for scalar multiply  // construct without mesh ptrs 
-    IOp I2_lval(nullptr);
+    IOp I2_lval;
     double c=2.0; 
     auto Expr2 = 2.0* I2_lval;
-    auto Expr3 = c*IOp(nullptr);
+    auto Expr3 = c*IOp();
     Expr2.set_mesh(my_mesh); 
     Expr3.set_mesh(my_mesh); 
     // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-    ASSERT_EQ(I2_lval.mesh(), my_mesh);
-    ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
-    ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
+    ASSERT_EQ(I2_lval.mesh().lock(), my_mesh);
+    ASSERT_EQ(Expr2.Rhs().mesh().lock(), my_mesh);
+    ASSERT_EQ(Expr3.Rhs().mesh().lock(), my_mesh);
 
     // test again for composition 
-    RandLinOp I3_lval(nullptr); 
-    IOp I4_lval(nullptr);
+    RandLinOp I3_lval; 
+    IOp I4_lval;
     auto Expr4 = I3_lval.compose(I3_lval); 
-    auto Expr5 = I3_lval.compose(IOp(nullptr));
+    auto Expr5 = I3_lval.compose(IOp());
     Expr4.set_mesh(my_mesh); 
     Expr5.set_mesh(my_mesh); 
     // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-    ASSERT_EQ(I3_lval.mesh(), my_mesh);
-    ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
-    ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
+    ASSERT_EQ(I3_lval.mesh().lock(), my_mesh);
+    ASSERT_EQ(Expr4.Rhs().mesh().lock(), my_mesh);
+    ASSERT_EQ(Expr5.Rhs().mesh().lock(), my_mesh);
   }
 }
 
@@ -419,85 +426,107 @@ TEST(FdmPluginSuite, Method_SetTime_Hooking)
   // set time of expression, make sure it propagates to t 
   expr04.SetTime(5.0);
   ASSERT_EQ(5.0,I.Time()); 
+
+
+  // make sure LHS is given priority 
+  IOp I1, I2; 
+  I1.SetTime(1.0); 
+  I2.SetTime(2.0); 
+  auto expr = I1+I2; 
+
+  ASSERT_EQ(I1.Time(), expr.Time()); 
+  ASSERT_TRUE(I2.Time() != expr.Time()); 
+
+
 }; 
 
-// Taking 1 explicit step with a convection diffusion scheme 
-TEST(FdmPluginSuite, Method_explicit_step_returning)
+
+
+// Solver Tests =================================================================
+// Solving a convection diffusion scheme  explicitly 
+TEST(SolverSuite, Method_Calculate_Completing)
 {
-  auto r = 10.0; 
-  int n_gridpoints = 10001;
-
-  // uniform mesh from 0.0 to r with n_gridpoints
-  MeshPtr_t my_mesh = make_mesh(0.0,r,n_gridpoints);
-
-  Discretization1D my_vals;
-  
-  // Bump centered at r/2. Zero at 0.0 and r 
-  auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);}; 
-  
-  // fill my_vals with func(x)
-  my_vals.set_init(my_mesh, func); 
-  
-  // create an fdm_scheme for convection diffusion equation 
-  using D = NthDerivOp; 
-  double dt = 0.01;
-  // auto fdm_scheme = IOp() + (dt) * (-0.2*D(2) + 0.5*D(1));
-  auto fdm_scheme = D(2);
-
-  // set the boundary conditions to Dirichlet 0
-  auto left = std::make_shared<DirichletBC>(0.0);
-  auto right = std::make_shared<DirichletBC>(0.0); 
-  fdm_scheme.lbc_ptr = left; 
-  fdm_scheme.rbc_ptr = right; 
-
-  // // fill out the stencil matrix
-  fdm_scheme.set_mesh(my_mesh);
-
-  // apply the stencil. this uses lbc_ptr->SetSolL & ...->...R 
-  auto result = fdm_scheme.explicit_step(my_vals);
-
-  ASSERT_EQ(result.at(0),left->boundary_val); 
-  ASSERT_EQ(result.at(result.size()-1),right->boundary_val); 
-}
-
-// Taking 1 implicit step with a convection diffusion scheme 
-TEST(FdmPluginSuite, Method_solve_implicit_returning)
-{
+  // defining Domain + Time Mesh --------------------------------------
   auto r = 10.0; 
   int n_gridpoints = 101;
+  // mesh in space 
+  auto my_mesh = make_mesh(0.0,r,n_gridpoints); 
+  // mesh in time 
+  auto time_mesh = make_mesh(0.0, 1.0, 11); 
 
-  // uniform mesh from 0.0 to r with n_gridpoints
-  MeshPtr_t my_mesh = make_mesh(0.0,r,n_gridpoints);
-
+  // Initializing IC discretizations -------------------------------------------------------
   Discretization1D my_vals;
-  
-  // Bump centered at r/2. Zero at 0.0 and r 
-  auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);}; 
-  
-  // fill my_vals with func(x)
+  // Bump centered at r/2. Zero at 0.0 and r. 
+  auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);};  
   my_vals.set_init(my_mesh, func); 
-  
-  // create an fdm_scheme for convection diffusion equation 
-  using D = NthDerivOp; 
-  double dt = 0.01;
-  auto fdm_scheme = IOp() + (dt) * (-0.2*D(2) + 0.5*D(1));
 
-  // set the boundary conditions to Dirichlet 0
-  auto left = std::make_shared<DirichletBC>(0.0);
-  auto right = left; 
-  fdm_scheme.lbc_ptr = left; 
-  fdm_scheme.rbc_ptr = right; 
+  // building RHS expression -----------------------------------------------------
+  using D = NthDerivOp;
+  auto expr = 0.2 * D(2) - 0.5 * D(1); 
 
-  // // fill out the stencil matrix
-  fdm_scheme.set_mesh(my_mesh);
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  auto left_bc = make_dirichlet(0.0); 
+  auto right_bc = make_dirichlet(0.0); 
 
-  // // apply the stencil. this uses lbc_ptr->SetSolL & ...->...R 
-  auto result = fdm_scheme.solve_implicit(my_vals);
+  // Solving --------------------------------------------------------------------- 
+  SolverArgs1D args 
+  {
+    .domain_mesh_ptr   = my_mesh,  
+    .time_mesh_ptr     = time_mesh, 
+    .bcs_pair          = { left_bc, right_bc},  
+    .ICs               = my_vals, 
+    .time_dep_flag     = true  
+  };
 
-  ASSERT_EQ(result.at(0),left->boundary_val); 
-  ASSERT_EQ(result.at(result.size()-1),right->boundary_val); 
-}
+  Solver1D s(expr); 
+  // auto result = s.Calculate( args );
+  Discretization1D result01 = s.Calculate( args );
 
+  args.time_dep_flag = false; 
+  Discretization1D result02 = s.Calculate( args );
 
+};
 
+// Solving a convection diffusion scheme  explicitly 
+TEST(SolverSuite, Method_CalculateImp_Completing)
+{
+  // defining Domain + Time Mesh --------------------------------------
+  auto r = 10.0; 
+  int n_gridpoints = 101;
+  // mesh in space 
+  auto my_mesh = make_mesh(0.0,r,n_gridpoints); 
+  // mesh in time 
+  auto time_mesh = make_mesh(0.0, 1.0, 11); 
 
+  // Initializing IC discretizations -------------------------------------------------------
+  Discretization1D my_vals;
+  // Bump centered at r/2. Zero at 0.0 and r. 
+  auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);};  
+  my_vals.set_init(my_mesh, func); 
+
+  // building RHS expression -----------------------------------------------------
+  using D = NthDerivOp;
+  auto expr = 0.2 * D(2) - 0.5 * D(1); 
+
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  auto left_bc = make_dirichlet(0.0); 
+  auto right_bc = make_dirichlet(0.0); 
+
+  // Solving --------------------------------------------------------------------- 
+  SolverArgs1D args 
+  {
+    .domain_mesh_ptr   = my_mesh,  
+    .time_mesh_ptr     = time_mesh, 
+    .bcs_pair          = { left_bc, right_bc},  
+    .ICs               = my_vals, 
+    .time_dep_flag     = true  
+  };
+
+  Solver1D s(expr); 
+  // auto result = s.Calculate( args );
+  Discretization1D result01 = s.CalculateImp( args );
+
+  args.time_dep_flag = false; 
+  Discretization1D result02 = s.CalculateImp( args );
+
+};
