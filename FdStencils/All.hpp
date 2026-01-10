@@ -16,7 +16,7 @@
 #include "BCs/Robin.hpp"
 
 #include "DiffOps/NthDerivOp.hpp"
-#include "CoeffOps/CoeffOpBase.hpp"
+#include "CoeffOpBase.hpp"
 #include "CoeffOps/AutonomousCoeff.hpp"
 #include "CoeffOps/TimeDepCoeff.hpp"
 

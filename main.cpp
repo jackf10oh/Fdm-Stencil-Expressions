@@ -13,15 +13,7 @@
 
 #include "Utilities/PrintVec.hpp"
 
-#include "DiffOps/All.hpp" // must include first for plugin to take effect over linops?
-// #include "Diffops/FdmPlugin.hpp" 
-// #include "DiffOps/DiffOps/NthDerivOp.hpp"
-#include "LinOps/All.hpp" 
-// #include "LinOpsXD/All.hpp"
-
-#include "DiffOps/Solver1D.hpp"
-
-using std::cout, std::endl;
+#include "FDStencils/All.hpp"
 
 int main()
 {
@@ -32,29 +24,26 @@ int main()
   auto r = 10.0; 
   int n_gridpoints = 101;
   // mesh in space 
-  auto my_mesh = make_mesh(0.0,r,n_gridpoints); 
+  auto my_mesh = Fds::make_mesh(0.0,r,n_gridpoints); 
   // mesh in time 
-  auto time_mesh = make_mesh(0.0, 1.0, 11); 
+  auto time_mesh = Fds::make_mesh(0.0, 1.0, 101); 
 
   // Initializing IC discretizations -------------------------------------------------------
-  Discretization1D my_vals;
+  Fds::Discretization1D my_vals;
   // Bump centered at r/2. Zero at 0.0 and r. 
   auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);};  
   my_vals.set_init(my_mesh, func); 
-  print_vec(my_vals, "t=t0");  
 
   // building RHS expression -----------------------------------------------------
-  using D = NthDerivOp;
+  using D = Fds::NthDerivOp;
   auto expr = 0.2 * D(2) - 0.5 * D(1); 
-  // expr.set_mesh(my_mesh); 
-  // cout << expr.GetMat() << endl; 
 
   // Boundary Conditions + --------------------------------------------------------------------- 
-  auto left_bc = make_dirichlet(0.0); 
-  auto right_bc = make_dirichlet(0.0); 
+  auto left_bc = Fds::make_dirichlet(0.0); 
+  auto right_bc = Fds::make_dirichlet(0.0); 
 
   // Solving --------------------------------------------------------------------- 
-  SolverArgs1D args 
+  Fds::SolverArgs1D args 
   {
     .domain_mesh_ptr   = my_mesh,  
     .time_mesh_ptr     = time_mesh, 
@@ -63,11 +52,16 @@ int main()
     .time_dep_flag     = false 
   };
 
-  Solver1D s(expr); 
+  Fds::Solver1D s(expr); 
   // auto result = s.Calculate( args );
   auto result = s.CalculateImp( args );
+
+  // Printing ---------------------------------------------------------------- 
+  print_vec(my_vals, "ICs");  
   print_vec(result, "solution"); 
 
+  // expr.set_mesh(my_mesh); 
+  // std::cout << expr.GetMat() << std::endl; 
 };
 
 // explicit step 

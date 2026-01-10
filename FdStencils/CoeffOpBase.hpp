@@ -8,9 +8,8 @@
 #ifndef COEFFOP_H
 #define COEFFOP_H 
 
-#include "../FdmPlugin.hpp"
-#include "../../LinOps/LinearOpBase.hpp"
-#include "../../Utilities/SparseDiagExpr.hpp"
+#include "FdmPlugin.hpp"
+#include "../LinOps/LinearOpBase.hpp"
 
 namespace Fds{
 using namespace LinOps; 
