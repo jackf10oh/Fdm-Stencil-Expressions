@@ -10,7 +10,10 @@
 #include<vector>
 #include<Eigen/Core>
 #include "MeshXD.hpp"
-#include "LinOpTraitsXD.hpp"
+// #include "LinOpTraitsXD.hpp"
+#include "../LinOps/LinOpTraits.hpp" // callable_traits<T> 
+
+namespace LinOps{
 
 struct DiscretizationXD
 {
@@ -25,25 +28,28 @@ struct DiscretizationXD
     MeshXDPtr_t m_mesh_ptr; 
 
   public:
-    // constructors ==========================================================
+    // Constructors / Destructors  ==========================================================
     // Default ----------------------------------------------- 
     DiscretizationXD()=default; 
     // from size of m_vals. assume just 1 dimension ----------
     DiscretizationXD(std::size_t size_init): m_mesh_ptr(), m_vals(size_init), m_dims(1,size_init){}; 
     // from a MeshXDPtr --------------------------------------
     DiscretizationXD(const MeshXDPtr_t& mesh_init) 
-      : m_mesh_ptr(mesh_init), m_vals(mesh_init ? mesh_init->sizes_product() : 0), m_dims(mesh_init ? mesh_init->dims() : 0)
+      : m_mesh_ptr(mesh_init)
     {
-      if(m_mesh_ptr){
-        for(std::size_t i=0; i<m_mesh_ptr->dims(); ++i) m_dims[i] = m_mesh_ptr->dim_size(i); 
+      auto locked = m_mesh_ptr.lock(); 
+      if(locked){
+        m_dims.resize(locked->dims()); 
+        for(std::size_t i=0; i<locked->dims(); ++i) m_dims[i] = locked->dim_size(i); 
       }
     }
     // copy --------------------------------------
     DiscretizationXD(const DiscretizationXD& other)
       : m_mesh_ptr(other.m_mesh_ptr), m_vals(other.m_vals), m_dims(other.m_dims)
     {}; 
-    // destructors ==========================================================
+    // destructor 
     ~DiscretizationXD()=default; 
+
     // member functions ==========================================================
     // get underlying values 
     Eigen::VectorXd& values(){return m_vals; }
@@ -102,41 +108,73 @@ struct DiscretizationXD
     }
 
     // set discretization to same size as meshxd's sizes_product
-    void match_mesh(MeshXDPtr_t m) { 
-      if(!m) return; // do nothing on nullptr 
+    void resize(MeshXDPtr_t m) { 
       m_mesh_ptr=m; 
-      m_vals.resize(m->sizes_product()); 
-      m_dims.resize(m->dims()); 
-      for(std::size_t i=0; i<m->dims(); ++i) m_dims[i] = m->dim_size(i); 
+      auto locked = m_mesh_ptr.lock(); 
+      if(!locked){
+         m_vals.resize(0); 
+         return; 
+      }
+      else{
+        m_vals.resize(locked->sizes_product()); 
+        m_dims.resize(locked->dims()); 
+        for(std::size_t i=0; i<locked->dims(); ++i) m_dims[i] = locked->dim_size(i); 
+        return; 
+      }
     }
     // set discretization to a constant
     void set_init(double val){ m_vals.setConstant(val);}
     // set vector to match a mesh size and set it constant 
-    void match_mesh(MeshXDPtr_t m, double val){ match_mesh(m), m_vals.setConstant(val); } 
+    void set_init(MeshXDPtr_t m, double val){ resize(m), m_vals.setConstant(val); } 
 
     // set discretizations values according to callable type F
     template<
     typename F,
     typename = std::enable_if_t<
-      std::is_same_v<double, typename callable_traits<F>::result_type>
+      std::is_same_v<double, typename internal::callable_traits<F>::result_type>
       >
     >
     void set_init(MeshXDPtr_t m, F func)
     {
-      static constexpr std::size_t num_args = callable_traits<F>::num_args; 
-      // check there are enough dimensions to use callable type F
-      if(m->dims() < num_args) throw std::invalid_argument("# dims of MeshXDPtr_t must be >= # args in callable F"); 
-
+      // take ownership for duation of resizing + setting values;
+      auto locked = m.lock();  
       // stores mesh, resizes dims + vals 
-      match_mesh(m); 
+      resize(m); 
+      // set all values according to func(x0, x1, ... , xn) 
+      set_init<F>(func);
+    }
 
-      // some initializations before looping 
-      std::size_t flat_end = sizes_middle_product(0,num_args); // how many values are in flattened 1D array to fill before copy/paste  
+    // set discretization based on current stored mesh + callable F 
+    template<
+    typename F,
+    typename = std::enable_if_t<
+      std::is_same_v<double, typename internal::callable_traits<F>::result_type>
+      >
+    >
+    void set_init(F func)
+    {
+      auto locked = m_mesh_ptr.lock(); 
+      if(!locked){ m_vals.resize(0); return;} 
+
+      // check there are enough dimensions to use callable type F
+      static constexpr std::size_t num_args = internal::callable_traits<F>::num_args; 
+      if(dims() < num_args) throw std::invalid_argument("# dims of MeshXDPtr_t must be >= # args in callable F"); 
+
+      // some initializations before looping ------------------------------------------
+      // how many values are in flattened array 
+      std::size_t flat_end = sizes_middle_product(0,num_args);   
+      // # of times to copy/paste first [0,flat_end) vales 
       std::size_t n_layers = m_vals.size() / flat_end; 
-      std::array<double, num_args> args_arr; // stores n args for std::apply(func,args_arr) later 
-      std::array<std::size_t, num_args> cumulative_prod_arr; // holds sizes_middle_product(i) for i=0,...,num_args 
+      
+      // stores n args for std::apply(func,args_arr) later
+      std::array<double, num_args> args_arr;  
 
-      // calculate all of cumulative_prod_arr
+      // holds .begin() iterators for each Mesh1D inside m_mesh_vec 
+      std::array<std::vector<double>::const_iterator, num_args> domain_arr;
+      for(std::size_t dim=0; dim<num_args; dim++) domain_arr[dim] = locked->GetMesh(dim)->cbegin(); 
+
+      // holds sizes_middle_product(i) for i=0,...,num_args // calculate all of cumulative_prod_arr
+      std::array<std::size_t, num_args> cumulative_prod_arr; 
       for(std::size_t dim=0; dim<num_args; dim++) cumulative_prod_arr[dim] = sizes_middle_product(0, dim); 
 
       // iterate through flattened first layer 
@@ -146,7 +184,7 @@ struct DiscretizationXD
           std::size_t dim_i = flat_i;
           dim_i /= cumulative_prod_arr[dim]; 
           dim_i %= m_dims[dim]; 
-          args_arr[dim] = m_mesh_ptr->GetMesh(dim)->operator[](dim_i); 
+          args_arr[dim] = domain_arr[dim][dim_i]; 
         }
         // write func(arg_arr) to m_vals 
         m_vals[flat_i] = std::apply(func, args_arr);  
@@ -156,46 +194,30 @@ struct DiscretizationXD
       if(flat_end != m_vals.size()){
         // ither through views
         for(std::size_t ith_view=0; ith_view<flat_end; ith_view++){
-          // store the first layer's entry 
-          double first_val = m_vals[ith_view]; 
-          // create a view to paste into. 
-          Stride_t s(0,flat_end); 
-          StrideView_t view(m_vals.data()+ith_view, n_layers,s); 
           // fill in all layers with first layers value 
           for(std::size_t layer=1; layer<n_layers; layer++){
-            view[layer]=first_val; 
+            m_vals[ith_view + flat_end*layer] = m_vals[ith_view]; 
           } // end for loop through values of ith layer 
         } // end for loop through layers  
       } // end if 
       // void return type. m_vals now has output of func for each entry. 
     }
-
-    // set discretization based on current stored mesh + callable F 
-    template<
-    typename F,
-    typename = std::enable_if_t<
-      std::is_same_v<double, typename callable_traits<F>::result_type>
-      >
-    >
-    void set_init(F func)
-    {
-      if(m_mesh_ptr==nullptr) return; // do nothing if no stored mesh 
-      set_init(m_mesh_ptr, func); // otherwise assign func(x) to each point x in mesh 
-    }
+       
     // Operators ----------------------------------------------------
     DiscretizationXD& operator=(const DiscretizationXD& other) = default;
     DiscretizationXD& operator=(DiscretizationXD&& other){
       m_mesh_ptr = std::move(other.m_mesh_ptr); 
-      other.m_mesh_ptr = nullptr; 
+      other.m_mesh_ptr = MeshXDPtr_t{}; 
       m_vals = std::move(other.m_vals); 
       m_dims = std::move(other.m_dims);
       return *this;
     }; 
     DiscretizationXD& operator=(const Eigen::VectorXd& other){
       // only care about the size of the VectorXd if we already have a MeshXDPtr_t 
-      if(m_mesh_ptr != nullptr)
+      auto locked = m_mesh_ptr.lock(); 
+      if(locked)
       {
-        if(other.size() != m_mesh_ptr->sizes_product()) throw std::invalid_argument("size of VectorXd must be == to m_mesh_ptr->sizes_product()"); 
+        if(other.size() != locked->sizes_product()) throw std::invalid_argument("size of VectorXd must be == to m_mesh_ptr->sizes_product()"); 
       } 
       m_vals=other;
       // assume that m_dims is set to match m_mesh_ptr 
@@ -203,15 +225,19 @@ struct DiscretizationXD
     }
     DiscretizationXD& operator=(Eigen::VectorXd&& other){ 
       // only care about the size of the VectorXd if we already have a MeshXDPtr_t 
-      if(m_mesh_ptr != nullptr)
+      auto locked = m_mesh_ptr.lock(); 
+      if(locked)
       {
-        if(other.size() != m_mesh_ptr->sizes_product()) throw std::invalid_argument("size of VectorXd must be == to m_mesh_ptr->sizes_product()"); 
+        if(other.size() != locked->sizes_product()) throw std::invalid_argument("size of VectorXd must be == to m_mesh_ptr->sizes_product()"); 
       } 
 
       m_vals=std::move(other);       
       // assume that m_dims is set to match m_mesh_ptr 
       return *this;
     }
+
 }; 
 
-#endif // DiscretizationXd.hpp 
+} // end namespace LinOps 
+
+#endif // DiscretizationXd.hpp

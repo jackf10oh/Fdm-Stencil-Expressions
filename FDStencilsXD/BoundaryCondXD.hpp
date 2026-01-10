@@ -11,10 +11,13 @@
 #include<vector>
 #include<tuple>
 #include<unsupported/Eigen/KroneckerProduct>
-#include "../DiffOps/BoundaryCond.hpp"
+#include "../FDStencils/BoundaryCond.hpp"
 #include "../Utilities/FillStencil.hpp"
 #include "../Utilities/SparseDiagExpr.hpp"
 #include "MeshXD.hpp"
+
+namespace Fds{
+using namespace LinOps; 
 
 class BoundaryCondXD
 {
@@ -180,6 +183,8 @@ class BoundaryCondXD
     return result; 
   }; 
 };
+
+} // end namespace Fds 
 
 #endif // BOundaryCondXD.hpp 
 

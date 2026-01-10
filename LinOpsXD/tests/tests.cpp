@@ -13,6 +13,8 @@
 
 #include "../All.hpp"
 
+using namespace LinOps; 
+
 // Mesh Suite ==================================================== 
 // Test all constructors 
 TEST(MeshXDSuite, MeshXDConstructible){
@@ -30,19 +32,21 @@ TEST(MeshXDSuite, MeshXDConstructible){
   MeshXD from_ends_list_steps_list01({{0.0,4.0}}, {8}); 
   MeshXD from_ends_list_steps_list02({{0.0,4.0},{-2.0,2.0},{-4.0,0.0}}, {8,16,32}); 
 
-  // from std::vector<> of std::shared_ptr<Mesh1D>  
-  auto mesh_1d_01 = make_mesh(); 
-  auto mesh_1d_02 = make_mesh(-1.0,1.0,21); 
-  auto mesh_1d_03 = make_mesh(0,10.0, 101); 
-  MeshXD from_vec(std::vector<MeshPtr_t>({mesh_1d_01,mesh_1d_02,mesh_1d_03})); 
+  // from std::vector<> of std::shared_ptr<Mesh1D> 
+  // const!  
+  auto mesh_1d_01 = std::make_shared<const Mesh1D>(); 
+  auto mesh_1d_02 = std::make_shared<const Mesh1D>(-10.0,0.0,21); 
+  auto mesh_1d_03 = std::make_shared<const Mesh1D>(0.0,10.0,101);
+  auto v = std::vector<std::shared_ptr<const Mesh1D>>({mesh_1d_01,mesh_1d_02,mesh_1d_03}); 
+  MeshXD from_vec(v); 
 
   // copy 
   MeshXD from_copy(from_dims_only); 
 
-  // mesh throws errors if # of grid points < 2
+  // // mesh throws errors if # of grid points < 2
   EXPECT_ANY_THROW(MeshXD(0.0, 1.0, 1, 4));
 
-  // mesh throws errors if x1 > x2 
+  // // mesh throws errors if x1 > x2 
   EXPECT_ANY_THROW(MeshXD(1.0, -5.0, 6, 1));
 }; 
 
@@ -125,13 +129,13 @@ TEST(DiscretizationXDSuite, DiscretizationXDConstructible){
 // Testing all method that return sizes. should match original MeshXDPtr_t 
 TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
   // simply make a mesh and do nothing with it
-  auto my_mesh = make_meshes(); 
+  auto my_mesh = make_meshXD(); 
   // make a unit mesh, 5 steps per dim, X dimensions 
   std::size_t X = 4; 
-  auto from_dims_only = make_meshes(X); 
+  auto from_dims_only = make_meshXD(X); 
   // make a mesh with custom endpoints, # of steps, # of dimension 
   std::size_t n_steps=31; 
-  auto from_ends_steps_dims = make_meshes(-10.0,20.0,n_steps, 3); 
+  auto from_ends_steps_dims = make_meshXD(-10.0,20.0,n_steps, 3); 
 
   // from std::vec of [left,right] and n_steps 
   std::size_t X1{8}, X2{16}, X3{32}; 
@@ -139,8 +143,8 @@ TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
   bounds_vec_t bound_vals01{{0.0,4.0}}, bound_vals02{{0.0,4.0},{-2.0,2.0},{-4.0,0.0}}; 
   using nsteps_vec_t = std::vector<std::size_t>; 
   nsteps_vec_t nsteps01{X1}, nsteps02{X1, X2, X3}; 
-  auto from_ends_list_steps_list01 = make_meshes(bound_vals01, nsteps01); 
-  auto from_ends_list_steps_list02 = make_meshes(bound_vals02, nsteps02); 
+  auto from_ends_list_steps_list01 = make_meshXD(bound_vals01, nsteps01); 
+  auto from_ends_list_steps_list02 = make_meshXD(bound_vals02, nsteps02); 
 
   // size getters should give same result across DiscretizationXD / MeshXDPtr_t 
   // returns # of dimensions 
@@ -177,10 +181,10 @@ TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
   EXPECT_ANY_THROW(DiscretizationXD(from_ends_list_steps_list02).sizes_middle_product(4,0)); // start > end 
 }
 
-// Testing set_init() for constant ????????????????????
+// Testing set_init() for constant
 TEST(DiscretizationXDSuite, DiscretizationXDSetByConstant){
 
-  MeshXDPtr_t my_meshes = make_meshes(); 
+  MeshXDPtr_t my_meshes = make_meshXD(); 
   DiscretizationXD my_disc(my_meshes); 
   
   double val_init = 6.7; 
@@ -199,9 +203,9 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
   auto lam02 = [](double x, double y){return std::sqrt(x*x + y*y);}; 
   auto lam03 = [](double x, double y, double z){return std::sqrt(x*x + y*y + z*z);}; 
 
-  auto my_mesh_1d = make_meshes(0.0,10.0,21, 1); 
-  auto my_mesh_2d = make_meshes(0.0,10.0,21, 2); 
-  auto my_mesh_3d = make_meshes(0.0,10.0,21, 3); 
+  auto my_mesh_1d = make_meshXD(0.0,10.0,21, 1); 
+  auto my_mesh_2d = make_meshXD(0.0,10.0,21, 2); 
+  auto my_mesh_3d = make_meshXD(0.0,10.0,21, 3); 
 
   DiscretizationXD my_disc; 
 

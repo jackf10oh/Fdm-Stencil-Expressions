@@ -14,15 +14,17 @@
 #include<numeric>
 #include "../LinOps/Mesh.hpp"
 
+namespace LinOps{
+
 // forward declaration -> aliases
 class MeshXD; 
-using MeshXDPtr_t = std::shared_ptr<MeshXD>;
+using MeshXDPtr_t = std::weak_ptr<const MeshXD>;
 
 class MeshXD
 {
   private:
     // member data --------------------------------------------------------------------------
-    std::vector<MeshPtr_t> m_mesh_vec; // dynamic array of meshes. 
+    std::vector<std::shared_ptr<const Mesh1D>> m_mesh_vec; // dynamic array of meshes. 
   public:
     // constructors ------------------------------------------------------------------------- 
     // uniformly on [0,1] with 5 steps per dim, with n_dims
@@ -37,7 +39,7 @@ class MeshXD
     MeshXD(double left=0.0, double right=1.0, std::size_t n_steps=11,std::size_t n_dims=1)
       : m_mesh_vec(n_dims)
     {
-      MeshPtr_t original_ptr = std::make_shared<Mesh1D>(left,right,n_steps); 
+      auto original_ptr = std::make_shared<Mesh1D>(left,right,n_steps); 
       for(auto& ptr : m_mesh_vec) ptr=original_ptr;  
     }
     // uniformly on [ L(i), R(i) ] with NSteps(i) per dim with NSteps.size() dims 
@@ -54,16 +56,20 @@ class MeshXD
       }
     }
     // from std::vector<> of MeshPtr_t (Mesh1D's)
-    MeshXD(const std::vector<MeshPtr_t>& init_vec) : m_mesh_vec(init_vec){}; 
+    MeshXD(const std::vector<std::shared_ptr<const Mesh1D>>& init_vec) : m_mesh_vec(init_vec){}; 
     // Copy 
     MeshXD(const MeshXD& other)=default; 
     // destructors --------------------------------------------------------------------------
     virtual ~MeshXD()=default;
     // member functions ---------------------------------------------------------------------
     // full size of XD mesh. i.e. axis1.size() * ... * axisn.size()
-    std::size_t sizes_product(){return std::accumulate(m_mesh_vec.begin(), m_mesh_vec.end(),1ul, [](std::size_t rolling, const MeshPtr_t& axis){return rolling*(axis->size());});} 
+    std::size_t sizes_product() const {
+      std::size_t p = 1; 
+      for(const auto& m : m_mesh_vec) p *= m->size(); 
+      return p; 
+    } 
     // product of axes up to dim exclusively [first, dim)
-    std::size_t sizes_middle_product(std::size_t start, std::size_t end){
+    std::size_t sizes_middle_product(std::size_t start, std::size_t end) const {
       if(start > end) throw std::invalid_argument("start index must be <= end index for middle product"); 
       if(end > m_mesh_vec.size()) throw std::invalid_argument("end index must be <= # of dims in MeshXD"); 
       std::size_t prod = 1; 
@@ -71,21 +77,23 @@ class MeshXD
       return prod; 
     } 
     // size of a specific axis 
-    std::size_t dim_size(std::size_t i){return m_mesh_vec.at(i)->size();} 
+    std::size_t dim_size(std::size_t i) const {return m_mesh_vec.at(i)->size();} 
     // number of dimensions 
-    std::size_t dims(){return m_mesh_vec.size(); } 
+    std::size_t dims() const {return m_mesh_vec.size(); } 
     // get a specific mesh 
-    MeshPtr_t& GetMesh(std::size_t i){return m_mesh_vec[i];} 
-    const MeshPtr_t& GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
-    MeshPtr_t& GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
-    const MeshPtr_t& GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
+    // std::shared_ptr<Mesh1D>& GetMesh(std::size_t i){return m_mesh_vec[i];} 
+    const std::shared_ptr<const Mesh1D>& GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
+    // std::shared_ptr<Mesh1D>& GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
+    const std::shared_ptr<const Mesh1D>& GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
 };
 
 template<typename MeshXD_t=MeshXD, typename... Args> 
-auto make_meshes(Args... args)
+auto make_meshXD(Args... args)
 {
   static_assert(std::is_base_of<MeshXD,MeshXD_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
-  return std::make_shared<MeshXD_t>(args...); 
+  return std::make_shared<const MeshXD_t>(args...); 
 }
+
+} // end namespace LinOps 
 
 #endif // MeshXD.hpp
