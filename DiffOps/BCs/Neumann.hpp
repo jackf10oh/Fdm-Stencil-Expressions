@@ -24,7 +24,7 @@ class NeumannBC : public IBoundaryCond
     virtual ~NeumannBC()=default; 
     // Member Funcs ----------------------------------------------
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
     {
       Mat.topRows(1) *= 0;
       // first order derivative approximation 
@@ -32,7 +32,7 @@ class NeumannBC : public IBoundaryCond
       Mat.coeffRef(0,0)= -1.0/h;
       Mat.coeffRef(0,1)=  1.0/h;
     }; 
-    virtual void SetStencilR(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
     {
       Mat.bottomRows(1) *= 0; 
       // first order derivative approximation 
@@ -41,13 +41,13 @@ class NeumannBC : public IBoundaryCond
       Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=  1.0/h;
     };
 
-    virtual void SetImpSolL(StridedRef Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
     {Sol[0] = boundary_flux;};
-    virtual void SetImpSolR(StridedRef Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
     {Sol[Sol.size()-1] = boundary_flux;};
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(StridedRef Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
     { 
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
@@ -55,7 +55,7 @@ class NeumannBC : public IBoundaryCond
       FornCalc calc(3,1);
 
       // get forward finite difference weights for Sol[0], Sol[1], Sol[2] 
-      auto weights = calc.GetWeights((*mesh)[0], mesh->begin(), mesh->begin()+3, 1); 
+      auto weights = calc.GetWeights((*mesh)[0], mesh->cbegin(), mesh->cbegin()+3, 1); 
 
       // solve the equation Flux = W[0]*S[0] + W[1]*S[1] + W[2]*S[2] 
       // for the target value S[0] 
@@ -68,7 +68,7 @@ class NeumannBC : public IBoundaryCond
       Sol[0] = target;  
       // void return type
     };
-    virtual void SetSolR(StridedRef Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
     {
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
@@ -76,7 +76,7 @@ class NeumannBC : public IBoundaryCond
       FornCalc calc(3,1);
 
       // get forward finite difference weights for Sol[0], Sol[1], Sol[2] 
-      auto weights = calc.GetWeights((*mesh)[mesh->size()-1], mesh->end()-3, mesh->end(), 1); 
+      auto weights = calc.GetWeights((*mesh)[mesh->size()-1], mesh->cend()-3, mesh->cend(), 1); 
 
       // solve the equation Flux = W[0]*S[N-3] + W[1]*S[N-2] + W[2]*S[N-1] 
       // for the target value S[N-1] 

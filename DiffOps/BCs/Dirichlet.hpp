@@ -23,24 +23,24 @@ class DirichletBC : public IBoundaryCond
     virtual ~DirichletBC()=default; 
     // Member Funcs ----------------------------------------------
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
     {
       Mat.topRows(1) *= 0; Mat.coeffRef(0,0)=1;
     }; 
-    virtual void SetStencilR(Eigen::Ref<MatrixStorage_t> Mat, const MeshPtr_t& mesh) const override
+    virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
     {
       Mat.bottomRows(1) *= 0; Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=1;
     };
 
-    virtual void SetImpSolL(StridedRef Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
     {Sol[0] = boundary_val;};
-    virtual void SetImpSolR(StridedRef Sol, const MeshPtr_t& mesh) const override
+    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
     {Sol[Sol.size()-1] = boundary_val;};
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(StridedRef Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
     { Sol[0] = boundary_val;};
-    virtual void SetSolR(StridedRef Sol, const MeshPtr_t& mesh) const override 
+    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
     {Sol[Sol.size()-1] = boundary_val;};
 };
 
