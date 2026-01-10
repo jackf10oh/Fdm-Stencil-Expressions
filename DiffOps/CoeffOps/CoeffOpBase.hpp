@@ -30,8 +30,10 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     // use member types so FdmPlugin can access grandchildren 
     using Derived_t = Derived;
   public:
-    // Constructors ============================================================== 
-    CoeffOpBase(MeshPtr_t m=nullptr){ set_mesh(m); };
+    // Constructors / Destructor =================================================== 
+    CoeffOpBase()=default;
+    CoeffOpBase(const CoeffOpBase& other) = default; 
+    ~CoeffOpBase()=default; 
 
     // Member functions ========================================================
     // must be implemented by derived classes -----------------------------------

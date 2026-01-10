@@ -26,7 +26,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
     // constructors ==========================================================
     AutonomousCoeff()=delete; // no default constructor
     // from callable + mesh 
-    AutonomousCoeff(FUNC_STORAGE_T f_init, MeshPtr_t m=nullptr)
+    AutonomousCoeff(FUNC_STORAGE_T f_init, MeshPtr_t m = MeshPtr_t{})
       : m_function(f_init), m_diag_vals(0)
     {
       static_assert(callable_traits<FUNC_STORAGE_T>::num_args==1, "In 1D, AutonomousCoeff must have form a(x)");  
@@ -50,11 +50,18 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
     };
     // updated m_mesh_ptr, resize m_diag_vals
     void set_mesh(MeshPtr_t m){
-      if(m==nullptr || m==this->m_mesh_ptr) return; 
-      this->m_mesh_ptr = m;  
-      m_diag_vals.resize(m->size()); 
+      // ensure we aren't resetting the mesh again
+      if(!this->m_mesh_ptr.owner_before(m) && !m.owner_before(this->m_mesh_ptr)) return;
+      // do nothing on nullptr. or throw an error 
+      auto locked = m.lock(); 
+
+      if(!locked) return; 
+      this->m_mesh_ptr = m; // store the mesh 
+
+      m_diag_vals.resize(locked->size()); 
+      const auto data = locked->cbegin(); 
       for(std::size_t i=0; i<m_diag_vals.size(); i++){
-        m_diag_vals[i] = m_function(this->m_mesh_ptr->operator[](i)); 
+        m_diag_vals[i] = m_function(data[i]); 
       }
     }
     // update state of AutonomousCoeff from a given t 
