@@ -139,23 +139,6 @@ template<typename L, typename R, typename OP>
 struct is_subtraction_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorSubtraction_t, std::remove_reference_t<OP>>
 {};
 
-
-// given a base class and flags, attach flags to base class -------------------------
-template<typename Base, typename... Flags>
-struct make_flagged
-{
-  // the new class
-  struct result : public Base, public Flags...
-  {
-    // only need to take constructor from base
-    result(Base b) : Base(b){};
-  }; 
-  using type = result;
-};
-
-template<typename Base, typename... Flags>
-using make_flagged_t = typename make_flagged<Base, Flags...>::type; 
-
 // given a type T we may need to store it  ----------------------------------------
 // as a reference or a value in a binary expression
 template<typename T, typename = void>
@@ -173,6 +156,17 @@ struct Storage_t<LINOP_T, std::enable_if_t< is_linop_crtp<LINOP_T>::value > >
     std::remove_reference_t<LINOP_T> // else store rvalue by value
   >; 
 }; 
+
+// given type T, see if instances have .left_scalar_mult_impl(double) -------------------------
+template<typename T, typename = void>
+struct supports_left_scalar_mult : public std::false_type{}; 
+
+template<typename T>
+struct supports_left_scalar_mult<T, 
+  std::void_t<
+    decltype(std::declval<T>().left_scalar_mult_impl( std::declval<double>() ))
+  >
+> : public std::true_type{}; 
 
 // given a type T that will be a mixin, see if it has .apply() const method ----------------------------------
 template<typename T, typename = void>

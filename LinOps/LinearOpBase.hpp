@@ -224,7 +224,8 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // riend declare c * L (lval + rval) -------------------------------------------
     template<typename LINOP_T, typename>
     friend auto operator*(double scalar, LINOP_T&& rhs); 
-
+    template<typename T>
+    friend struct internal::supports_left_scalar_mult;
     // unary operator-() (lval) ---------------------------------------------- 
     auto operator-() & {
         return LinOpExpr<Derived&, void, internal::unary_negate_op>(
@@ -244,7 +245,11 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 }; // end LinOpBase
 
 // operator*(c,L) outside of class .... 
-template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
+template<typename LINOP_T, 
+  typename = std::enable_if_t<
+    internal::supports_left_scalar_mult<LINOP_T>::value
+  >
+>
 auto operator*(double c, LINOP_T&& rhs){
   return std::forward<LINOP_T>(rhs).left_scalar_mult_impl(c); 
 }

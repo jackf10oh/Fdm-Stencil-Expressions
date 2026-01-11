@@ -27,7 +27,11 @@ class IOp : public LinOpBase<IOp>
     CustomStorage_t m_Mat; 
   public: 
     // Constructors --------------------------
-    IOp(MeshPtr_t m = MeshPtr_t{})
+    IOp(std::size_t s_init=0)
+    {
+      resize(s_init); 
+    } 
+    IOp(MeshPtr_t m)
     {
       set_mesh(m);
     } 
