@@ -26,7 +26,7 @@ class BCListXD : public IBoundaryCondXD
   public:
     // member data. -------------------------------------------------
     // list of boundary conditions. 1 per Dimension 
-    std::vector<BCPair> bc_list; 
+    std::vector<BCPair> list; 
 
     // Constructors + Destructors =========================================
     BCListXD()=default; 
@@ -39,9 +39,9 @@ class BCListXD : public IBoundaryCondXD
     virtual void SetSol(DiscretizationXD& Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
-      if(bc_list.empty()) throw std::runtime_error("BCListXD: bc_list must be non empty!"); 
-      if(bc_list.size()!=mesh->dims()) throw std::invalid_argument("BCListXD:  length of boundary condition list must be == to # of dims of MeshXD");
-      if(bc_list.size()!=Sol.dims()) throw std::invalid_argument("BCListXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
+      if(list.empty()) throw std::runtime_error("BCListXD: list must be non empty!"); 
+      if(list.size()!=mesh->dims()) throw std::invalid_argument("BCListXD:  length of boundary condition list must be == to # of dims of MeshXD");
+      if(list.size()!=Sol.dims()) throw std::invalid_argument("BCListXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
       for(std::size_t i=0; i<Sol.dims(); i++){
         if(Sol.dim_size(i)!=mesh->dim_size(i)) throw std::invalid_argument("BCListXD: Dimension sizes of Discretization1D and MeshXD must match!");
       };
@@ -73,8 +73,8 @@ class BCListXD : public IBoundaryCondXD
         }
       }; // end set_dim_boundaries lambda 
 
-      // apply lambda + corresponding bc from bc_list to Sol 
-      for(std::size_t j=0; j<bc_list.size(); j++) set_dim_boundaries(j,bc_list[j]); 
+      // apply lambda + corresponding bc from list to Sol 
+      for(std::size_t j=0; j<list.size(); j++) set_dim_boundaries(j,list[j]); 
 
       // void return type       
     }
@@ -83,9 +83,9 @@ class BCListXD : public IBoundaryCondXD
     virtual void SetImpSol(DiscretizationXD& Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
-      if(bc_list.empty()) throw std::runtime_error("BoundaryCondXD: bc_list must be non empty!"); 
-      if(bc_list.size()!=mesh->dims()) throw std::invalid_argument("BoundaryCondXD:  length of boundary condition list must be == to # of dims of MeshXD");
-      if(bc_list.size()!=Sol.dims()) throw std::invalid_argument("BoundaryCondXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
+      if(list.empty()) throw std::runtime_error("BoundaryCondXD: list must be non empty!"); 
+      if(list.size()!=mesh->dims()) throw std::invalid_argument("BoundaryCondXD:  length of boundary condition list must be == to # of dims of MeshXD");
+      if(list.size()!=Sol.dims()) throw std::invalid_argument("BoundaryCondXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
       for(std::size_t i=0; i<Sol.dims(); i++){
         if(Sol.dim_size(i)!=mesh->dim_size(i)) throw std::invalid_argument("BoundaryCondXD: Dimension sizes of Discretization1D and MeshXD must match!"); 
       }; 
@@ -116,19 +116,19 @@ class BCListXD : public IBoundaryCondXD
           }
         }
       }; // end set_dim_boundaries lambda 
-      // apply lambda + corresponding bc from bc_list to Sol 
+      // apply lambda + corresponding bc from list to Sol 
       std::size_t dim_i=0; 
-      for(auto& bc : bc_list) set_dim_boundaries_imp(dim_i++, bc); 
+      for(auto& bc : list) set_dim_boundaries_imp(dim_i++, bc); 
       // void return type       
     }
 
-    // set a Matrixs' row according to bc_list. making it an implicit stencil  
+    // set a Matrixs' row according to list. making it an implicit stencil  
     virtual void SetStencilImp(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
-      if(bc_list.empty()) throw std::runtime_error("bc_list must be non empty!"); 
-      if(bc_list.size()!=mesh->dims()) throw std::invalid_argument("length of boundary condition list must be == to # of dims of MeshXD"); 
-      // if(bc_list.size() > 2) throw std::runtime_error("BoundaryCondXD doesn't support dims >= 3 yet!"); 
+      if(list.empty()) throw std::runtime_error("list must be non empty!"); 
+      if(list.size()!=mesh->dims()) throw std::invalid_argument("length of boundary condition list must be == to # of dims of MeshXD"); 
+      // if(list.size() > 2) throw std::runtime_error("BoundaryCondXD doesn't support dims >= 3 yet!"); 
 
       // initializations ---------------------------------------------
       // s1 = ith dims size, s2 = cumulative product of all dims < ith dim
@@ -141,8 +141,7 @@ class BCListXD : public IBoundaryCondXD
       
       // base case: 
       // set stencil's first/last rows maually with BcPtr_t  
-      // m_bc_list[0].first->SetStencilL(mask,mesh->GetMesh(0));   
-      bc_list[0].SetStencil(mask,mesh->GetMesh(0)); 
+      list[0].SetStencil(mask,mesh->GetMesh(0)); 
 
       // recursive case: 
       for(std::size_t ith_dim=1; ith_dim<mesh->dims(); ith_dim++)
@@ -152,7 +151,7 @@ class BCListXD : public IBoundaryCondXD
         MatrixStorage_t mask_temp = Eigen::KroneckerProductSparse(I(s1), mask); 
         
         // fill new empty rows with ith BcPtr_t pair
-        MatrixStorage_t sp_diag = make_SparseDiag( flat_stencil(bc_list[ith_dim],mesh->GetMesh(ith_dim)), s2 ); 
+        MatrixStorage_t sp_diag = make_SparseDiag( flat_stencil(list[ith_dim],mesh->GetMesh(ith_dim)), s2 ); 
         MatrixStorage_t fill_rows = Eigen::KroneckerProductSparse(sp_diag, I(s1));
         fill_stencil(mask_temp, fill_rows); 
 
@@ -171,7 +170,7 @@ class BCListXD : public IBoundaryCondXD
   
     // Set time of each stored BC in 1D 
     virtual void SetTime(double t){
-      for(auto& bc : bc_list) bc.SetTime(t); 
+      for(auto& bc : list) bc.SetTime(t); 
     }
   private:
     // Unreachable =========================================================== 
@@ -202,10 +201,10 @@ class BCListXD : public IBoundaryCondXD
 
 
 /* 
-// order of priority for m_bc_list to be applied 
+// order of priority for BCListXD.list to be applied 
 corners / edges of XDim space are given priority to whichever BC would cover it first 
 0 is unaffected by BCs. 
-1 is first BC in m_bc_list,
+1 is first BC in .list,
 2 is 2nd,
 ...  
 

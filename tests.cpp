@@ -41,9 +41,9 @@ int main()
   disc.set_init(my_meshes, lam03);  
 
   BCListXD bcs; 
-  bcs.bc_list.emplace_back(make_dirichlet(1.0), make_dirichlet(1.0)); 
-  bcs.bc_list.emplace_back(make_dirichlet(2.0), make_dirichlet(2.0)); 
-  bcs.bc_list.emplace_back(make_neumann(1.0), make_neumann(1.0)); 
+  bcs.list.emplace_back(make_dirichlet(1.0), make_dirichlet(1.0)); 
+  bcs.list.emplace_back(make_dirichlet(2.0), make_dirichlet(2.0)); 
+  bcs.list.emplace_back(make_neumann(1.0), make_neumann(1.0)); 
 
   bcs.SetSol(disc, my_meshes); 
 
