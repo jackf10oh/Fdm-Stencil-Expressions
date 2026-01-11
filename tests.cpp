@@ -34,25 +34,17 @@ int main()
   // iomanip 
   std::cout << std::setprecision(2); 
 
-  auto my_meshes = LinOps::make_meshXD(0.0,1.0, 3, 3);
-  // auto my_meshes = LinOps::make_mesh(0.0,3.0, 4);
+  // auto my_meshes = LinOps::make_meshXD(0.0,1.0, 3, 3);
+  auto my_meshes = LinOps::make_mesh(0.0,3.0, 10);
 
-  IOpXD I(my_meshes); 
-  DirectionalRandOp R(my_meshes, 0);  
+  Discretization1D disc; 
+  disc.set_init(my_meshes, lam01); 
 
-  // I.SetTime(1.0); 
-  // R.SetTime(2.0); 
-  
-  auto expr = I + R; 
+  cout << disc.values() << endl; 
+  auto row = disc.values().transpose(); 
+  cout << SparseDiag<decltype(row), std::modulus<std::size_t>>(row, 2) << endl; 
 
-  I.SetTime(1.0); 
-  R.SetTime(2.0); 
-
-  cout << I.Time() << endl; 
-  cout << R.Time() << endl; 
-  cout << expr.Time() << endl; 
-
-  cout << internal::is_exprxd_crtp<decltype(expr)>::value << endl; 
+  cout << "repeat entries" << endl << SparseDiag(row,2) << endl; 
 
   // cout << R.GetMat().toDense() << endl; 
 

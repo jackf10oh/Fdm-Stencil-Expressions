@@ -9,19 +9,20 @@
 #ifndef SPARSEDIAGEXPR_H
 #define SPARSEDIAGEXPR_H
 
+#include<cstdint>
 #include<Eigen/Core>
 #include<Eigen/Sparse>
 
 // forward declaration -----------------------------------------------
-template<class ArgType>
+template<class ArgType, typename DIV_TEMPLATE = std::divides<std::size_t>>
 class SparseDiag;
 // using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
 
 // type traits =======================================================================
 namespace Eigen {
 namespace internal {
-template<class ArgType>
-struct traits<SparseDiag<ArgType> > {
+template<class ArgType, typename DIVIDER_T>
+struct traits<SparseDiag<ArgType, DIVIDER_T> > {
   typedef Eigen::Sparse StorageKind;
   typedef Eigen::MatrixXpr XprKind;
   typedef typename ArgType::StorageIndex StorageIndex;
@@ -38,8 +39,8 @@ struct traits<SparseDiag<ArgType> > {
 }  // namespace Eigen
 
 // expression class ======================================================================= 
-template<class ArgType>
-class SparseDiag : public Eigen::SparseMatrixBase<SparseDiag<ArgType> > {
+template<class ArgType, typename DIVIDER_T>
+class SparseDiag : public Eigen::SparseMatrixBase< SparseDiag<ArgType,DIVIDER_T> > {
   public:
     // typedefs 
     typedef typename Eigen::internal::ref_selector<SparseDiag>::type Nested;
@@ -66,11 +67,11 @@ class SparseDiag : public Eigen::SparseMatrixBase<SparseDiag<ArgType> > {
 // the evaluator =======================================================================
 namespace Eigen {
 namespace internal {
-template<typename ArgType>
-struct evaluator<SparseDiag<ArgType> > : evaluator_base<SparseDiag<ArgType> > {
+template<typename ArgType, typename DIVIDER_T>
+struct evaluator< SparseDiag<ArgType,DIVIDER_T> > : evaluator_base< SparseDiag<ArgType,DIVIDER_T> > {
 
   // typedefs -------------------------------------------------- 
-  typedef SparseDiag<ArgType> XprType;
+  typedef SparseDiag<ArgType, DIVIDER_T> XprType;
   typedef typename nested_eval<ArgType, XprType::ColsAtCompileTime>::type ArgTypeNested;
   typedef typename remove_all<ArgTypeNested>::type ArgTypeNestedCleaned;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
@@ -79,43 +80,54 @@ struct evaluator<SparseDiag<ArgType> > : evaluator_base<SparseDiag<ArgType> > {
 
   // custom InnerIterator ----------------------------------
   struct InnerIterator{
-    // constructor 
+    // Constructor ================================================================
     InnerIterator(const evaluator& eval, Index row_idx)
-      : m_eval(eval), m_row(row_idx)
+      : m_eval(eval), m_row(row_idx), m_div_obj()
     {
       // iterator is only valid if row_idx is in bounds and underlying row has nonzero entry 
       m_valid = (m_row < m_eval.rows()) && \
-                      (m_eval.m_argImpl.coeff(0,m_row / m_eval.m_num_repeats) != Scalar(0.0)); 
+                      (value() != Scalar(0.0)); 
     };
-    // member data  
+    // Member Funcs ===================================================
     operator bool() const { return m_valid; }; 
     void operator++(){ m_valid=false; }; 
     Index row() const { return m_row; }; 
     Index col() const { return m_row; };
     Index index() const { return m_row; };
-    Scalar value() const { return m_eval.m_argImpl.coeff(0,m_row / m_eval.m_num_repeats); };
-    // member data
+    Scalar value() const { 
+      if constexpr(std::is_same<std::divides<std::size_t>, DIVIDER_T>::value){
+        return m_eval.m_argImpl.coeff(0, m_div_obj(m_row, m_eval.m_num_repeats)); 
+      }
+      if constexpr(std::is_same<std::modulus<std::size_t>, DIVIDER_T>::value){
+        return m_eval.m_argImpl.coeff(0, m_div_obj(m_row, m_eval.rows() / m_eval.m_num_repeats)); 
+      }
+      else{
+        return m_eval.m_argImpl.coeff(0, m_div_obj(m_row, m_eval.m_num_repeats)); 
+      }
+    };
+    // member data ------------------------------------------
     const evaluator& m_eval; 
     Index m_row;    
     bool m_valid; 
-  }; 
+    DIVIDER_T m_div_obj; 
+  }; // end InnerIterator 
 
-  // flags ------------------------------------------------------
-  enum { CoeffReadCost = evaluator<ArgTypeNestedCleaned>::CoeffReadCost, Flags = Eigen::RowMajor };
- 
-  // constructors ------------------------------------------------------ 
+  // Constructors ======================================================== 
   evaluator(const XprType& xpr) 
     : m_argImpl(xpr.m_arg), m_rows(xpr.rows()), m_cols(xpr.cols()), m_num_repeats(xpr.m_num_repeats)
   {};
  
-  // member functions ------------------------------------------------------
+  // Member Functions ========================================================
   Index rows() const {return m_rows; }; 
   Index cols() const {return m_cols; }; 
   Index outerSize() const { return m_rows; }
   Index innerSize() const { return m_rows; }
   Index nonZerosEstimate() const { return m_rows; }
+
+  // Flags ------------------------------------------------------
+  enum { CoeffReadCost = evaluator<ArgTypeNestedCleaned>::CoeffReadCost, Flags = Eigen::RowMajor };
  
-  // member data ------------------------------------------------------
+  // Member Data ------------------------------------------------------
   evaluator<ArgTypeNestedCleaned> m_argImpl;
   Index m_rows; 
   Index m_cols; 
@@ -125,8 +137,8 @@ struct evaluator<SparseDiag<ArgType> > : evaluator_base<SparseDiag<ArgType> > {
 }  // namespace Eigen
 
 // the entry point ======================================================================= 
-template<class ArgType>
-SparseDiag<ArgType> make_SparseDiag(const Eigen::SparseMatrixBase<ArgType>& arg, std::size_t num_repeats=1) {
+template<class ArgType, typename DIVIDER_T=std::divides<std::size_t>>
+SparseDiag<ArgType,DIVIDER_T> make_SparseDiag(const Eigen::SparseMatrixBase<ArgType>& arg, std::size_t num_repeats=1) {
   return SparseDiag<ArgType>(arg.derived(), num_repeats);
 }
 
