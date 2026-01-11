@@ -10,12 +10,12 @@
 #include "MeshXD.hpp" 
 #include "DiscretizationXD.hpp" 
 
-// #include "LinOpTraitsXD.hpp"
-// #include "LinearOpBaseXD.hpp"
-// #include "LinOpExprXD.hpp"
+#include "LinOpTraitsXD.hpp"
+#include "LinearOpBaseXD.hpp"
+#include "LinOpExprXD.hpp"
 
-// #include "OperatorsXD/DirectionalRandOp.hpp"
-// #include "OperatorsXD/IOpXD.hpp"
+#include "OperatorsXD/DirectionalRandOp.hpp"
+#include "OperatorsXD/IOpXD.hpp"
 
 // #include "BoundaryCondXD.hpp" 
 

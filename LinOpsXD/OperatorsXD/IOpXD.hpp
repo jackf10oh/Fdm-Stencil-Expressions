@@ -11,6 +11,8 @@
 #include<Eigen/Sparse>
 #include "../LinearOpBaseXD.hpp" 
 
+namespace LinOps{
+
 class IOpXD: public LinOpBaseXD<IOpXD> 
 {
   private:
@@ -19,25 +21,29 @@ class IOpXD: public LinOpBaseXD<IOpXD>
     // member data 
     Matrix_t m_mat; 
   public:
-    // constructors
-    IOpXD(MeshXDPtr_t m=nullptr){set_mesh(m);}; 
+    // Constructors + Destructors ==========================
+    IOpXD(MeshXDPtr_t m=MeshXDPtr_t{}){set_mesh(m);}; 
 
-
-    // destructors 
+    // destructor 
     ~IOpXD()=default; 
-    // member functions 
+    // Fember Functions ==============================================
     auto& GetMat(){ return m_mat; }; 
     const auto& GetMat() const { return m_mat; }; 
     DiscretizationXD apply(const DiscretizationXD& d){ return d; }; 
     void set_mesh(MeshXDPtr_t m){
-      // do nothing on nullptr or same ptr 
-      if(m==nullptr || m==m_mesh_ptr) return; 
-      m_mesh_ptr = m; 
-
-      std::size_t s = m_mesh_ptr->sizes_product(); 
+      // ensure we aren't resetting the mesh again
+      if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+      // do nothing on nullptr. or throw an error 
+      auto locked = m.lock(); 
+      if(!locked) return; 
+      m_mesh_ptr = m; // store the mesh  
+      // perform work on locked 
+      std::size_t s = locked->sizes_product(); 
       m_mat.resize(s,s); 
       m_mat.setIdentity(); 
     } // end set_mesh()  
 }; 
+
+} // end namespace LinOps 
 
 #endif // IOpXD.hpp 

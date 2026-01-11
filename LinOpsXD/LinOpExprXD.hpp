@@ -14,34 +14,44 @@
 #include "LinearOpBaseXD.hpp"
 #include "LinOpTraitsXD.hpp"
 
-// Expression of L,R, & BinOp --------------------------------------------
+namespace LinOps{
+
+// Expression of L,R, BinOp, + Mesh =====================================================
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
 class LinOpExprXD : public LinOpBaseXD<LinOpExprXD<Lhs_t, Rhs_t, BinaryOp_t>>
 {
   public:
-    // types and constexpr flags
-    using LStorage_t = typename Storage_t<Lhs_t>::type;
-    using RStorage_t = typename Storage_t<Rhs_t>::type;
+    // Type Defs --------------------------------------
+    using Derived_t = LinOpExprXD<Lhs_t, Rhs_t, BinaryOp_t>; 
+    using LStorage_t = typename internal::Storage_t<Lhs_t>::type;
+    using RStorage_t = typename internal::Storage_t<Rhs_t>::type;
   private:
-    // member data
+    // Member Data ---------------------------------------------
     LStorage_t m_Lhs;
     RStorage_t m_Rhs;
     BinaryOp_t m_BinOp; 
     
   public:
-    // Constructors --------------------------------------
-    LinOpExprXD(LStorage_t A, RStorage_t B, BinaryOp_t bin_op)
-      : m_Lhs(A), m_Rhs(B), m_BinOp(bin_op)
+    // Constructors / Destructors =============================================================
+    // from Lhs, Rhs, BinOp, + Mesh 
+    LinOpExprXD(LStorage_t A, RStorage_t B, BinaryOp_t bin_op, MeshXDPtr_t m)
+      : m_Lhs(A), m_Rhs(B), m_BinOp(bin_op), LinOpBaseXD<LinOpExprXD<Lhs_t, Rhs_t, BinaryOp_t>>(m) 
     {};
-
-    // destructors ------------------------------------------
+    // destructor
     ~LinOpExprXD()=default;
 
-    // member funcs ------------------------------------------
-    // getters
+    // Member Funcs ======================================================================
+    // Expr Only ==============================================================
+    // Lhs/Rhs getters --------------------------------------------------
+    // Lhs 
     LStorage_t& Lhs(){ return m_Lhs; }; 
+    const LStorage_t& Lhs() const { return m_Lhs; }; 
+    // rhs 
     RStorage_t& Rhs(){ return m_Rhs; }; 
-    // returns combination bin_op(A,B) of 2 stored LinOps----------------
+    const RStorage_t& Rhs() const { return m_Rhs; }; 
+   
+    // Must be implemented ========================================================
+    // returns combination bin_op(A,B) of 2 stored LinOps ----------------
     decltype(auto) GetMat()
     {
       return m_BinOp(m_Lhs, m_Rhs); 
@@ -50,135 +60,72 @@ class LinOpExprXD : public LinOpBaseXD<LinOpExprXD<Lhs_t, Rhs_t, BinaryOp_t>>
     {
       return m_BinOp(m_Lhs, m_Rhs); 
     };
-    // apply bin_op(A,B) * x --------------------
-    DiscretizationXD apply(const DiscretizationXD& d_arr) const 
-    {
-      // we might constexpr branch this to L.apply(R.apply(d.values())) later ...
-      // potentially introduces bug if 
-      // R(.) maps boundaries -> L(.) uses boundaries 
-      DiscretizationXD result(d_arr.mesh()); 
-      result = GetMat()*d_arr.values(); 
-      return result; 
-    };
+
     // sets both stored diffops to work on a mesh ------------------
     void set_mesh(MeshXDPtr_t m)
     {
-      if constexpr(is_linopxd_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
-      if constexpr(is_linopxd_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
+      this->m_mesh_ptr=m; 
+      if constexpr(internal::is_linopxd_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
+      if constexpr(internal::is_linopxd_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
     }; 
-    const MeshXDPtr_t& mesh() const
+};
+
+// Specialization for Unary operators --------------------------------------------
+template<typename Lhs_t, typename UnaryOp_t>
+class LinOpExprXD<Lhs_t, void, UnaryOp_t> : public LinOpBaseXD<LinOpExprXD<Lhs_t, void, UnaryOp_t>>
+{
+  public:
+    // Type Defs ------------------------------------------------------------------
+    using Derived_t = LinOpExprXD<Lhs_t, void, UnaryOp_t>; 
+    using LStorage_t = typename internal::Storage_t<Lhs_t>::type;
+    using RStorage_t = void; // not storing a second argument anymore 
+  private:
+    // Member Data -------------------------------------------------------------
+    LStorage_t m_Lhs;
+    // RStorage_t m_Rhs; // not storing a second argument anymore 
+    UnaryOp_t m_UnarOp; 
+    
+  public:
+    // Constructors / Destructors ===============================================
+    // from lhs, unar_op, + mesh
+    LinOpExprXD(LStorage_t A, UnaryOp_t unar_op, MeshXDPtr_t m)
+      : m_Lhs(A), m_UnarOp(unar_op), LinOpBaseXD<LinOpExprXD<Lhs_t, void, UnaryOp_t>>(m)
+    {};
+
+    // destructors
+    ~LinOpExprXD()=default;
+
+    // Member Funcs ======================================================================
+    // Expr Only ==============================================================
+    // Lhs/Rhs getters --------------------------------------------------
+    // Lhs 
+    LStorage_t& Lhs(){ return m_Lhs; };     
+    // since nothing is stored. but still declared so that decltype(Rhs()) is still usable
+    void Rhs(){};    
+    
+    // Must be implemented ========================================================
+    // returns Op( A ) of 1 stored LinOps --------------------------------------
+    decltype(auto) GetMat()
     {
-      // if LHS is from linop base. given priority over RHS 
-      if constexpr(is_linopxd_crtp<LStorage_t>::value)
-      {
-        // and it has a mesh 
-        const MeshXDPtr_t& result = m_Lhs.mesh(); 
-        if(result) return result; 
-      }
-      // if RHS is from linop base. 
-      if constexpr(is_linopxd_crtp<RStorage_t>::value)
-      {
-        // and it has a mesh 
-        const MeshXDPtr_t& result = m_Rhs.mesh(); 
-        if(result) return result; 
-      }
-      // any other other cases give the stored mesh in the expression. presumably a nullptr. 
-      return this->m_mesh_ptr; 
-    }
-}; // end LinOpXDExpr class
+      // return m_BinOp(m_Lhs, m_Rhs); 
+      return m_UnarOp(m_Lhs); 
+    };
+    decltype(auto) GetMat() const
+    {
+      // return m_BinOp(m_Lhs, m_Rhs); 
+      return m_UnarOp(m_Lhs); 
+    };
 
-// operator to add linops L1+L2 
-template<
-  typename DerivedL, 
-  typename DerivedR,
-  std::enable_if_t<
-    std::conjunction_v<
-      is_linopxd_crtp<DerivedL>,
-      is_linopxd_crtp<DerivedR>
-    >,
-    int 
-  > = 0
->
-auto operator+(DerivedL&& Lhs, DerivedR&& Rhs)
-{
-  using LStorage_t = typename Storage_t<DerivedL>::type;
-  using RStorage_t = typename Storage_t<DerivedR>::type;
-
-  auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()+B.GetMat(); };
-  using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
-
-  return LinOpExprXD<DerivedL, DerivedR, Op_t>(
-    std::forward<DerivedL>(Lhs),
-    std::forward<DerivedR>(Rhs),
-    static_cast<Op_t>(bin_op)
-  );
+    // sets both stored diffops to work on a mesh ------------------------------------
+    void set_mesh(MeshXDPtr_t m)
+    {
+      // store mesh into expression 
+      this->m_mesh_ptr=m; 
+      // if Lhs is linop, call its set_mesh() as well
+      if constexpr(internal::is_linopxd_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
+    }; 
 };
 
-// operator to difference linops L1-L2 
-template<
-  typename DerivedL, 
-  typename DerivedR,
-  std::enable_if_t<
-    std::conjunction_v<
-      is_linopxd_crtp<DerivedL>,
-      is_linopxd_crtp<DerivedR>
-    >,
-    int 
-  > = 0
->
-auto operator-(DerivedL&& Lhs, DerivedR&& Rhs)
-{
-  using LStorage_t = typename Storage_t<DerivedL>::type;
-  using RStorage_t = typename Storage_t<DerivedR>::type;
-
-  auto bin_op = [](const LStorage_t& A, const RStorage_t& B){ return A.GetMat()-B.GetMat(); };
-  using Op_t = make_flagged_t<decltype(bin_op), OperatorAddition_t>;
-
-  return LinOpExpr<DerivedL, DerivedR, Op_t>(
-    std::forward<DerivedL>(Lhs),
-    std::forward<DerivedR>(Rhs),
-    static_cast<Op_t>(bin_op)
-  );
-};
-
-// operator for scalar multiplication c*L
-template<
-  typename Scalar_t, 
-  typename Derived,
-  std::enable_if_t<
-    std::conjunction_v<
-      std::is_convertible<Scalar_t,double>,
-      is_linopxd_crtp<Derived>
-    >,
-    int 
-  > = 0
->
-auto operator*(Scalar_t c, Derived&& L)
-{
-  using LStorage_t = double;
-  using RStorage_t = typename Storage_t<Derived>::type;
-  // using RStorage_t = typename Storage_t<std::remove_reference_t<Derived>>::type;
-
-  auto bin_op = [](const LStorage_t& scalar, const RStorage_t& Mat){ return scalar*Mat.GetMat(); };
-  using Op_t = make_flagged_t<decltype(bin_op), ScalarMultiply_t>;
-
-  return LinOpExpr<double, RStorage_t, Op_t>(
-    static_cast<double>(c),
-    std::forward<Derived>(L),
-    static_cast<Op_t>(bin_op)
-  );
-};
-
-template<
-  typename Derived, 
-  std::enable_if_t<
-    is_linopxd_crtp<Derived>::value,
-    int 
-  > = 0
->
-auto operator-(Derived&& L)
-{
-  return (-1.0) * std::forward<Derived>(L); 
-}; 
+} // end namespace LinOps 
 
 #endif

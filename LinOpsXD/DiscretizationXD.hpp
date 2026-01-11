@@ -107,6 +107,8 @@ struct DiscretizationXD
       return std::accumulate(m_dims.begin()+start, m_dims.begin()+end, 1, std::multiplies{}); 
     }
 
+    // store a new MeshXDPtr_t
+    void set_mesh(MeshXDPtr_t m){ m_mesh_ptr = m; }; 
     // set discretization to same size as meshxd's sizes_product
     void resize(MeshXDPtr_t m) { 
       m_mesh_ptr=m; 
