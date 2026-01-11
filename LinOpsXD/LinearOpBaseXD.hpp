@@ -13,6 +13,7 @@
 #include<type_traits>
 #include "MeshXD.hpp"
 #include "DiscretizationXD.hpp" 
+#include "LinOpTraitsXD.hpp"
 
 namespace LinOps{
 
@@ -29,6 +30,7 @@ using LinOpXDMixIn = LINOPXD_PLUGIN<T>;
 #ifndef CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE
 #define CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Eigen::SparseMatrix<double, Eigen::RowMajor>
 #endif 
+
 
 template<typename Derived>
 class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>> 

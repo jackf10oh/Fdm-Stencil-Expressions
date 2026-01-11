@@ -15,9 +15,9 @@
 
 #include "FDStencils/All.hpp" // must include first for plugin to take effect over linops?
 #include "LinOps/All.hpp" 
+#include "FDStencilsXD/FdmPluginXD.hpp"
+#include "FDStencilsXD/All.hpp"
 #include "LinOpsXD/All.hpp"
-#include "FDStencilsXD/DiffOps/DirectionalNthDerivOp.hpp"
-#include "FDStencilsXD/BCs/BCListXD.hpp"
 
 using std::cout, std::endl;
 
@@ -34,32 +34,27 @@ int main()
   // iomanip 
   std::cout << std::setprecision(2); 
 
-  auto my_meshes = LinOps::make_meshXD(0.0,10.0, 11, 3);
+  auto my_meshes = LinOps::make_meshXD(0.0,1.0, 3, 3);
   // auto my_meshes = LinOps::make_mesh(0.0,3.0, 4);
 
-  LinOps::DiscretizationXD disc; 
-  disc.set_init(my_meshes, lam03);  
+  IOpXD I(my_meshes); 
+  DirectionalRandOp R(my_meshes, 0);  
 
-  BCListXD bcs; 
-  bcs.list.emplace_back(make_dirichlet(1.0), make_dirichlet(1.0)); 
-  bcs.list.emplace_back(make_dirichlet(2.0), make_dirichlet(2.0)); 
-  bcs.list.emplace_back(make_neumann(1.0), make_neumann(1.0)); 
-
-  bcs.SetSol(disc, my_meshes); 
-
-  // view a 1D slice of disc 
-  auto views = disc.OneDim_views(0);  
-  cout << "1D -----------" << endl << views[0].transpose() << endl; 
-
-  // view ith slice of disc that looks like 2D matrix 
-  using Stride_t = Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>;
-  using MatView_t = Eigen::Map<Eigen::MatrixXd, Eigen::Unaligned, Stride_t>; 
-  std::size_t offset = 1 * disc.sizes_middle_product(0,2); 
-  MatView_t A(disc.values().data() + offset, disc.dim_size(0), disc.dim_size(1), Stride_t(11,1)); 
-
-  cout << "2D -----------" << endl <<A << endl; 
+  // I.SetTime(1.0); 
+  // R.SetTime(2.0); 
   
-  // LinOps::IOpXD I(my_meshes);
+  auto expr = I + R; 
+
+  I.SetTime(1.0); 
+  R.SetTime(2.0); 
+
+  cout << I.Time() << endl; 
+  cout << R.Time() << endl; 
+  cout << expr.Time() << endl; 
+
+  cout << internal::is_exprxd_crtp<decltype(expr)>::value << endl; 
+
+  // cout << R.GetMat().toDense() << endl; 
 
 };
 

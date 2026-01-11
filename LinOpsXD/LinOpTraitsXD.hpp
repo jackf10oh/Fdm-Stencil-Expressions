@@ -44,7 +44,7 @@ struct is_exprxd_crtp_impl<LinOpExprXD<L,R,OP>>: public std::true_type
 {};
 
 template<typename T>
-using is_exprxd_crtp = is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;
+using is_exprxd_crtp = is_exprxd_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;
 
 // given a linop expression. detect if it is a composition L1( L2( . )) ---------------
 // compose<T> : public false_type{} in LinOpTraits...

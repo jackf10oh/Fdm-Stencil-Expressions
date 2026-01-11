@@ -26,7 +26,7 @@ class DirectionalRandOp: public LinOpBaseXD<DirectionalRandOp>
   public:
     // constructors
     // direction only 
-    DirectionalRandOp(std::size_t dir_init): m_direction(dir_init){ m_mesh_ptr=MeshXDPtr_t{}; }  
+    DirectionalRandOp(std::size_t dir_init): m_direction(dir_init){ this->m_mesh_ptr=MeshXDPtr_t{}; }  
     // mesh + direction 
     DirectionalRandOp(MeshXDPtr_t m=MeshXDPtr_t{}, std::size_t dir_init=0) 
       : m_direction(dir_init) 
@@ -53,13 +53,13 @@ class DirectionalRandOp: public LinOpBaseXD<DirectionalRandOp>
     
     void set_mesh(MeshXDPtr_t m){
       // ensure we aren't resetting the mesh again
-      if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+      if(!this->m_mesh_ptr.owner_before(m) && !m.owner_before(this->m_mesh_ptr)) return;
       // do nothing on nullptr. or throw an error 
       auto locked = m.lock(); 
       // do nothing on nullptr
       if(!locked) return; 
       // store the mesh
-      m_mesh_ptr = m;   
+      this->m_mesh_ptr = m;   
 
       // perform work on locked ...
       

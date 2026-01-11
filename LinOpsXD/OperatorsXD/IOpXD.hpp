@@ -32,11 +32,11 @@ class IOpXD: public LinOpBaseXD<IOpXD>
     DiscretizationXD apply(const DiscretizationXD& d){ return d; }; 
     void set_mesh(MeshXDPtr_t m){
       // ensure we aren't resetting the mesh again
-      if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+      if(!this->m_mesh_ptr.owner_before(m) && !m.owner_before(this->m_mesh_ptr)) return;
       // do nothing on nullptr. or throw an error 
       auto locked = m.lock(); 
       if(!locked) return; 
-      m_mesh_ptr = m; // store the mesh  
+      this->m_mesh_ptr = m; // store the mesh  
       // perform work on locked 
       std::size_t s = locked->sizes_product(); 
       m_mat.resize(s,s); 

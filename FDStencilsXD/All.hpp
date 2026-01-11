@@ -7,7 +7,7 @@
 #ifndef FDSTENCILSXD_ALL_H
 #define FDSTENCILSXD_ALL_H
 
-// TODO: plugin for setting time 
+// #include "FdmPluginXD.hpp"
 // TODO: Solver in XD  
 
 #include "BoundaryCondXD.hpp"
