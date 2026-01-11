@@ -25,7 +25,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     std::size_t m_order; 
   public:
     // constructors ---------------------------------
-    NthDerivOp(const MeshPtr_t& m, std::size_t order=1)
+    NthDerivOp(MeshPtr_t m, std::size_t order=1)
       : m_order(order)
     {set_mesh(m);};
     NthDerivOp(std::size_t order=1, const MeshPtr_t& m=MeshPtr_t{})
