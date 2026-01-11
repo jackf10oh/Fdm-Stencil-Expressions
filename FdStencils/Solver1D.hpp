@@ -38,18 +38,19 @@ struct SolverArgs1D{
   bool time_dep_flag=true; 
 }; 
 
-template<typename EXPR_T>
+template<typename EXPR_T, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
 class Solver1D{
 
   private:
     // member data -------------------------------------------
     EXPR_T& m_expr; 
+    EIGENSOLVER_T<MatrixStorage_t> m_solver; 
 
   public:
     // Constructors / Destructors =========================================
     Solver1D()=delete;
     Solver1D(EXPR_T& expr_init)
-      : m_expr(expr_init)
+      : m_expr(expr_init), m_solver()
     {};
     Solver1D(const Solver1D& other)=delete; 
     ~Solver1D()=default;
@@ -132,8 +133,7 @@ class Solver1D{
       double t_prev = args.time_mesh_ptr->cbegin()[0];  
       MatrixStorage_t stencil; 
       auto I = IOp(args.domain_mesh_ptr).GetMat();  
-      Eigen::BiCGSTAB<MatrixStorage_t> mat_solver(stencil);
-      mat_solver.setMaxIterations(max_iters); 
+      m_solver.setMaxIterations(max_iters); 
       switch (args.time_dep_flag)
       {
       // PDE is time dependent 
@@ -161,8 +161,8 @@ class Solver1D{
           args.bcs_pair.second->SetImpSolR(solution.values(), args.domain_mesh_ptr);
 
           // implicit step. modifies solution in place 
-          mat_solver.compute(stencil);
-          Eigen::VectorXd v = mat_solver.solveWithGuess(solution.values(), solution.values()); 
+          m_solver.compute(stencil);
+          Eigen::VectorXd v = m_solver.solveWithGuess(solution.values(), solution.values()); 
           solution = std::move(v); 
 
           // update into old_time 
@@ -190,8 +190,8 @@ class Solver1D{
           args.bcs_pair.second->SetImpSolR(solution.values(), args.domain_mesh_ptr);
 
           // implicit step. modifies solution in place 
-          mat_solver.compute(stencil);
-          Eigen::VectorXd v = mat_solver.solveWithGuess(solution.values(), solution.values()); 
+          m_solver.compute(stencil);
+          Eigen::VectorXd v = m_solver.solveWithGuess(solution.values(), solution.values()); 
           solution = std::move(v); 
 
           // update into old_time 
