@@ -18,6 +18,7 @@ namespace Fds{
 using namespace LinOps; 
 
 using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
+using StridedRef = Eigen::Ref<Eigen::VectorXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
 
 class IBCLeft
 {
@@ -57,7 +58,7 @@ class IBCRight
     // Constructors + Destructor =============================================
     IBCRight() : m_current_time(0.0){};
     IBCRight(double t) : m_current_time(t){}; 
-    IBCRight(const BCLeft& other)=default; 
+    IBCRight(const IBCRight& other)=default; 
     // destructor
     virtual ~IBCRight()=default; 
 

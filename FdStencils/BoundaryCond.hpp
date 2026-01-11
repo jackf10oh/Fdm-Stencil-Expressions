@@ -41,16 +41,16 @@ class IBoundaryCond
     virtual void SetTime(double t){m_current_time=t;};
 
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh)const=0; 
-    virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    // virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh)const=0; 
+    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh)const=0;
     
     // change the first/last entries in an impicit solution vector 
-    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
-    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    // virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
 
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
-    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    // virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
 };
 
 } // end namespace Fds 

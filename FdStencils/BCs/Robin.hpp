@@ -8,13 +8,13 @@
 #ifndef ROBINBCS_H
 #define ROBINBCS_H 
 
-#include "../BoundaryCond.hpp"
+#include "BCLeftRight.hpp"
 #include "../../Utilities/FornbergCalc.hpp"
 
 namespace Fds{
 using namespace LinOps; 
 
-class RobinBC : public IBoundaryCond
+class RobinBC : public IBCLeft, public IBCRight 
 {
   public:  
     // member data 
@@ -26,7 +26,7 @@ class RobinBC : public IBoundaryCond
     // Constructors ---------------------------------------------
     // a*U + b*Ux = target
     RobinBC(double a=1.0, double b=0.0, double target=0.0) 
-      : val_coeff(a), deriv_coeff(b), boundary_target(target) 
+      : val_coeff(a), deriv_coeff(b), boundary_target(target), IBCLeft(), IBCRight()
     {}; 
     // Destructors ----------------------------------------------
     virtual ~RobinBC()=default; 

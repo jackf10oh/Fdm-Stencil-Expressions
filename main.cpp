@@ -39,15 +39,16 @@ int main()
   auto expr = 0.2 * D(2) - 0.5 * D(1); 
 
   // Boundary Conditions + --------------------------------------------------------------------- 
-  auto left_bc = Fds::make_dirichlet(0.0); 
-  auto right_bc = Fds::make_dirichlet(0.0); 
+  std::shared_ptr<Fds::IBCLeft> left = Fds::make_dirichlet(0.0); 
+  std::shared_ptr<Fds::IBCRight> right = Fds::make_dirichlet(0.0); 
+  auto bcs = std::make_shared<Fds::BCPair>(left, right); 
 
   // Solving --------------------------------------------------------------------- 
   Fds::SolverArgs1D args 
   {
     .domain_mesh_ptr   = my_mesh,  
     .time_mesh_ptr     = time_mesh, 
-    .bcs_pair          = { left_bc, right_bc},  
+    .bcs               = bcs,  
     .ICs               = my_vals, 
     .time_dep_flag     = false 
   };

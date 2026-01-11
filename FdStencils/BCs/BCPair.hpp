@@ -13,6 +13,7 @@
 #include<utility> // std::pair
 #include "../../LinOps/Mesh.hpp"
 #include "../../LinOps/Discretization.hpp"
+#include "BCLeftRight.hpp"
 
 namespace Fds{
 using namespace LinOps; 
@@ -55,21 +56,21 @@ class BCPair : public IBoundaryCond
 
     // Pure Virtual ---------------------------------------------------
     // change last (right boundary) row of the fdm stencil matrix
-    virtual void SetStencilImp(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) final const
+    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const final
     {
       pair.first->SetStencilL(Mat, mesh); 
       pair.second->SetStencilR(Mat, mesh); 
     }
     
     // change the last entries in an impicit solution vector 
-    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) final const
+    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const final
     {
       pair.first->SetImpSolL(Sol, mesh); 
       pair.second->SetImpSolR(Sol, mesh); 
     }
 
     // change the last (right boundary) entry of a vector  
-    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) final const
+    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const final
     {
       pair.first->SetSolL(Sol, mesh); 
       pair.second->SetSolR(Sol, mesh); 

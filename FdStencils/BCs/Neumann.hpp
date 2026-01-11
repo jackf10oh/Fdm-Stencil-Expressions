@@ -8,13 +8,13 @@
 #ifndef NEUMANNBCS_H
 #define NEUMANNBCS_H 
 
-#include "../BoundaryCond.hpp"
+#include "BCLeftRight.hpp" 
 #include "../../Utilities/FornbergCalc.hpp"
 
 namespace Fds{
 using namespace LinOps; 
 
-class NeumannBC : public IBoundaryCond
+class NeumannBC : public IBCLeft, public IBCRight 
 {
   public:  
     // member data 
@@ -22,7 +22,7 @@ class NeumannBC : public IBoundaryCond
 
   public:
     // Constructors ---------------------------------------------
-    NeumannBC(double val_init=0.0) : boundary_flux(val_init){}; 
+    NeumannBC(double val_init=0.0) : boundary_flux(val_init), IBCLeft(), IBCRight(){}; 
     // Destructors ----------------------------------------------
     virtual ~NeumannBC()=default; 
     // Member Funcs ----------------------------------------------

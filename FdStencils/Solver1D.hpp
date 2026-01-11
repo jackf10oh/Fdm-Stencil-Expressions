@@ -33,7 +33,7 @@ struct SolverArgs1D{
   // Member Data -------------------
   std::shared_ptr<const Mesh1D> domain_mesh_ptr; 
   std::shared_ptr<const Mesh1D> time_mesh_ptr; 
-  std::pair<BcPtr_t, BcPtr_t> bcs_pair; 
+  BcPtr_t bcs; 
   Discretization1D ICs;
   bool time_dep_flag=true; 
 }; 
@@ -82,13 +82,13 @@ class Solver1D{
           m_expr.SetTime(t_prev);
 
           // update BCs time 
-          args.bcs_pair.first->SetTime(t);
-          args.bcs_pair.second->SetTime(t);
+          // args.bcs_pair.first->SetTime(t);
+          args.bcs->SetTime(t);
 
           // explicit step;
           Eigen::VectorXd v = solution.values() + (t-t_prev) * m_expr.GetMat() * solution.values(); 
-          args.bcs_pair.first->SetSolL(v, args.domain_mesh_ptr); 
-          args.bcs_pair.second->SetSolR(v, args.domain_mesh_ptr); 
+          // args.bcs_pair.first->SetSolL(v, args.domain_mesh_ptr); 
+          args.bcs->SetSol(v, args.domain_mesh_ptr); 
           solution = std::move(v); 
 
           // update into old_time 
@@ -146,19 +146,19 @@ class Solver1D{
           m_expr.SetTime(t);
 
           // update BCs time 
-          args.bcs_pair.first->SetTime(t);
-          args.bcs_pair.second->SetTime(t);
+          // args.bcs_pair.first->SetTime(t);
+          args.bcs->SetTime(t);
 
           // calculate matrix A 
           stencil = I - (t-t_prev) * m_expr.GetMat(); 
 
           // set first / last row of A 
-          args.bcs_pair.first->SetStencilL(stencil, args.domain_mesh_ptr);
-          args.bcs_pair.first->SetStencilR(stencil, args.domain_mesh_ptr);
+          // args.bcs_pair.first->SetStencilL(stencil, args.domain_mesh_ptr);
+          args.bcs->SetStencil(stencil, args.domain_mesh_ptr);
 
           // set solutions L/R side 
-          args.bcs_pair.first->SetImpSolL(solution.values(), args.domain_mesh_ptr);
-          args.bcs_pair.second->SetImpSolR(solution.values(), args.domain_mesh_ptr);
+          // args.bcs_pair.first->SetImpSolL(solution.values(), args.domain_mesh_ptr);
+          args.bcs->SetImpSol(solution.values(), args.domain_mesh_ptr);
 
           // implicit step. modifies solution in place 
           m_solver.compute(stencil);
@@ -173,8 +173,8 @@ class Solver1D{
       // PDE is not time dependent 
       default: // false  
         MatrixStorage_t bcs_mask(args.domain_mesh_ptr->size(), args.domain_mesh_ptr->size()); 
-        args.bcs_pair.first->SetStencilL(bcs_mask, args.domain_mesh_ptr);
-        args.bcs_pair.first->SetStencilR(bcs_mask, args.domain_mesh_ptr);
+        // args.bcs_pair.first->SetStencilL(bcs_mask, args.domain_mesh_ptr);
+        args.bcs->SetStencil(bcs_mask, args.domain_mesh_ptr);
         for(; it!=end; it++){
           // get new time, and dt 
           t = *it;
@@ -186,8 +186,8 @@ class Solver1D{
           overwrite_stencil(stencil, bcs_mask);
 
           // set solutions L/R side 
-          args.bcs_pair.first->SetImpSolL(solution.values(), args.domain_mesh_ptr);
-          args.bcs_pair.second->SetImpSolR(solution.values(), args.domain_mesh_ptr);
+          // args.bcs_pair.first->SetImpSolL(solution.values(), args.domain_mesh_ptr);
+          args.bcs->SetImpSol(solution.values(), args.domain_mesh_ptr);
 
           // implicit step. modifies solution in place 
           m_solver.compute(stencil);

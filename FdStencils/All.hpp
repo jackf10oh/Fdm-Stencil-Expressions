@@ -11,6 +11,8 @@
 #include "Solver1D.hpp"
 
 #include "BoundaryCond.hpp" 
+#include "BCs/BCPair.hpp"
+#include "BCs/BCLeftRight.hpp"
 #include "BCs/Dirichlet.hpp"
 #include "BCs/Neumann.hpp"
 #include "BCs/Robin.hpp"

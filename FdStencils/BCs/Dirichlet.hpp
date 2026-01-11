@@ -8,12 +8,13 @@
 #ifndef DIRICHLETBCS_H
 #define DIRICHLETBCS_H 
 
-#include "../BoundaryCond.hpp"
+// #include "../BoundaryCond.hpp"
+#include "BCLeftRight.hpp" 
 
 namespace Fds{
 using namespace LinOps; 
 
-class DirichletBC : public IBoundaryCond
+class DirichletBC : public IBCLeft, public IBCRight 
 {
   public:  
     // member data 
@@ -21,7 +22,7 @@ class DirichletBC : public IBoundaryCond
 
   public:
     // Constructors ---------------------------------------------
-    DirichletBC(double val_init=0.0) : boundary_val(val_init){}; 
+    DirichletBC(double val_init=0.0) : boundary_val(val_init), IBCLeft(), IBCRight(){}; 
     // Destructors ----------------------------------------------
     virtual ~DirichletBC()=default; 
     // Member Funcs ----------------------------------------------
@@ -29,22 +30,23 @@ class DirichletBC : public IBoundaryCond
     virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
     {
       Mat.topRows(1) *= 0; Mat.coeffRef(0,0)=1;
-    }; 
+    }
     virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
     {
       Mat.bottomRows(1) *= 0; Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=1;
-    };
+    }
 
+    // change the first/last (left/right boundary) entry of a vector to implicit solution   
     virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
-    {Sol[0] = boundary_val;};
+    {Sol[0] = boundary_val;}
     virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
-    {Sol[Sol.size()-1] = boundary_val;};
+    {Sol[Sol.size()-1] = boundary_val;}
     
     // change the first/last (left/right boundary) entry of a vector  
     virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
-    { Sol[0] = boundary_val;};
+    { Sol[0] = boundary_val;}
     virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
-    {Sol[Sol.size()-1] = boundary_val;};
+    {Sol[Sol.size()-1] = boundary_val;}
 };
 
 template<typename... Args>
