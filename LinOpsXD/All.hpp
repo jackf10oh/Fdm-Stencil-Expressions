@@ -17,6 +17,4 @@
 #include "OperatorsXD/DirectionalRandOp.hpp"
 #include "OperatorsXD/IOpXD.hpp"
 
-// #include "BoundaryCondXD.hpp" 
-
 #endif // All.hpp 
