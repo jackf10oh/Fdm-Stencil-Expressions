@@ -50,17 +50,21 @@ class SparseDiag : public Eigen::SparseMatrixBase< SparseDiag<ArgType,P> > {
     // constructors 
     SparseDiag(const ArgType& arg_init, std::size_t repeats_init=1) : m_arg(arg_init), m_num_repeats(repeats_init) {
       // static_assert( std::is_same<ArgType, MatrixStorage_t>::value, "Invalid arg type. SparseDiag must be constructed from MatrixStorage_t."); 
-      if(arg_init.rows()!=1) throw std::invalid_argument("SparseDiag must be constructed from expr with .rows()==1"); 
+      if(arg_init.rows()!=1 && arg_init.cols()!=1) throw std::invalid_argument("SparseDiag must be constructed from expr with .rows()==1 or .cols()==1"); 
       if(repeats_init<1) throw std::invalid_argument("SparseDiag must be constructed with num_repeats >= 1."); 
+      m_is_horizontal = arg_init.rows()==1; 
+      m_size = std::max(arg_init.rows(), arg_init.cols()); 
     }
     
     // member functions 
-    Index rows() const { return m_num_repeats * m_arg.cols(); }
-    Index cols() const { return m_num_repeats * m_arg.cols(); }
+    Index rows() const { return m_num_repeats * m_size; }
+    Index cols() const { return m_num_repeats * m_size; }
 
     // member data 
     ArgTypeNested m_arg;
     std::size_t m_num_repeats; 
+    std::size_t m_size; 
+    bool m_is_horizontal; 
   
 };
 
@@ -97,13 +101,16 @@ struct evaluator< SparseDiag<ArgType,P> > : evaluator_base< SparseDiag<ArgType,P
     Index index() const { return m_row; };
     Scalar value() const { 
       if constexpr(P == SparseDiagPattern::REPEAT){
-        return m_eval.m_argImpl.coeff(0, m_row / m_eval.m_num_repeats); 
+        if(m_eval.m_is_horizontal) return m_eval.m_argImpl.coeff(0, m_row / m_eval.m_num_repeats); 
+        else return m_eval.m_argImpl.coeff(m_row / m_eval.m_num_repeats, 0);
       }
       if constexpr(P == SparseDiagPattern::CYCLE){
-        return m_eval.m_argImpl.coeff(0, m_row % (m_eval.rows()/m_eval.m_num_repeats)); 
+        if(m_eval.m_is_horizontal) return m_eval.m_argImpl.coeff(0, m_row % (m_eval.rows()/m_eval.m_num_repeats));  
+        else return m_eval.m_argImpl.coeff(m_row % (m_eval.rows()/m_eval.m_num_repeats), 0); 
       }
       else{
-        return m_eval.m_argImpl.coeff(0, m_row / m_eval.m_num_repeats); 
+        if(m_eval.m_is_horizontal) return m_eval.m_argImpl.coeff(0, m_row / m_eval.m_num_repeats); 
+        else return m_eval.m_argImpl.coeff(m_row / m_eval.m_num_repeats, 0);
       }
     };
     // member data ------------------------------------------
@@ -114,7 +121,8 @@ struct evaluator< SparseDiag<ArgType,P> > : evaluator_base< SparseDiag<ArgType,P
 
   // Constructors ======================================================== 
   evaluator(const XprType& xpr) 
-    : m_argImpl(xpr.m_arg), m_rows(xpr.rows()), m_cols(xpr.cols()), m_num_repeats(xpr.m_num_repeats)
+    : m_argImpl(xpr.m_arg), m_rows(xpr.rows()), m_cols(xpr.cols()), 
+    m_num_repeats(xpr.m_num_repeats), m_is_horizontal(xpr.m_is_horizontal) 
   {};
  
   // Member Functions ========================================================
@@ -132,6 +140,8 @@ struct evaluator< SparseDiag<ArgType,P> > : evaluator_base< SparseDiag<ArgType,P
   Index m_rows; 
   Index m_cols; 
   Index m_num_repeats; 
+  Index m_size; 
+  bool m_is_horizontal; 
 };
 }  // namespace internal
 }  // namespace Eigen
