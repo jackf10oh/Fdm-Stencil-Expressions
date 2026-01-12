@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(DiffOps LANGUAGES CXX)
+project(FDStencils LANGUAGES CXX)
 
 # set cxx standard
 set(CMAKE_CXX_STANDARD 17)
@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # define the library as DiffOps
-add_library(DiffOps INTERFACE)
+add_library(FDStencils INTERFACE)
 
 # options 
 option(USE_OPENMP "Enable OpenMP Parallelization" OFF) 
@@ -17,7 +17,7 @@ if(USE_OPENMP)
   find_package(OpenMP)
   if(OpenMP_FOUND)
     message(STATUS "OpenMP found successfully!")
-    target_link_libraries(DiffOps INTERFACE OpenMP::OpenMP_CXX)
+    target_link_libraries(FDStencils INTERFACE OpenMP::OpenMP_CXX)
   endif()
 else()
   message(STATUS "Cmake args disabling OpenMP...")
@@ -32,12 +32,12 @@ target_link_libraries(LinOps
  INTERFACE Eigen3::Eigen 
 )
 
-target_include_directories(DiffOps 
+target_include_directories(FDStencils 
   INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(DiffOps
+target_link_libraries(FDStencils
   INTERFACE LinOps
 )
 
@@ -88,7 +88,7 @@ else()
   )
 
   target_link_libraries(tests  
-    PRIVATE DiffOps 
+    PRIVATE FDStencils 
     PRIVATE GTest::gtest 
     PRIVATE GTest::gtest_main 
     PRIVATE pthread # required by GTest

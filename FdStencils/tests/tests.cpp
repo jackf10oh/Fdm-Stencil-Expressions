@@ -448,87 +448,91 @@ TEST(FdmPluginSuite, Method_SetTime_Hooking)
 // Solving a convection diffusion scheme  explicitly 
 TEST(SolverSuite, Method_Calculate_Completing)
 {
-  // defining Domain + Time Mesh --------------------------------------
+  // iomanip 
+  std::cout << std::setprecision(2); 
+
+  // defining Domain Mesh --------------------------------------
   auto r = 10.0; 
   int n_gridpoints = 101;
   // mesh in space 
-  auto my_mesh = make_mesh(0.0,r,n_gridpoints); 
+  auto my_mesh = Fds::make_mesh(0.0,r,n_gridpoints); 
   // mesh in time 
-  auto time_mesh = make_mesh(0.0, 1.0, 11); 
+  auto time_mesh = Fds::make_mesh(0.0, 1.0, 101); 
 
   // Initializing IC discretizations -------------------------------------------------------
-  Discretization1D my_vals;
+  Fds::Discretization1D my_vals;
   // Bump centered at r/2. Zero at 0.0 and r. 
   auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);};  
   my_vals.set_init(my_mesh, func); 
 
   // building RHS expression -----------------------------------------------------
-  using D = NthDerivOp;
+  using D = Fds::NthDerivOp;
   auto expr = 0.2 * D(2) - 0.5 * D(1); 
 
   // Boundary Conditions + --------------------------------------------------------------------- 
-  auto left_bc = make_dirichlet(0.0); 
-  auto right_bc = make_dirichlet(0.0); 
+  std::shared_ptr<Fds::IBCLeft> left = Fds::make_dirichlet(0.0); 
+  std::shared_ptr<Fds::IBCRight> right = Fds::make_dirichlet(0.0); 
+  auto bcs = std::make_shared<Fds::BCPair>(left, right); 
 
   // Solving --------------------------------------------------------------------- 
-  SolverArgs1D args 
+  Fds::SolverArgs1D args 
   {
     .domain_mesh_ptr   = my_mesh,  
     .time_mesh_ptr     = time_mesh, 
-    .bcs_pair          = { left_bc, right_bc},  
+    .bcs               = bcs,  
     .ICs               = my_vals, 
-    .time_dep_flag     = true  
+    .time_dep_flag     = false 
   };
 
-  Solver1D s(expr); 
+  Fds::Solver1D s(expr); 
   // auto result = s.Calculate( args );
-  Discretization1D result01 = s.Calculate( args );
-
-  args.time_dep_flag = false; 
-  Discretization1D result02 = s.Calculate( args );
-
+  auto result = s.Calculate( args );
+  args.time_dep_flag = true; 
+  auto result2 = s.Calculate( args ); 
 };
 
 // Solving a convection diffusion scheme  explicitly 
 TEST(SolverSuite, Method_CalculateImp_Completing)
 {
-  // defining Domain + Time Mesh --------------------------------------
+  // iomanip 
+  std::cout << std::setprecision(2); 
+
+  // defining Domain Mesh --------------------------------------
   auto r = 10.0; 
   int n_gridpoints = 101;
   // mesh in space 
-  auto my_mesh = make_mesh(0.0,r,n_gridpoints); 
+  auto my_mesh = Fds::make_mesh(0.0,r,n_gridpoints); 
   // mesh in time 
-  auto time_mesh = make_mesh(0.0, 1.0, 11); 
+  auto time_mesh = Fds::make_mesh(0.0, 1.0, 101); 
 
   // Initializing IC discretizations -------------------------------------------------------
-  Discretization1D my_vals;
+  Fds::Discretization1D my_vals;
   // Bump centered at r/2. Zero at 0.0 and r. 
   auto func = [r, smush=10](double x){return std::pow(x*(r-x)*(4.0/(r*r)),smush);};  
   my_vals.set_init(my_mesh, func); 
 
   // building RHS expression -----------------------------------------------------
-  using D = NthDerivOp;
+  using D = Fds::NthDerivOp;
   auto expr = 0.2 * D(2) - 0.5 * D(1); 
 
   // Boundary Conditions + --------------------------------------------------------------------- 
-  auto left_bc = make_dirichlet(0.0); 
-  auto right_bc = make_dirichlet(0.0); 
+  std::shared_ptr<Fds::IBCLeft> left = Fds::make_dirichlet(0.0); 
+  std::shared_ptr<Fds::IBCRight> right = Fds::make_dirichlet(0.0); 
+  auto bcs = std::make_shared<Fds::BCPair>(left, right); 
 
   // Solving --------------------------------------------------------------------- 
-  SolverArgs1D args 
+  Fds::SolverArgs1D args 
   {
     .domain_mesh_ptr   = my_mesh,  
     .time_mesh_ptr     = time_mesh, 
-    .bcs_pair          = { left_bc, right_bc},  
+    .bcs               = bcs,  
     .ICs               = my_vals, 
-    .time_dep_flag     = true  
+    .time_dep_flag     = false 
   };
 
-  Solver1D s(expr); 
+  Fds::Solver1D s(expr); 
   // auto result = s.Calculate( args );
-  Discretization1D result01 = s.CalculateImp( args );
-
-  args.time_dep_flag = false; 
-  Discretization1D result02 = s.CalculateImp( args );
-
+  auto result = s.CalculateImp( args );
+  args.time_dep_flag = true; 
+  auto result2 = s.CalculateImp( args ); 
 };
