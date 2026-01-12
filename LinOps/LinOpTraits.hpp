@@ -232,9 +232,32 @@ class callable_traits
     using result_type = typename result_traits<F,num_args()>::result_type; 
   }; 
 
+  // --------------------------------------------------------------------- 
+  // Given a callable G, return a new type F that has constructor F( G g, double x0)
+  // with an operator() that accepts # args == # args in G - 1.
+  // the result is f(x1,...,xn) = g(x0,x1,...,xn) 
+
+  template<std::size_t N_doubles, typename G, typename... Args> 
+  struct BindFirst_impl : public BindFirst_impl<N_doubles-1,G,double,Args...>
+  {
+    using Base = BindFirst_impl<N_doubles-1,G,double,Args...>; 
+    BindFirst_impl(G g, double t): Base(g,t) {}; 
+    using BindFirst_impl<N_doubles-1,G,double, Args...>::operator(); 
+  }; 
+
+  template<typename G, typename... Args> 
+  struct BindFirst_impl<0,G,Args...>
+  {
+    G func; 
+    double captured; 
+    BindFirst_impl(G g, double x0): func(g), captured(x0) {}; 
+    double operator()(Args... args){return func(captured,args...); }; 
+  }; 
+
   public:
   constexpr static std::size_t num_args = arg_traits<F>::num_args(); 
   using result_type = typename result_traits<F, num_args>::result_type; 
+  using BindFirst_t = std::enable_if_t<num_args, BindFirst_impl<num_args-1, F>>;
 }; // end callable_traits<F> 
 
 } // end namespace internal 
