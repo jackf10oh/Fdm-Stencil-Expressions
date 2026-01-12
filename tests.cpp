@@ -40,9 +40,11 @@ int main()
   Discretization1D disc; 
   disc.set_init(my_meshes, lam01); 
 
-  cout << disc.values() << endl; 
+  cout << disc.values().transpose() << endl; 
+
+
   auto row = disc.values().transpose(); 
-  cout << SparseDiag<decltype(row), std::modulus<std::size_t>>(row, 2) << endl; 
+  cout << "cycle entries" << endl << SparseDiag<decltype(row), SparseDiagPattern::CYCLE>(row, 2) << endl; 
 
   cout << "repeat entries" << endl << SparseDiag(row,2) << endl; 
 
