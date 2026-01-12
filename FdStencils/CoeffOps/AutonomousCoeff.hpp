@@ -10,6 +10,7 @@
 #include<Eigen/Core> 
 #include "../CoeffOpBase.hpp"
 #include "../../LinOps/LinOpTraits.hpp" // callable_traits<F> 
+#include "../../LinOps/Discretization.hpp" 
 #include "../../Utilities/SparseDiagExpr.hpp"
 
 namespace Fds{
@@ -22,7 +23,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
     using Derived_t = AutonomousCoeff; 
   public:
     FUNC_STORAGE_T m_function;  
-    Eigen::RowVectorXd m_diag_vals; 
+    Discretization1D m_diag_vals;
   public:
     // constructors ==========================================================
     AutonomousCoeff()=delete; // no default constructor
@@ -43,27 +44,15 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
     // Matrix getters 
     auto GetMat()
     {
-      return SparseDiag(m_diag_vals);  
+      return SparseDiag(m_diag_vals.values().transpose());  
     };
     auto GetMat() const
     {
-      return SparseDiag(m_diag_vals);
+      return SparseDiag(m_diag_vals.values().transpose());
     };
     // updated m_mesh_ptr, resize m_diag_vals
     void set_mesh(MeshPtr_t m){
-      // ensure we aren't resetting the mesh again
-      if(!this->m_mesh_ptr.owner_before(m) && !m.owner_before(this->m_mesh_ptr)) return;
-      // do nothing on nullptr. or throw an error 
-      auto locked = m.lock(); 
-
-      if(!locked) return; 
-      this->m_mesh_ptr = m; // store the mesh 
-
-      m_diag_vals.resize(locked->size()); 
-      const auto data = locked->cbegin(); 
-      for(std::size_t i=0; i<m_diag_vals.size(); i++){
-        m_diag_vals[i] = m_function(data[i]); 
-      }
+      m_diag_vals.set_init(m, m_function); 
     }
     // update state of AutonomousCoeff from a given t 
     void SetTime_impl(double t){};

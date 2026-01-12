@@ -10,6 +10,7 @@
 #include<Eigen/Core> 
 #include "../CoeffOpBase.hpp"
 #include "../../LinOps/LinOpTraits.hpp" // callable_traits<F> 
+#include "../../LinOps/Discretization.hpp"
 #include "../../Utilities/SparseDiagExpr.hpp"
 
 namespace Fds{
@@ -22,7 +23,7 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     using Derived_t = TimeDepCoeff; 
   public:
     FUNC_STORAGE_T m_function;  
-    Eigen::RowVectorXd m_diag_vals; 
+    Discretization1D m_diag_vals; 
   public:
     // constructors ==========================================================
     TimeDepCoeff()=delete; // no default constructor
@@ -44,11 +45,11 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     // Matrix getters 
     auto GetMat()
     {
-      return SparseDiag(m_diag_vals);  
+      return SparseDiag(m_diag_vals.values().transpose());  
     };
     auto GetMat() const
     {
-      return SparseDiag(m_diag_vals);
+      return SparseDiag(m_diag_vals.values().transpose());
     };
     // updated m_mesh_ptr, resize m_diag_vals
     void set_mesh(MeshPtr_t m){
@@ -60,22 +61,19 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
       if(!locked) return; 
       this->m_mesh_ptr = m; // store the mesh  
       // perform work on locked 
-      m_diag_vals.resize(locked->size());
+      m_diag_vals.resize(m);
     }
     // update state of TimeDepCoeff from a given t 
     void SetTime_impl(double t){
       // SetTime() stores the new time... 
       // Store the result of m_function(t,x)  
       if constexpr(internal::callable_traits<FUNC_STORAGE_T>::num_args==2){
-        auto locked = this->m_mesh_ptr.lock(); 
-        if(!locked) return; 
-        const auto data = locked->cbegin();  
-        for(std::size_t i=0; i<m_diag_vals.size(); i++){
-          m_diag_vals[i] = m_function(t, data[i]); 
-        }
+        auto binded = std::bind(m_function, t, std::placeholders::_1); 
+        m_diag_vals.set_init(this->m_mesh_ptr, binded); 
       }
+      // set diag to be f(t) 
       if constexpr(internal::callable_traits<FUNC_STORAGE_T>::num_args==1){
-        m_diag_vals.setConstant( m_function(t) ); 
+        m_diag_vals.set_init( m_function(t) ); 
       }
     };
 }; 

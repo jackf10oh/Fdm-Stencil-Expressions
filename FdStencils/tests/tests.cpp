@@ -94,7 +94,7 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
       if constexpr(internal::callable_traits<decltype(func)>::num_args==2){
         ASSERT_EQ(     
           A.coeff(i,i), 
-          func(coeff_op.Time(), my_mesh->operator[](i))         
+          func(coeff_op.Time(), my_mesh->cbegin()[i])         
         ); 
       } 
       if constexpr(internal::callable_traits<decltype(func)>::num_args==1){
