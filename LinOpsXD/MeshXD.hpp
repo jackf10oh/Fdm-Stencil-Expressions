@@ -81,10 +81,10 @@ class MeshXD
     // number of dimensions 
     std::size_t dims() const {return m_mesh_vec.size(); } 
     // get a specific mesh 
-    // std::shared_ptr<Mesh1D>& GetMesh(std::size_t i){return m_mesh_vec[i];} 
-    const std::shared_ptr<const Mesh1D>& GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
-    // std::shared_ptr<Mesh1D>& GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
-    const std::shared_ptr<const Mesh1D>& GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
+    // std::shared_ptr<const Mesh1D> GetMesh(std::size_t i){return m_mesh_vec[i];} 
+    std::shared_ptr<const Mesh1D> GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
+    // std::shared_ptr<const Mesh1D> GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
+    std::shared_ptr<const Mesh1D> GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
 };
 
 template<typename MeshXD_t=MeshXD, typename... Args> 
