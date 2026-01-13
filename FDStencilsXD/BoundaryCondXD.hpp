@@ -16,11 +16,18 @@
 namespace Fds{
 using namespace LinOps; 
 
+class IBoundaryCondXD; 
+using BcXDPtr_t = std::shared_ptr<IBoundaryCondXD>; 
+
 class IBoundaryCondXD
 {
+  private:
+    // member data 
+    double m_current_time;
+    
   public:
     // Constructors + Destructors ========================
-    IBoundaryCondXD()=default; 
+    IBoundaryCondXD(): m_current_time(0.0){}; 
     IBoundaryCondXD(const IBoundaryCondXD& other)=default;
     // destructor 
     virtual ~IBoundaryCondXD()=default; 
@@ -34,10 +41,10 @@ class IBoundaryCondXD
     virtual void SetImpSol(DiscretizationXD& Sol, const std::shared_ptr<const MeshXD>& mesh) const =0; 
 
     // set a Matrixs' row according to m_bc_list. making it an implicit stencil  
-    virtual void SetStencilImp(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const =0; 
+    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const =0; 
 
     // Default Implemented ---------------------------------------------
-    virtual void SetTime(double t){}; 
+    virtual void SetTime(double t){m_current_time=t;}; 
 };
 
 } // end namespace Fds 

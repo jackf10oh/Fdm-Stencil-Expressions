@@ -53,24 +53,28 @@ void print_mat(const Eigen::DenseBase<Derived>& A, std::string comment = "")
 }; 
 
 
-// // for an STL like container 
-// template<typename Cont2D>
-// void print_mat(const Cont2D& A, std::string comment="")
-// {
-//   // print comment 
-//   if(!comment.empty()) std::cout << "--------------" << comment << "--------------" << "\n";
-//   // opening brace 
-//   std::cout << "["; 
-//   // print rows up to last row with , << \n 
-//   auto it_last_row = std::for_each_n(A.begin(), A.size()-1, 
-//       [](const auto& row){
-//           print_vec(row,"",false); std::cout<<","<< "\n";
-//       }
-//   ); 
-//   // print last row
-//   print_vec(*it_last_row, "", false); 
-//   // closing brace 
-//   std::cout << "]\n\n";
-// }
+// for an STL like container 
+template<typename Cont2D, 
+  typename = std::enable_if_t<
+    !std::is_base_of<Eigen::DenseBase<Cont2D>, Cont2D>::value
+  >
+>
+void print_mat(const Cont2D& A, std::string comment="")
+{
+  // print comment 
+  if(!comment.empty()) std::cout << "--------------" << comment << "--------------" << "\n";
+  // opening brace 
+  std::cout << "["; 
+  // print rows up to last row with , << \n 
+  auto it_last_row = std::for_each_n(A.begin(), A.size()-1, 
+      [](const auto& row){
+          print_vec(row,"",false); std::cout<<","<< "\n";
+      }
+  ); 
+  // print last row
+  print_vec(*it_last_row, "", false); 
+  // closing brace 
+  std::cout << "]\n\n";
+}
 
 #endif // PrintVec.hpp

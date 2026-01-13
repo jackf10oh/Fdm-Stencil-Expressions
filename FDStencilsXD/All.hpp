@@ -8,7 +8,7 @@
 #define FDSTENCILSXD_ALL_H
 
 #include "FdmPluginXD.hpp"
-// TODO: Solver in XD  
+#include "SolverXD.hpp"
 
 #include "BoundaryCondXD.hpp"
 #include "BCs/BCListXD.hpp" 

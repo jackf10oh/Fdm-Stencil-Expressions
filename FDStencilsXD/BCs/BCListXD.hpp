@@ -123,7 +123,7 @@ class BCListXD : public IBoundaryCondXD
     }
 
     // set a Matrixs' row according to list. making it an implicit stencil  
-    virtual void SetStencilImp(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const override 
+    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
       if(list.empty()) throw std::runtime_error("list must be non empty!"); 
