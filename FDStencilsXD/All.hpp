@@ -7,14 +7,16 @@
 #ifndef FDSTENCILSXD_ALL_H
 #define FDSTENCILSXD_ALL_H
 
-// #include "FdmPluginXD.hpp"
+#include "FdmPluginXD.hpp"
 // TODO: Solver in XD  
 
 #include "BoundaryCondXD.hpp"
 #include "BCs/BCListXD.hpp" 
 
 #include "DiffOps/DirectionalNthDerivOp.hpp"
-// TODO: coeffops in XD 
+#include "CoeffOpBaseXD.hpp"
+#include "CoeffOps/AutonomousCoeffXD.hpp"
+#include "CoeffOps/TimeDepCoeffXD.hpp"
 
 #include "../LinOpsXD/All.hpp"
 namespace Fds{
