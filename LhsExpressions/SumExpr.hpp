@@ -18,7 +18,7 @@ class SumExpr : public TimeDerivBase<SumExpr<Args...>>
     // Constructors + Destructor ================================
     SumExpr()=delete; 
     SumExpr(std::tuple<Args...> tup_init, std::size_t order) 
-      : m_args( tup_init ), TimeDerivBase<SumExpr<Args...>>(order, order+1) 
+      : m_args( tup_init ), TimeDerivBase<SumExpr<Args...>>(order) 
     {} 
     // destructor 
     ~SumExpr()=default; 

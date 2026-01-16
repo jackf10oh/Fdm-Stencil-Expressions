@@ -29,12 +29,11 @@ class TimeDerivBase
   public:
     // Member Data ----------------------------------
     std::size_t m_order; // nth derivative in time 
-    std::size_t m_n_nodes; // # of nodes required for nth deriv 
   public:
     // Constructors + Destructor ============================================
     TimeDerivBase()=default; 
-    TimeDerivBase(std::size_t order_init, std::size_t n_nodes_init)
-      : m_order(order_init), m_n_nodes(n_nodes_init)
+    TimeDerivBase(std::size_t order_init)
+      : m_order(order_init)
     {}
     TimeDerivBase(const TimeDerivBase& other)=default; 
     ~TimeDerivBase()=default;

@@ -36,8 +36,8 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
   public:
     // Constructors + Destructor ====================================
     // CoeffMultExpr()=delete; // necessary?  
-    CoeffMultExpr(Lhs_t c_init, Rhs_t rhs_init, std::size_t order=1)
-      : m_coeff(c_init), m_rhs(rhs_init), TimeDerivBase<CoeffMultExpr>(order, order+1)
+    CoeffMultExpr(Lhs_t c_init, Rhs_t rhs_init)
+      : m_coeff(c_init), m_rhs(rhs_init), TimeDerivBase<CoeffMultExpr>(rhs_init.Order())
     {
       // std::cout << "rhs is lvalue? " << std::is_lvalue_reference_v<Rhs_t> << std::endl;
       // std::cout << "rhs is rval? " << std::is_rvalue_reference_v<Rhs_t> << std::endl;
@@ -81,7 +81,7 @@ template<
 >
 auto operator*(Lhs&& c, Rhs&& rhs)
 {
-  return CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs), rhs.Order()); 
+  return CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs)); 
 }
 
 // Operator for double c, TimeDeriv Ut making expression c*Ut 
@@ -93,7 +93,7 @@ template<
 >
 auto operator*(double c, Rhs&& rhs)
 {
-  return CoeffMultExpr<double,Rhs>(c, std::forward<Rhs>(rhs), rhs.Order()); 
+  return CoeffMultExpr<double,Rhs>(c, std::forward<Rhs>(rhs)); 
 }
 
 #endif // LhsCoeffMultExpr.hpp 
