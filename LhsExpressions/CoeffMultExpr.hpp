@@ -11,8 +11,6 @@
 #include "NthTimeDeriv.hpp" 
 #include "../LinOps/LinOpTraits.hpp"
 
-
-
 template<typename COEFF_T, typename RHS_T>
 class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>> 
 {
@@ -43,8 +41,8 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     {
       // std::cout << "rhs is lvalue? " << std::is_lvalue_reference_v<Rhs_t> << std::endl;
       // std::cout << "rhs is rval? " << std::is_rvalue_reference_v<Rhs_t> << std::endl;
-      std::cout << "LHS stored as lvalue ref? " << std::is_lvalue_reference_v<Lhs_t> << '\n';
-      std::cout << "RHS stored as lvalue ref? " << std::is_lvalue_reference_v<Rhs_t> << '\n';
+      // std::cout << "LHS stored as lvalue ref? " << std::is_lvalue_reference_v<Lhs_t> << '\n';
+      // std::cout << "RHS stored as lvalue ref? " << std::is_lvalue_reference_v<Rhs_t> << '\n';
     }
     CoeffMultExpr(const CoeffMultExpr& other)=default; 
     // destructor 
@@ -54,7 +52,7 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     template<typename Cont>
     auto CoeffAt(const Cont& v, std::size_t n_nodes_per_row, std::size_t ith_node) const 
     {
-      std::size_t offset = this->m_order * n_nodes_per_row; 
+      std::cout << "CoeffMultExpr::CoeffAt" << std::endl;      
       if constexpr(LinOps::internal::is_coeffop_crtp<Lhs_t>::value){
         return m_coeff.GetMat() * m_rhs.CoeffAt(v,n_nodes_per_row,ith_node);  
       }
@@ -70,6 +68,7 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     std::string toString() const {return "hi from coeffMult!"; }; 
 }; 
 
+// should be deleted for SumExprs...... 
 template<
   typename Lhs, 
   typename Rhs,  
@@ -85,6 +84,7 @@ auto operator*(Lhs&& c, Rhs&& rhs)
   return CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs), rhs.Order()); 
 }
 
+// Operator for double c, TimeDeriv Ut making expression c*Ut 
 template<
   typename Rhs, 
   typename = std::enable_if_t<

@@ -59,24 +59,55 @@ class TimeDerivBase
     auto toTuple() &&
     {
       // std::cout << "Rvalue Base .toTuple()" << std::endl; 
-      return std::make_tuple(*this); // rvalue -> rvalue ref
+      return std::make_tuple(static_cast<Derived&>(*this)); // rvalue -> rvalue ref
     }
 
     std::string toString() const {return "hi from base"; }; 
 
     // Operators ================================
+    // Binary Addition Ut + Utt (Lvalue)-----------------------
     template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) & 
     {
       return make_sumexpr_helper(static_cast<Derived&>(*this), std::forward<RHS>(rhs)); 
     }
-
+    // (Rvalue) 
     template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) &&
     {
       return make_sumexpr_helper(std::move(static_cast<Derived&>(*this)), std::forward<RHS>(rhs)); 
     }
 
+    // Unary Negation Ut -> -Ut (Lvalue) -----------------------
+    auto operator-() &
+    {
+      // delegate to Operator*() from CoeffMultExpr.hpp 
+      return (-1.0) * static_cast<Derived&>(*this); 
+    }
+    // (Rvalue) 
+    auto operator-() &&
+    {
+      // delegate to Operator*() from CoeffMultExpr.hpp 
+      return (-1.0) * std::move(static_cast<Derived&>(*this)); 
+    }
+
+    // Binary Subtraction (Ut - Utt) -> (Ut) + (-Utt) (Lvalue) ----------------------------------
+    template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
+    auto operator-(RHS&& rhs)
+    {
+      return this->operator+(-std::forward<RHS>(rhs)); 
+    }
+    // template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
+    // auto operator-(RHS&& rhs) & 
+    // {
+    //   return make_sumexpr_helper(static_cast<Derived&>(*this), -std::forward<RHS>(rhs)); 
+    // }
+    // // (Rvalue) 
+    // template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
+    // auto operator-(RHS&& rhs) &&
+    // {
+    //   return make_sumexpr_helper(std::move(static_cast<Derived&>(*this)), -std::forward<RHS>(rhs)); 
+    // }
 }; 
 
 #endif

@@ -75,24 +75,37 @@ int main()
   // LhsExpr -------------------------------------------------------- 
   using D = NthTimeDeriv; 
   auto Ut = D(1); 
-  // auto Utt = -1.0 * D(2); 
-  // auto Utt = -1.0 * D(2); 
-  // auto Uttt = D(3); 
+  auto Utt = D(2); 
+  // auto cUt = 2.0 * Ut;   
   auto cUt = c * Ut;  
   auto ccUt = 3.0 * cUt; 
-  // auto cUt = c * Ut;  
 
-  // auto sum_expr01 = Utt + Ut; 
-  // auto sum_expr02 = Uttt + sum_expr01;
+  std::cout << "left mult -------------------------------------" << std::endl; 
+  cout << Ut.CoeffAt(calc.m_arr, 3, 0) << endl; 
+  cout << cUt.CoeffAt(calc.m_arr, 3, 0) << endl; 
+  cout << ccUt.CoeffAt(calc.m_arr, 3, 0) << endl; 
+
+  std::cout << "unary negate -------------------------------------" << std::endl; 
+  auto negation = - D(1); 
+  cout << negation.CoeffAt(calc.m_arr, 3, 0) << endl; 
+
+
+  std::cout << "binary subtract -------------------------------------" << std::endl; 
+  auto sum_expr01 = Utt + Ut; 
+  auto sum_expr02 = Utt - Ut; 
+
+  // cout << std::tuple_size_v<std::remove_reference_t<decltype(sum_expr02.toTuple())>> << endl;
+  // cout << std::tuple_size_v<std::remove_reference_t<decltype(sum_expr01.toTuple())>> << endl;
+  cout << std::get<1>(sum_expr01.toTuple()).CoeffAt(calc.m_arr, 3,0) << endl; 
+  cout << std::get<1>(sum_expr02.toTuple()).CoeffAt(calc.m_arr, 3,0) << endl; 
+  // cout << std::get<1>(sum_expr02.toTuple()).toString() << endl; 
+
   // auto sum_expr03 = Ut + Utt; 
 
   // cout << std::tuple_size_v<std::remove_reference_t<decltype(sum_expr03.toTuple())>> << endl;
 
   // tup_print(sum_expr03.toTuple());
 
-  cout << Ut.CoeffAt(calc.m_arr, 3, 0) << endl; 
-  cout << cUt.CoeffAt(calc.m_arr, 3, 0) << endl; 
-  cout << ccUt.CoeffAt(calc.m_arr, 3, 0) << endl; 
   // cout << std::get<1>(sum_expr03.toTuple()).CoeffAt(calc.m_arr, 3,1) << endl; 
   // cout << sum_expr03.CoeffAt(calc.m_arr, 3, 0); // deleted member function 
 };
