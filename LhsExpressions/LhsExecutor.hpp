@@ -7,29 +7,40 @@
 #ifndef LHSEXECUTOR_H
 #define LHSEXECUTOR_H 
 
-template<typename LHS_EXPR>
+template<typename LHS_EXPR, typename TUP_T = decltype(std::declval<LHS_EXPR>().toTuple())>
 struct LhsExecutor
 {
   // Member Data ---------------------------------
-  LHS_EXPR m_expr; 
+  // LHS_EXPR m_expr; 
+  TUP_T m_sum_tup; 
+  std::size_t m_order; 
+  std::size_t m_num_nodes; 
   std::vector<double> m_stored_times; 
   std::vector<LinOps::Discretization1D> m_stored_sols; 
   FornCalc m_weights_calc; 
 
-  // Constructors =======================================
-  LhsTimeDeriv(LHS_EXPR expr_init) 
-    : m_weights_calc(expr_init.Order()+1,expr_init.Order()), 
-    m_stored_times(expr_init.Order()+1), 
-    m_stored_sols(expr_init.Order()); 
+  // Constructors + Destructor =======================================
+  LhsExecutor()=delete; 
+  LhsExecutor(LHS_EXPR& expr_init) 
+    :m_order(expr_init.Order()), 
+    m_num_nodes(expr_init.Order()+1),  
+    m_weights_calc(m_order, m_num_nodes), 
+    m_stored_times(m_num_nodes), 
+    m_stored_sols(m_order), 
+    m_sum_tup(expr_init.toTuple()) 
   {}
+  LhsExecutor(const LhsExecutor& other)=delete; 
+  // destructor 
+  ~LhsExecutor()=default; 
+
   // Member Funcs =======================================
   // from a time. set weights
   void SetWeightsFromTime(double t)
   {
     // set last entry in m_stored_times
-    m_stored_times[N-1] = t; 
+    m_stored_times[m_num_nodes-1] = t; 
     // recalculate m_weights_calc 
-    m_weights_calc.Calculate(t, m_stored_times.cbegin(), m_stored_times.cend(), Order);     
+    m_weights_calc.Calculate(t, m_stored_times.cbegin(), m_stored_times.cend(), m_order);     
   }
   
   // consume a time. push back all previous
@@ -54,12 +65,12 @@ struct LhsExecutor
   { 
     /* same idea as ConsumeTime(). with move semantics*/
     // iterate from 1st to 2nd to last of m_stored_sols
-    std::size_t end = N-2; 
-    for(std::size_t i=0; i<N-2; i++){
+    std::size_t end = m_num_nodes-2; 
+    for(std::size_t i=0; i<end; i++){
       m_stored_sols[i] = std::move(m_stored_sols[i+1]); 
     }
     // last m_stored_sol get sol input
-    m_stored_sols[N-1] = std::move(sol);   
+    m_stored_sols[m_num_nodes-2] = std::move(sol);   
   }
 
   // // Build RHS starting point from m_stored_sols[0, ..., N-2]

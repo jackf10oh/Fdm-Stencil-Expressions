@@ -93,20 +93,18 @@ int main()
   std::cout << "binary subtract -------------------------------------" << std::endl; 
   auto sum_expr01 = Utt + Ut; 
   auto sum_expr02 = Utt - Ut; 
+  auto sum_expr03 = 2.0*Ut - Ut; 
 
   // cout << std::tuple_size_v<std::remove_reference_t<decltype(sum_expr02.toTuple())>> << endl;
   // cout << std::tuple_size_v<std::remove_reference_t<decltype(sum_expr01.toTuple())>> << endl;
   cout << std::get<1>(sum_expr01.toTuple()).CoeffAt(calc.m_arr, 3,0) << endl; 
   cout << std::get<1>(sum_expr02.toTuple()).CoeffAt(calc.m_arr, 3,0) << endl; 
   // cout << std::get<1>(sum_expr02.toTuple()).toString() << endl; 
-
-  // auto sum_expr03 = Ut + Utt; 
-
-  // cout << std::tuple_size_v<std::remove_reference_t<decltype(sum_expr03.toTuple())>> << endl;
-
-  // tup_print(sum_expr03.toTuple());
-
-  // cout << std::get<1>(sum_expr03.toTuple()).CoeffAt(calc.m_arr, 3,1) << endl; 
   // cout << sum_expr03.CoeffAt(calc.m_arr, 3, 0); // deleted member function 
+
+  std::cout << "Lhs Executor -------------------------------------" << std::endl; 
+  LhsExecutor executor(sum_expr02); 
+  cout << "executor order: " << executor.m_order << endl; 
+  cout << "executor num_nodes: " << executor.m_num_nodes << endl; 
 };
  

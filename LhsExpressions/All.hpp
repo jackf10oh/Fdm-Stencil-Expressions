@@ -11,5 +11,6 @@
 #include "NthTimeDeriv.hpp"
 #include "CoeffMultExpr.hpp"
 #include "SumExpr.hpp"
+#include "LhsExecutor.hpp"
 
 #endif // All.hpp 
