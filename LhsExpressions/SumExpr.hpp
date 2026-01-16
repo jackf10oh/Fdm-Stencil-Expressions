@@ -40,7 +40,7 @@ class SumExpr : public TimeDerivBase<SumExpr<Args...>>
 };
 
 template<typename LHS, typename RHS>
-auto make_lhssumexpr_helper(LHS&& lhs, RHS&& rhs)
+auto make_sumexpr_helper(LHS&& lhs, RHS&& rhs)
 {
   std::size_t m = std::max(lhs.Order(), rhs.Order()); 
   auto left_tup = std::forward<LHS>(lhs).toTuple(); 

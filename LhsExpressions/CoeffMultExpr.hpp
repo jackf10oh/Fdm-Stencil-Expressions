@@ -11,28 +11,42 @@
 #include "NthTimeDeriv.hpp" 
 #include "../LinOps/LinOpTraits.hpp"
 
-template<typename COEFF_T>
-class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T>> 
+
+
+template<typename COEFF_T, typename RHS_T>
+class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>> 
 {
   public:
-    // Member Data ---------------
+    // Type Defs --------------------- 
     using Lhs_t = typename LinOps::internal::Storage_t<COEFF_T>::type; 
+    using Rhs_t = typename std::conditional_t<
+      std::conjunction_v<
+        std::is_same<std::remove_cv_t<std::remove_reference_t<RHS_T>>, NthTimeDeriv>, 
+        std::is_lvalue_reference<RHS_T>
+      >, 
+      RHS_T, 
+      std::remove_reference_t<RHS_T>
+    >; 
+
+    // Member Data ---------------
     Lhs_t m_coeff; 
+    Rhs_t m_rhs; 
+    /* store the right hand side somehow... 
+    if its an lvalue store a reference. 
+    if its a rvalue just store a copy.*/
 
   public:
     // Constructors + Destructor ====================================
     // CoeffMultExpr()=delete; // necessary?  
-    CoeffMultExpr(Lhs_t c_init, std::size_t order=1)
-      : m_coeff(c_init), TimeDerivBase<CoeffMultExpr>(order, order+1)
+    CoeffMultExpr(Lhs_t c_init, Rhs_t rhs_init, std::size_t order=1)
+      : m_coeff(c_init), m_rhs(rhs_init), TimeDerivBase<CoeffMultExpr>(order, order+1)
     {
-      // std::cout << "is linop? " << LinOps::internal::is_linop_crtp<COEFF_T>::value << std::endl; 
-      // std::cout << "is linop? " << LinOps::internal::is_linop_crtp<Lhs_t>::value << std::endl; 
-      // std::cout << "is coeff? " << LinOps::internal::is_coeffop_crtp<COEFF_T>::value << std::endl; 
-      // std::cout << "is coeff? " << LinOps::internal::is_coeffop_crtp<Lhs_t>::value << std::endl; 
-      // std::cout << "is lval? " << std::is_lvalue_reference<COEFF_T>::value << std::endl; 
-      // std::cout << "is lval? " << std::is_lvalue_reference<Lhs_t>::value << std::endl; 
+      // std::cout << "rhs is lvalue? " << std::is_lvalue_reference_v<Rhs_t> << std::endl;
+      // std::cout << "rhs is rval? " << std::is_rvalue_reference_v<Rhs_t> << std::endl;
+      std::cout << "LHS stored as lvalue ref? " << std::is_lvalue_reference_v<Lhs_t> << '\n';
+      std::cout << "RHS stored as lvalue ref? " << std::is_lvalue_reference_v<Rhs_t> << '\n';
     }
-    // LhsCoeffMultExpr(const LhsCoeffMultExpr& other)=delete; 
+    CoeffMultExpr(const CoeffMultExpr& other)=default; 
     // destructor 
     ~CoeffMultExpr()=default; 
 
@@ -42,10 +56,10 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T>>
     {
       std::size_t offset = this->m_order * n_nodes_per_row; 
       if constexpr(LinOps::internal::is_coeffop_crtp<Lhs_t>::value){
-        return v[ith_node + offset] * m_coeff.GetMat();  
+        return m_coeff.GetMat() * m_rhs.CoeffAt(v,n_nodes_per_row,ith_node);  
       }
       else if constexpr(std::is_same<double, std::remove_cv_t<std::remove_reference_t<Lhs_t>>>::value){
-        return v[ith_node + offset] * m_coeff; 
+        return m_coeff * m_rhs.CoeffAt(v,n_nodes_per_row,ith_node); 
       }
       else{
         throw std::runtime_error("LhsCoeffMultExpr error: COEFF_T is not a double or CoeffOp."); 
@@ -53,23 +67,33 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T>>
     } 
 
     // using LhsBase<LhsCoeffMultExpr<COEFF_T>>::toTuple; 
-    std::string toString() const {return "hi from coeffMult"; }; 
+    std::string toString() const {return "hi from coeffMult!"; }; 
 }; 
 
 template<
-  typename Lhs,  
+  typename Lhs, 
+  typename Rhs,  
   typename = std::enable_if_t<
-    LinOps::internal::is_coeffop_crtp<Lhs>::value
+    std::conjunction_v<
+    LinOps::internal::is_coeffop_crtp<Lhs>,
+    is_timederiv_crtp<Rhs>
+    >
   >
 >
-auto operator*(Lhs&& c, NthTimeDeriv rhs)
+auto operator*(Lhs&& c, Rhs&& rhs)
 {
-  return CoeffMultExpr<Lhs>(std::forward<Lhs>(c), rhs.Order()); 
+  return CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs), rhs.Order()); 
 }
 
-auto operator*(double c, NthTimeDeriv rhs)
+template<
+  typename Rhs, 
+  typename = std::enable_if_t<
+    is_timederiv_crtp<Rhs>::value
+  >
+>
+auto operator*(double c, Rhs&& rhs)
 {
-  return CoeffMultExpr<double>(c, rhs.Order()); 
+  return CoeffMultExpr<double,Rhs>(c, std::forward<Rhs>(rhs), rhs.Order()); 
 }
 
 #endif // LhsCoeffMultExpr.hpp 

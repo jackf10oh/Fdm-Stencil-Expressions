@@ -68,13 +68,13 @@ class TimeDerivBase
     template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) & 
     {
-      return make_lhssumexpr_helper(static_cast<Derived&>(*this), std::forward<RHS>(rhs)); 
+      return make_sumexpr_helper(static_cast<Derived&>(*this), std::forward<RHS>(rhs)); 
     }
 
     template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) &&
     {
-      return make_lhssumexpr_helper(std::move(static_cast<Derived&>(*this)), std::forward<RHS>(rhs)); 
+      return make_sumexpr_helper(std::move(static_cast<Derived&>(*this)), std::forward<RHS>(rhs)); 
     }
 
 }; 
