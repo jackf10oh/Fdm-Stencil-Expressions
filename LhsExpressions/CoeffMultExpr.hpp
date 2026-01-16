@@ -1,4 +1,4 @@
-// LhsCoeffMultExpr.hpp
+// CoeffMultExpr.hpp
 //
 //
 //
@@ -7,12 +7,12 @@
 #ifndef LHSCOEFFMULTEXPR_H
 #define LHSCOEFFMULTEXPR_H
 
-#include "LhsBase.hpp"
+#include "TimeDerivBase.hpp"
 #include "NthTimeDeriv.hpp" 
 #include "../LinOps/LinOpTraits.hpp"
 
 template<typename COEFF_T>
-class LhsCoeffMultExpr : public LhsBase<LhsCoeffMultExpr<COEFF_T>> 
+class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T>> 
 {
   public:
     // Member Data ---------------
@@ -21,9 +21,9 @@ class LhsCoeffMultExpr : public LhsBase<LhsCoeffMultExpr<COEFF_T>>
 
   public:
     // Constructors + Destructor ====================================
-    // LhsCoeffMultExpr()=delete; // necessary?  
-    LhsCoeffMultExpr(Lhs_t c_init, std::size_t order=1)
-      : m_coeff(c_init), LhsBase<LhsCoeffMultExpr>(order, order+1)
+    // CoeffMultExpr()=delete; // necessary?  
+    CoeffMultExpr(Lhs_t c_init, std::size_t order=1)
+      : m_coeff(c_init), TimeDerivBase<CoeffMultExpr>(order, order+1)
     {
       // std::cout << "is linop? " << LinOps::internal::is_linop_crtp<COEFF_T>::value << std::endl; 
       // std::cout << "is linop? " << LinOps::internal::is_linop_crtp<Lhs_t>::value << std::endl; 
@@ -34,7 +34,7 @@ class LhsCoeffMultExpr : public LhsBase<LhsCoeffMultExpr<COEFF_T>>
     }
     // LhsCoeffMultExpr(const LhsCoeffMultExpr& other)=delete; 
     // destructor 
-    ~LhsCoeffMultExpr()=default; 
+    ~CoeffMultExpr()=default; 
 
     // Member Funcs =================================================== 
     template<typename Cont>
@@ -64,14 +64,12 @@ template<
 >
 auto operator*(Lhs&& c, NthTimeDeriv rhs)
 {
-  return LhsCoeffMultExpr<Lhs>(std::forward<Lhs>(c), rhs.Order()); 
+  return CoeffMultExpr<Lhs>(std::forward<Lhs>(c), rhs.Order()); 
 }
 
 auto operator*(double c, NthTimeDeriv rhs)
 {
-  return LhsCoeffMultExpr<double>(c, rhs.Order()); 
+  return CoeffMultExpr<double>(c, rhs.Order()); 
 }
-
-
 
 #endif // LhsCoeffMultExpr.hpp 

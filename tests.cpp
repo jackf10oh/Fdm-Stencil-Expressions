@@ -75,7 +75,8 @@ int main()
   // LhsExpr -------------------------------------------------------- 
   using D = NthTimeDeriv; 
   auto Ut = D(1); 
-  auto Utt = 3.0 * D(2); 
+  auto Utt = -1.0 * D(2); 
+  // auto Utt = -1.0 * D(2); 
   auto Uttt = D(3);  
 
   // auto sum_expr01 = Utt + Ut; 
@@ -87,7 +88,7 @@ int main()
   tup_print(sum_expr03.toTuple());
 
   cout << Ut.CoeffAt(calc.m_arr, 3, 0) << endl; 
-  cout << std::get<2>(sum_expr03.toTuple()).CoeffAt(calc.m_arr, 3,0) << endl; 
-  // cout << std::get<1>(sum_expr03.toTuple()).CoeffAt(calc.m_arr, 3, 0); 
+  cout << std::get<1>(sum_expr03.toTuple()).CoeffAt(calc.m_arr, 3,1) << endl; 
+  // cout << sum_expr03.CoeffAt(calc.m_arr, 3, 0); // deleted member function  
 };
  

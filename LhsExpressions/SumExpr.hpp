@@ -1,4 +1,4 @@
-// LhsSumExpr.hpp
+// SumExpr.hpp
 //
 //
 //
@@ -7,24 +7,25 @@
 #ifndef LHSSUMEXPR_H
 #define LHSSUMEXPR_H 
 
-#include "LhsBase.hpp"
+#include "TimeDerivBase.hpp"
 
 template<typename... Args>
-class LhsSumExpr : public LhsBase<LhsSumExpr<Args...>> 
+class SumExpr : public TimeDerivBase<SumExpr<Args...>> 
 {
   public:
     std::tuple<Args...> m_args; 
   public:
     // Constructors + Destructor ================================
-    LhsSumExpr()=delete; 
-    LhsSumExpr(std::tuple<Args...> tup_init, std::size_t order) 
-      : m_args( tup_init ), LhsBase<LhsSumExpr<Args...>>(order, order+1) 
+    SumExpr()=delete; 
+    SumExpr(std::tuple<Args...> tup_init, std::size_t order) 
+      : m_args( tup_init ), TimeDerivBase<SumExpr<Args...>>(order, order+1) 
     {} 
     // destructor 
-    ~LhsSumExpr()=default; 
+    ~SumExpr()=default; 
 
     // Member Funcs ====================================================
-    // auto toTuple() { return m_args; }
+    template<typename Cont>
+    auto CoeffAt(const Cont& v, std::size_t n_nodes_per_row, std::size_t ith_node) const = delete;
     auto& toTuple() &
     {
       // std::cout << "Lvalue SumExpr .toTuple()" << std::endl; 
@@ -45,7 +46,7 @@ auto make_lhssumexpr_helper(LHS&& lhs, RHS&& rhs)
   auto left_tup = std::forward<LHS>(lhs).toTuple(); 
   auto right_tup = std::forward<RHS>(rhs).toTuple(); 
   auto cat = std::tuple_cat(left_tup, right_tup); 
-  return LhsSumExpr(cat, m); 
+  return SumExpr(cat, m); 
 }
 
-#endif // LhsSumExpr.hpp 
+#endif // SumExpr.hpp 

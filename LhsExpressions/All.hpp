@@ -7,9 +7,9 @@
 #ifndef LHSEXPRALL_H
 #define LHSEXPRALL_H 
 
-#include "LhsBase.hpp" 
+#include "TimeDerivBase.hpp" 
 #include "NthTimeDeriv.hpp"
-#include "LhsCoeffMultExpr.hpp"
-#include "LhsSumExpr.hpp"
+#include "CoeffMultExpr.hpp"
+#include "SumExpr.hpp"
 
 #endif // All.hpp 

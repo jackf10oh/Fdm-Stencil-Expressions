@@ -1,43 +1,43 @@
-// LhsBase.hpp
+// TimeDerivBase.hpp
 //
 //
 //
 // JAF 1/15/2026 
 
-#ifndef LHSBASE_H
-#define LHSBASE_H 
+#ifndef TIMEDERIVBASE_H
+#define TIMEDERIVBASE_H 
 
 #include "../FDStencils/CoeffOpBase.hpp"
 
 // traits =====================================================
 template<typename T, typename = void> 
-struct is_lhs_crtp_impl : public std::false_type{}; 
+struct is_timederiv_crtp_impl : public std::false_type{}; 
 
 template<typename T> 
-struct is_lhs_crtp_impl<T, std::void_t<typename T::is_lhs_tag>>: public std::true_type{}; 
+struct is_timederiv_crtp_impl<T, std::void_t<typename T::is_timederiv_tag>>: public std::true_type{}; 
 
 template<typename T>
-using is_lhs_crtp = is_lhs_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
+using is_timederiv_crtp = is_timederiv_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
 
 // Base Definition =====================================================
 template<typename Derived>
-class LhsBase
+class TimeDerivBase
 {
   public:
     // Type Defs --------------------------
-    struct is_lhs_tag{}; 
+    struct is_timederiv_tag{}; 
   public:
     // Member Data ----------------------------------
     std::size_t m_order; // nth derivative in time 
     std::size_t m_n_nodes; // # of nodes required for nth deriv 
   public:
     // Constructors + Destructor ============================================
-    LhsBase()=default; 
-    LhsBase(std::size_t order_init, std::size_t n_nodes_init)
+    TimeDerivBase()=default; 
+    TimeDerivBase(std::size_t order_init, std::size_t n_nodes_init)
       : m_order(order_init), m_n_nodes(n_nodes_init)
     {}
-    LhsBase(const LhsBase& other)=default; 
-    ~LhsBase()=default;
+    TimeDerivBase(const TimeDerivBase& other)=default; 
+    ~TimeDerivBase()=default;
     // Member Funcs ========================================================== 
     // Current Order of expression  
     std::size_t Order() const {return m_order; }; 
@@ -65,13 +65,13 @@ class LhsBase
     std::string toString() const {return "hi from base"; }; 
 
     // Operators ================================
-    template<typename RHS, typename = std::enable_if_t<is_lhs_crtp<RHS>::value>>
+    template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) & 
     {
       return make_lhssumexpr_helper(static_cast<Derived&>(*this), std::forward<RHS>(rhs)); 
     }
 
-    template<typename RHS, typename = std::enable_if_t<is_lhs_crtp<RHS>::value>>
+    template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) &&
     {
       return make_lhssumexpr_helper(std::move(static_cast<Derived&>(*this)), std::forward<RHS>(rhs)); 
