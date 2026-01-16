@@ -35,7 +35,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
       set_mesh(m);
     }
     // copy constructor
-    AutonomousCoeff(const AutonomousCoeff& other)=delete; 
+    AutonomousCoeff(const AutonomousCoeff& other)=default; 
     
     // destructors =============================================================
     ~AutonomousCoeff()=default;
