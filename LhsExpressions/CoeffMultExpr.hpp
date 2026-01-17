@@ -38,21 +38,22 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     // CoeffMultExpr()=delete; // necessary?  
     CoeffMultExpr(Lhs_t c_init, Rhs_t rhs_init)
       : m_coeff(c_init), m_rhs(rhs_init), TimeDerivBase<CoeffMultExpr>(rhs_init.Order())
-    {
-      // std::cout << "rhs is lvalue? " << std::is_lvalue_reference_v<Rhs_t> << std::endl;
-      // std::cout << "rhs is rval? " << std::is_rvalue_reference_v<Rhs_t> << std::endl;
-      // std::cout << "LHS stored as lvalue ref? " << std::is_lvalue_reference_v<Lhs_t> << '\n';
-      // std::cout << "RHS stored as lvalue ref? " << std::is_lvalue_reference_v<Rhs_t> << '\n';
-    }
+    {}
     CoeffMultExpr(const CoeffMultExpr& other)=default; 
     // destructor 
     ~CoeffMultExpr()=default; 
 
     // Member Funcs =================================================== 
+    // L/R Getters
+    Lhs_t& Lhs(){return m_coeff; } 
+    Rhs_t& Rhs(){return m_rhs; } 
+    const Lhs_t& Lhs() const {return m_coeff; } 
+    const Rhs_t& Rhs() const {return m_rhs; } 
+
+    // Must be implemented for TimeDerivBase.  Get coeff * rhs's CoeffAt() value  
     template<typename Cont>
     auto CoeffAt(const Cont& v, std::size_t n_nodes_per_row, std::size_t ith_node) const 
     {
-      std::cout << "CoeffMultExpr::CoeffAt" << std::endl;      
       if constexpr(LinOps::internal::is_coeffop_crtp<Lhs_t>::value){
         return m_coeff.GetMat() * m_rhs.CoeffAt(v,n_nodes_per_row,ith_node);  
       }
