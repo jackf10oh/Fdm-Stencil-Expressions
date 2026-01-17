@@ -7,7 +7,9 @@
 #ifndef TIMEDERIVBASE_H
 #define TIMEDERIVBASE_H 
 
+// contain traits for is_coeffop_crtp + is_coeffopxd_crtp 
 #include "../FDStencils/CoeffOpBase.hpp"
+#include "../FDStencilsXD/CoeffOpBaseXD.hpp"
 
 // traits =====================================================
 template<typename T, typename = void> 
@@ -48,6 +50,12 @@ class TimeDerivBase
     } 
 
     // going to need set time and set mesh so that coeff ops can interac with Lhs... 
+    // default of set_mesh(m) just do nothing. TimeDeriv doesn't depend on spatial
+    template<typename ANYMESHPTR_T>
+    void set_mesh(ANYMESHPTR_T m){}; 
+
+    // default of SetTime() just do nothing. 
+    void SetTime(double t){}; 
 
     // packs this pointer into iterable tuple object. note: SumExpr will override it
     auto toTuple() &

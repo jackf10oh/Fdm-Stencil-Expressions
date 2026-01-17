@@ -176,10 +176,21 @@ int main()
 
   print_vec(exec.m_weights_calc.m_arr, "exec weights");
 
-  cout << exec.inv_coeff_util() << endl; 
+  // cout << exec.inv_coeff_util() << endl; 
 
-  std::cout << "Lhs Executor III ----------------------------------------" << std::endl; 
+  std::cout << "CoeffMultExpr II ----------------------------------------" << std::endl; 
+  AutonomousCoeff c01 = [](double x){return x*x + 10.0; }; 
+  TimeDepCoeff c02 = [](double t, double x){return t + x; };
+  auto expr01 = c01 * Ut; 
+  auto expr02 = c02 * Utt;  
+
+  expr01.set_mesh(my_mesh); 
+  std::cout << expr01.Lhs().GetMat() << std::endl; 
+
+  expr02.set_mesh(my_mesh); 
+  expr02.SetTime(20.0); 
+  std::cout << expr02.Lhs().GetMat() << std::endl; 
+
   
-
 };
  

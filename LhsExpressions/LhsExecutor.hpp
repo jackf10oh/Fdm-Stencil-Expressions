@@ -8,6 +8,7 @@
 #define LHSEXECUTOR_H 
 
 #include<Eigen/Core>
+#include "../LinOps/Mesh.hpp" // MeshPtr_t
 
 using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
 
@@ -99,6 +100,10 @@ struct LhsExecutor
   ~LhsExecutor()=default; 
 
   // Member Funcs =======================================
+  // returns const ref to newest solution 
+  const auto& MostRecentSol() const { return m_stored_sols[m_stored_sols.size()-1]; }
+  auto& MostRecentSol(){ return m_stored_sols[m_stored_sols.size()-1]; }
+
   // from a time. set weights
   void SetWeightsFromTime(double t)
   {
@@ -125,6 +130,18 @@ struct LhsExecutor
     // right most value unassigned 
   } // end ConsumeTime 
 
+  // ConsumeTime but copies full list into m_stored_times
+  template<typename INPUT_IT>
+  void ConsumeTimeList(INPUT_IT start, INPUT_IT end)
+  {
+    if(std::distance(start,end)!=m_stored_times.size()-1) throw std::runtime_error("Error: distance(start,end) must == size of m_stored_times - 1"); 
+    std::move(
+      std::move_iterator(start),
+      std::move_iterator(end),
+      m_stored_times.begin() 
+    );
+  }
+
   // consume a solution. push back all previous 
   void ConsumeSolution(Eigen::VectorXd sol)
   { 
@@ -139,8 +156,19 @@ struct LhsExecutor
     *it = std::move(sol);   
   } // end ConsumeSolution 
 
+  // ConsumeSolution but copies full list into m_stored_sols
+  template<typename INPUT_IT>
+  void ConsumeSolutionList(INPUT_IT start, INPUT_IT end)
+  {
+    if(std::distance(start,end)!=m_stored_sols.size()) throw std::runtime_error("Error: distance(start,end) must == size of m_stored_sols"); 
+    std::move(
+      std::move_iterator(start),
+      std::move_iterator(end),
+      m_stored_sols.begin() 
+    );
+  }
+
   // // Build RHS starting point from m_stored_sols[0, ..., N-2]
-  // actually returns an Eigen::VectorXd 
   Eigen::VectorXd BuildRhs(double t)
   {
     // update m_weights_calc to new time step. 
@@ -188,6 +216,7 @@ struct LhsExecutor
     return result; 
   }
 
+  // gets 1 / c where c is coeff of U(n+1) in fdm equation 
   auto inv_coeff_util()
   {
     // all CoeffAt's evaluate to scalar -> return 1 / sum(coeffs...)
@@ -233,6 +262,26 @@ struct LhsExecutor
     }
   } // end inv_coeff_util() 
 
+  template<typename ANYMESHPTR_T>
+  void set_mesh(ANYMESHPTR_T m)
+  {
+    auto set_mesh_lam = [&](auto&& elem){
+      elem.set_mesh(m); 
+    };
+    auto set_mesh_for = [&](auto&&... elems){(set_mesh_lam(std::forward<decltype(elems)>(elems)),...);}; 
+    // std::apply(set_mesh_for, m_scalar_coeff_sum_partition); // unnecessary. 
+    std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
+  }
+
+  void SetTime(double t)
+  {
+    auto SetTime_lam = [&](auto&& elem){
+      elem.SetTime(t); 
+    };
+    auto set_mesh_for = [&](auto&&... elems){(SetTime_lam(std::forward<decltype(elems)>(elems)),...);}; 
+    // std::apply(set_mesh_for, m_scalar_coeff_sum_partition); // unnecessary.  
+    std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
+  }
 }; 
 
 #endif // LhsExecutor.hpp

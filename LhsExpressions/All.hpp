@@ -12,5 +12,6 @@
 #include "CoeffMultExpr.hpp"
 #include "SumExpr.hpp"
 #include "LhsExecutor.hpp"
+#include "GeneralSolver.hpp"
 
 #endif // All.hpp 

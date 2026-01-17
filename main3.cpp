@@ -86,15 +86,13 @@ int main()
     // print_vec(exec.m_weights_calc.m_arr, "Weights"); 
     
     // Explicit Step 
-    Eigen::VectorXd next_sol = ((exec.inv_coeff_util()*expr.GetMat()) * exec.m_stored_sols[exec.m_stored_sols.size()-1]) + rhs; 
+    Eigen::VectorXd next_sol = exec.inv_coeff_util()*expr.GetMat()*exec.MostRecentSol() + rhs; 
     
     // Apply BCs 
     bcs->SetSol(next_sol, my_mesh); 
     exec.ConsumeSolution(next_sol);
     exec.ConsumeTime(*it); 
   }
-
-
 
   // Printing ---------------------------------------------------------------- 
   print_vec(my_vals, "ICs"); 
