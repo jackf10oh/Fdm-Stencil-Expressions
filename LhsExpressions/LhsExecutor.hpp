@@ -13,7 +13,7 @@ using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>;
 
 // ===========================================================================
 template<template<typename...> class PRED, typename TUP_T>
-auto filter_tup(TUP_T& tup)
+auto filter_tup(TUP_T tup)
 {
   auto filter_lam = [](auto&& elem){
     using CLEAN_T = std::remove_reference_t<std::remove_cv_t<decltype(elem)>>;
@@ -78,7 +78,7 @@ struct LhsExecutor
   // list of t0, t1, ..., tn 
   std::vector<double> m_stored_times; 
   // list of solutions u0, u1, ..., un-1 at times t0, t1, ..., tn-1 
-  std::vector<LinOps::Discretization1D> m_stored_sols; 
+  std::vector<Eigen::VectorXd> m_stored_sols; 
 
   // forberg weights calculator 
   FornCalc m_weights_calc; 
@@ -126,27 +126,29 @@ struct LhsExecutor
   } // end ConsumeTime 
 
   // consume a solution. push back all previous 
-  void ConsumeSolution(LinOps::Discretization1D sol)
+  void ConsumeSolution(Eigen::VectorXd sol)
   { 
     /* same idea as ConsumeTime(). with move semantics*/
     // iterate from 1st to 2nd to last of m_stored_sols
-    std::size_t end = m_num_nodes-2; 
-    for(std::size_t i=0; i<end; i++){
-      m_stored_sols[i] = std::move(m_stored_sols[i+1]); 
+    auto it=m_stored_sols.begin();  
+    auto end = std::prev(m_stored_sols.end(),1); 
+    for(; it!=end; it++){
+      *it = std::move( *std::next(it) ); 
     }
     // last m_stored_sol get sol input
-    m_stored_sols[m_num_nodes-2] = std::move(sol);   
+    *it = std::move(sol);   
   } // end ConsumeSolution 
 
   // // Build RHS starting point from m_stored_sols[0, ..., N-2]
   // actually returns an Eigen::VectorXd 
-  void BuildRhs(double t)
+  Eigen::VectorXd BuildRhs(double t)
   {
     // update m_weights_calc to new time step. 
     SetWeightsFromTime(t);
 
     // initialize RHS vector to all zeros 
-    // Eigen::VectorXd result = Eigen::VectorXd::Zeros(m_stored_sols[0].size()); 
+    Eigen::VectorXd result(m_stored_sols[0].size());
+    result.setZero(); 
 
     // starting at oldest solution, first node's weight 
     for(std::size_t ith_node = 0; ith_node<m_num_nodes-1; ith_node++)
@@ -160,19 +162,10 @@ struct LhsExecutor
           }, 
           m_scalar_coeff_sum_partition
         ); 
-        std::cout << "BuildRhs: " << s << std::endl;
-        if constexpr(std::tuple_size<MAT_TUP_T>::value > 0)
-        {
-          auto M = std::apply(
-            [&](auto&&... coeffs){
-              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, ith_node) + ...); 
-            }, 
-            m_mat_coeff_sum_partition 
-          ); 
-          std::cout << "BuildRhs Mat: " << M << std::endl;
-        }
+        // std::cout << "BuildRhs: " << s << std::endl;
+        result += s * m_stored_sols[ith_node]; 
       } 
-      else // otherwise all matrices
+      if constexpr(std::tuple_size<MAT_TUP_T>::value > 0)
       {
         auto M = std::apply(
           [&](auto&&... coeffs){
@@ -180,15 +173,19 @@ struct LhsExecutor
           }, 
           m_mat_coeff_sum_partition 
         ); 
-        std::cout << "BuildRhs Mat: " << M << std::endl;
+        // std::cout << "BuildRhs Mat: " << M << std::endl;
+        result += M * m_stored_sols[ith_node]; 
       }
     } // end for() over ith_node 
 
     // flip result by negative 1 
+    result *= (-1.0); 
 
     // multiply by inv_coeff_util; 
+    result *= inv_coeff_util(); 
 
     // Eigen::VectorXd 
+    return result; 
   }
 
   auto inv_coeff_util()
@@ -211,27 +208,28 @@ struct LhsExecutor
             }, 
             m_mat_coeff_sum_partition 
       ); 
-      A = A.cwiseInverse(); 
-      return A; 
+      MatrixStorage_t B = A.cwiseInverse(); 
+      return B; 
     }
     else{ 
-      // otherwise return product of 1/sum(scalar) * (sum(Mats)).cwiseInverse
-      double s = std::apply(
-          [&](auto&&... coeffs){
-            return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-          }, 
-          m_scalar_coeff_sum_partition
-      );
+      throw std::runtime_error("This formula hasn't been implemented yet!"); 
+      // otherwise return product of 1/sum(scalar) + (sum(Mats)).cwiseInverse
+      // double s = std::apply(
+      //     [&](auto&&... coeffs){
+      //       return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+      //     }, 
+      //     m_scalar_coeff_sum_partition
+      // );
 
-      MatrixStorage_t A = std::apply(
-            [&](auto&&... coeffs){
-              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-            }, 
-            m_mat_coeff_sum_partition 
-      ); 
+      // MatrixStorage_t A = std::apply(
+      //       [&](auto&&... coeffs){
+      //         return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+      //       }, 
+      //       m_mat_coeff_sum_partition 
+      // ); 
 
-      MatrixStorage_t B = (1.0/s) * A.cwiseInverse(); 
-      return B; 
+      // MatrixStorage_t B = (1.0/s) * A.cwiseInverse(); 
+      // return B; 
     }
   } // end inv_coeff_util() 
 
