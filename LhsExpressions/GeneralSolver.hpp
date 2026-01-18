@@ -7,11 +7,13 @@
 #ifndef GENERALSOLVER_H
 #define GENERALSOLVER_H 
 
-#include "../LinOps/Mesh.hpp"
-#include "../LinOpsXD/MeshXD.hpp"
-#include "../LinOps/Operators/IOp.hpp"
-#include "../LinOpsXD/OperatorsXD/IOpXD.hpp"
-#include "../Utilities/FillStencil.hpp"
+#include "../LinOps/Mesh.hpp" // Mesh1D
+#include "../LinOpsXD/MeshXD.hpp" // MeshXD 
+#include "../LinOps/Discretization.hpp" // Discretization1D ( unnecessary? )
+#include "../LinOpsXD/DiscretizationXD.hpp" // DiscretizationXD ( unnecessary? ) 
+#include "../LinOps/Operators/IOp.hpp" // IOp
+#include "../LinOpsXD/OperatorsXD/IOpXD.hpp" // IOpXD
+#include "../Utilities/FillStencil.hpp" // overwrite_stencil 
 
 template<typename ANYMESH_SHAREDPTR_T, typename ANYBC_SHAREDPTR_T, typename CONTAINER_T>
 struct GenSolverArgs
@@ -114,9 +116,16 @@ class GenSolver
         }
         break;
       } // end switch(args.time_dep_flag)
-
-      // give last solution as result
-      return std::move(exec.MostRecentSol()); 
+      // pack last solution into Discretization1D (XD) and store mesh 
+      using DISCRETIZATION_T = std::conditional_t<
+        std::is_same<std::shared_ptr<const LinOps::Mesh1D>, M>::value,
+        LinOps::Discretization1D, 
+        LinOps::DiscretizationXD
+      >; 
+      DISCRETIZATION_T result; 
+      result = std::move(exec.MostRecentSol()); 
+      result.resize(args.domain_mesh_ptr); 
+      return result; 
     }
 
     // Takes GenSolverArgs and find solution U(t=T) with explicit steps 
@@ -197,9 +206,16 @@ class GenSolver
         }
         break;
       } // end switch(args.time_dep_flag)
-
-      // give last solution as result
-      return std::move(exec.MostRecentSol()); 
+      // pack last solution into Discretization1D (XD) and store mesh 
+      using DISCRETIZATION_T = std::conditional_t<
+        std::is_same<std::shared_ptr<const LinOps::Mesh1D>, M>::value,
+        LinOps::Discretization1D, 
+        LinOps::DiscretizationXD
+      >; 
+      DISCRETIZATION_T result; 
+      result = std::move(exec.MostRecentSol()); 
+      result.resize(args.domain_mesh_ptr); 
+      return result; 
     }
 
 }; 

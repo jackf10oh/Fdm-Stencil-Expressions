@@ -77,5 +77,4 @@ int main()
   // Printing ---------------------------------------------------------------- 
   print_vec(my_vals, "ICs"); 
   print_vec(v,"Sol"); 
-  // auto foo = exec.BuildRhs(*it); 
 };

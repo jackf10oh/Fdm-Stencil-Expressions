@@ -9,19 +9,10 @@
 
 #include "TimeDerivBase.hpp"
 #include "NthTimeDeriv.hpp" 
-#include "../LinOps/LinOpTraits.hpp"
-#include "../LinOpsXD/LinOpTraitsXD.hpp"
-
-// // detect if a type is a CoeffMultExpr
-// template<typename T, typename = void>
-// struct is_coeffmultexpr_crtp_impl : public std::false_type{}; 
-
-// template<typename T>
-// struct is_coeffmultexpr_crtp_impl<T,std::void_t<typename T::is_coeffmultexpr_tag>> : public std::true_type{}; 
-
-// template<typename T>
-// using is_coeffmultexpr_crtp = is_coeffmultexpr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;  
-
+#include "../LinOps/LinOpTraits.hpp" // LinOps::internal::Storage_t<> 
+#include "../LinOpsXD/LinOpTraitsXD.hpp" // LinOps::internal::Storage_t<> ( for CoeffOpXD )
+#include "../FDStencils/CoeffOpBase.hpp" // LinOps::internal::is_coeffop_crtp<>
+#include "../FDStencilsXD/CoeffOpBaseXD.hpp" // LinOps::internal::is_coeffopxd_crtp<>
 
 // ======================================================
 template<typename COEFF_T, typename RHS_T>
@@ -29,7 +20,6 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
 {
   public:
     // Type Defs --------------------- 
-    struct is_coeffmultexpr_tag{}; 
     using Lhs_t = typename LinOps::internal::Storage_t<COEFF_T>::type; 
     using Rhs_t = typename std::conditional_t<
       std::conjunction_v<
@@ -44,12 +34,13 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     Lhs_t m_coeff; 
     Rhs_t m_rhs; 
     /* store the right hand side somehow... 
-    if its an lvalue store a reference. 
-    if its a rvalue just store a copy.*/
+    if its an lvalue NthTimeDeriv store a reference. 
+    if its a rvalue NthTimeDeriv just store a copy.
+    All other types (COeffMultExpr) are stored by Copy*/
 
   public:
     // Constructors + Destructor ====================================
-    // CoeffMultExpr()=delete; // necessary?  
+    // CoeffMultExpr()=delete; // unnecessary?  
     CoeffMultExpr(Lhs_t c_init, Rhs_t rhs_init)
       : m_coeff(c_init), m_rhs(rhs_init), TimeDerivBase<CoeffMultExpr>(rhs_init.Order())
     {}
@@ -105,21 +96,25 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     std::string toString() const {return "hi from coeffMult!"; }; 
 }; 
 
-// should be deleted for SumExprs...... 
 template<
   typename Lhs, 
   typename Rhs,  
   typename = std::enable_if_t<
     std::conjunction_v<
-    LinOps::internal::is_coeffop_crtp<Lhs>,
-    is_timederiv_crtp<Rhs>
+      std::disjunction<
+        LinOps::internal::is_coeffop_crtp<Lhs>,
+        LinOps::internal::is_coeffopxd_crtp<Lhs>
+      >,
+      is_timederiv_crtp<Rhs>
     >
   >
 >
 auto operator*(Lhs&& c, Rhs&& rhs)
 {
+  // false if Rhs is any form of SumExpr. We don't want to mess with expressions like c*(A+B)
+  static_assert(std::tuple_size<decltype(rhs.toTuple())>::value == 1, "operator*(c,TimeDeriv) only meant for single TimeDeriv"); 
   return CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs)); 
-}
+} 
 
 // Operator for double c, TimeDeriv Ut making expression c*Ut 
 template<

@@ -101,9 +101,13 @@ struct LhsExecutor
   ~LhsExecutor()=default; 
 
   // Member Funcs =======================================
-  // returns const ref to newest solution 
+  // returns ref to newest solution 
   const auto& MostRecentSol() const { return m_stored_sols[m_stored_sols.size()-1]; }
   auto& MostRecentSol(){ return m_stored_sols[m_stored_sols.size()-1]; }
+  // return ref to first elem in m_stored_sols. Gives an opportunity to move it elsewhere before overwritten in ConsumeSolution  
+  Eigen::VectorXd& ExpiringSol(){ return m_stored_sols[0]; }
+  // return full vector of StoredSols. change to move it elsewhere at end of calculation loop 
+  auto& StoredSols(){ return m_stored_sols; }
 
   // from a time. set weights
   void SetWeightsFromTime(double t)

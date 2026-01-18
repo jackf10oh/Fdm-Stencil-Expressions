@@ -9,12 +9,7 @@
 
 #include "TimeDerivBase.hpp"
 
-// forward declarations -------------
-class NthTimeDeriv; 
-
-template<typename Lhs, typename>
-auto operator*(Lhs&& c, NthTimeDeriv rhs);
-
+// ===============================================================
 class NthTimeDeriv : public TimeDerivBase<NthTimeDeriv> 
 {
   private:

@@ -7,10 +7,6 @@
 #ifndef TIMEDERIVBASE_H
 #define TIMEDERIVBASE_H 
 
-// contain traits for is_coeffop_crtp + is_coeffopxd_crtp 
-#include "../FDStencils/CoeffOpBase.hpp"
-#include "../FDStencilsXD/CoeffOpBaseXD.hpp"
-
 // traits =====================================================
 template<typename T, typename = void> 
 struct is_timederiv_crtp_impl : public std::false_type{}; 
