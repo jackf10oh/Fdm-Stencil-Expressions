@@ -33,11 +33,11 @@ int main()
 
   // defining Domain Mesh --------------------------------------
   auto r = 10.0; 
-  int n_gridpoints = 21;
+  int n_gridpoints = 101;
   // mesh in space 
   auto my_mesh = Fds::make_mesh(0.0,r,n_gridpoints); 
   // mesh in time 
-  auto time_mesh = Fds::make_mesh(0.0, 5.0, 501); 
+  auto time_mesh = Fds::make_mesh(0.0, 5.0, 8); 
 
   // Initializing IC discretizations -------------------------------------------------------
   Fds::Discretization1D my_vals;
@@ -48,12 +48,12 @@ int main()
 
   // building RHS expression -----------------------------------------------------
   using D = Fds::NthDerivOp;
-  auto expr = 0.2 * D(2); 
+  auto expr = 0.2 * D(2) - 0.5 * D(1); 
   // auto expr = 0.2 * D(2) - 0.5 * D(1); 
 
   // Boundary Conditions + --------------------------------------------------------------------- 
   std::shared_ptr<Fds::IBCLeft> left = Fds::make_dirichlet(0.0); 
-  std::shared_ptr<Fds::IBCRight> right = Fds::make_dirichlet(0.0); 
+  std::shared_ptr<Fds::IBCRight> right = Fds::make_neumann(0.0); 
 
   auto bcs = std::make_shared<BCPair>(left,right); 
 
@@ -71,7 +71,8 @@ int main()
   }; 
 
   GenSolver s(lhs_expr, expr); 
-  auto v = s.Calculate(args); 
+  // auto v = s.Calculate(args); 
+  auto v = s.CalculateImp(args); 
 
   // Printing ---------------------------------------------------------------- 
   print_vec(my_vals, "ICs"); 

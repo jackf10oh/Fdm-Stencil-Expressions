@@ -9,6 +9,7 @@
 
 #include<Eigen/Core>
 #include "../LinOps/Mesh.hpp" // MeshPtr_t
+#include "../Utilities/SparseDiagExpr.hpp"
 
 using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
 
@@ -241,24 +242,25 @@ struct LhsExecutor
       return B; 
     }
     else{ 
-      throw std::runtime_error("This formula hasn't been implemented yet!"); 
-      // otherwise return product of 1/sum(scalar) + (sum(Mats)).cwiseInverse
-      // double s = std::apply(
-      //     [&](auto&&... coeffs){
-      //       return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-      //     }, 
-      //     m_scalar_coeff_sum_partition
-      // );
+      // throw std::runtime_error("This formula hasn't been implemented yet!"); 
+      // otherwise return product of 1/sum(scalar) + (sum(Mats)).cwiseInverse()
+      double s = std::apply(
+          [&](auto&&... coeffs){
+            return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+          }, 
+          m_scalar_coeff_sum_partition
+      );
 
-      // MatrixStorage_t A = std::apply(
-      //       [&](auto&&... coeffs){
-      //         return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-      //       }, 
-      //       m_mat_coeff_sum_partition 
-      // ); 
+      MatrixStorage_t A = std::apply(
+            [&](auto&&... coeffs){
+              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+            }, 
+            m_mat_coeff_sum_partition 
+      ); 
 
-      // MatrixStorage_t B = (1.0/s) * A.cwiseInverse(); 
-      // return B; 
+      auto diag = (1.0/s) * Eigen::VectorXd::Ones(A.rows()); 
+      MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
+      return B; 
     }
   } // end inv_coeff_util() 
 
