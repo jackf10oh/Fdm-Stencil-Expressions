@@ -43,9 +43,8 @@ int main()
   Fds::DiscretizationXD my_vals;
 
   // Bump centered at (r/2,r2). Zero at x=0, x=r, y=0, y=r. 
-  // BumpFunc bump_1d{.L=0.0, .R=r, .c=r/2, .h=1.0, .focus=20.0};
-  // auto f_lambda = [&](double x, double y){ return bump_1d(x) * bump_1d(y); }; 
-  auto f_lambda = [&](double x, double y){ return std::sqrt(x*x + y*y); }; 
+  BumpFunc bump_1d{.L=0.0, .R=r, .c=r/2, .h=1.0, .focus=20.0};
+  auto f_lambda = [&](double x, double y){ return bump_1d(x) * bump_1d(y); }; 
   my_vals.set_init(my_mesh, f_lambda); 
 
   // building RHS expression -----------------------------------------------------
@@ -62,20 +61,20 @@ int main()
   bcs->list.emplace_back(left,right); 
 
   // LHS time derivs ----------------------------------------------------------------
-  // auto lhs_expr = NthTimeDeriv(1); 
+  auto lhs_expr = NthTimeDeriv(1); 
   // auto lhs_expr = NthTimeDeriv(1); 
 
   // Solving --------------------------------------------------------------------- 
-  // GenSolverArgs args{
-  //   .domain_mesh_ptr = my_mesh,
-  //   .time_mesh_ptr = time_mesh,
-  //   .bcs = bcs, 
-  //   .ICs = std::vector<Eigen::VectorXd>(2, my_vals.values()), 
-  //   .time_dep_flag = false 
-  // }; 
+  GenSolverArgs args{
+    .domain_mesh_ptr = my_mesh,
+    .time_mesh_ptr = time_mesh,
+    .bcs = bcs, 
+    .ICs = std::vector<Eigen::VectorXd>(1, my_vals.values()), 
+    .time_dep_flag = false 
+  }; 
 
-  // GenSolver s(lhs_expr, expr); 
-  // // auto v = s.Calculate(args); 
+  GenSolver s(lhs_expr, expr); 
+  auto v = s.Calculate(args); 
   // auto v = s.CalculateImp(args); 
 
   // Printing ---------------------------------------------------------------- 
@@ -83,4 +82,5 @@ int main()
   // print_vec(v,"Sol"); 
 
   print_mat(my_mesh->OneDim_views(my_vals.values(),0), "ICs"); 
+  print_mat(my_mesh->OneDim_views(v.values(),0), "Sol"); 
 };
