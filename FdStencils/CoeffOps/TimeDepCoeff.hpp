@@ -31,8 +31,8 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     TimeDepCoeff(FUNC_STORAGE_T f_init, MeshPtr_t m = MeshPtr_t{})
       : m_function(f_init), m_diag_vals(0)
     {
-      static_assert(internal::callable_traits<FUNC_STORAGE_T>::num_args > 0, "Assinging functions with no arguments to TimeDepCoeff not allowed"); 
-      static_assert(internal::callable_traits<FUNC_STORAGE_T>::num_args <=2, "In 1D, TimeDepCoeff must have form a(t,x) or a(t)");  
+      static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args > 0, "Assinging functions with no arguments to TimeDepCoeff not allowed"); 
+      static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args <=2, "In 1D, TimeDepCoeff must have form a(t,x) or a(t)");  
       set_mesh(m);
     }
     // copy constructor
@@ -67,12 +67,12 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     void SetTime_impl(double t){
       // SetTime() stores the new time... 
       // Store the result of m_function(t,x)  
-      if constexpr(internal::callable_traits<FUNC_STORAGE_T>::num_args==2){
+      if constexpr(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args==2){
         auto binded = std::bind(m_function, t, std::placeholders::_1); 
         m_diag_vals.set_init(this->m_mesh_ptr, binded); 
       }
       // set diag to be f(t) 
-      if constexpr(internal::callable_traits<FUNC_STORAGE_T>::num_args==1){
+      if constexpr(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args==1){
         m_diag_vals.set_init( m_function(t) ); 
       }
     };

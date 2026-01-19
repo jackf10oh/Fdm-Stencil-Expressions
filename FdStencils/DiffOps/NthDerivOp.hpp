@@ -132,17 +132,17 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     {
       // derivative of a scalar multiple 
       using cleaned_rhs_t = std::remove_cv_t<std::remove_reference_t<DerivedInner>>; 
-      if constexpr(internal::is_scalar_multiply_expr<cleaned_rhs_t>::value){
+      if constexpr(LinOps::traits::is_scalar_multiply_expr<cleaned_rhs_t>::value){
         double c = InnerOp.Lhs(); 
         return c * compose(InnerOp.Rhs()); 
       }
-      else if constexpr(internal::is_add_expr<cleaned_rhs_t>::value){
+      else if constexpr(LinOps::traits::is_add_expr<cleaned_rhs_t>::value){
         return compose(InnerOp.Lhs()) + compose(InnerOp.Rhs()); 
       }
-      else if constexpr(internal::is_subtraction_expr<cleaned_rhs_t>::value){
+      else if constexpr(LinOps::traits::is_subtraction_expr<cleaned_rhs_t>::value){
         return compose(InnerOp.Lhs()) - compose(InnerOp.Rhs()); 
       }
-      else if constexpr(internal::is_negation_expr<cleaned_rhs_t>::value){
+      else if constexpr(LinOps::traits::is_negation_expr<cleaned_rhs_t>::value){
         return - compose(InnerOp.Lhs()); 
       }
       // if taking derivative of another derivative 

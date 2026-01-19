@@ -11,22 +11,23 @@
 #include "FdmPlugin.hpp"
 #include "../LinOps/LinearOpBase.hpp"
 
-namespace LinOps::internal{
-// Private Traits ---------------------------------------------
+namespace Fds{
+
+namespace traits{
 // Given a type, see if it is derived from CoeffOpBase's crtp scheme ------------------------------------
+namespace internal{
 template<typename T, typename = void> 
 struct is_coeffop_crtp_impl : std::false_type{}; 
 
 template<typename T>
 struct is_coeffop_crtp_impl<T, std::void_t<typename T::is_coeff_flag>>: std::true_type{}; 
+}
 
 template<typename T>
-using is_coeffop_crtp = is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
-} // end namespace LinOps::internal 
+using is_coeffop_crtp = internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
+} // end namespace Fds::traits
 
-namespace Fds{
 using namespace LinOps; 
-
 // BASE INTERFACE ===============================================
 template<typename Derived>
 class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
@@ -72,14 +73,14 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     template<typename LINOP_T>
     auto operator*(LINOP_T&& rhs) &
     {
-      static_assert(!internal::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      static_assert(!Fds::traits::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
       return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
     };
     // operator for scalar multiplication c * L ( Rval overload)
     template<typename LINOP_T>
     auto operator*(LINOP_T&& rhs) &&
     {
-      static_assert(!internal::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      static_assert(!Fds::traits::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
       return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
     };
     

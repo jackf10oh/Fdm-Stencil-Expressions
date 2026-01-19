@@ -91,13 +91,13 @@ TEST(CoeffOpTestSuite, TimeDepCoeffTest)
   auto check_lam = [&](const auto& coeff_op, auto func){
     MatrixStorage_t A = coeff_op.GetMat(); 
     for(std::size_t i=0; i<A.rows(); i++){
-      if constexpr(internal::callable_traits<decltype(func)>::num_args==2){
+      if constexpr(LinOps::traits::callable_traits<decltype(func)>::num_args==2){
         ASSERT_EQ(     
           A.coeff(i,i), 
           func(coeff_op.Time(), my_mesh->cbegin()[i])         
         ); 
       } 
-      if constexpr(internal::callable_traits<decltype(func)>::num_args==1){
+      if constexpr(LinOps::traits::callable_traits<decltype(func)>::num_args==1){
         ASSERT_EQ(    
           A.coeff(i,i), 
           func(coeff_op.Time())   

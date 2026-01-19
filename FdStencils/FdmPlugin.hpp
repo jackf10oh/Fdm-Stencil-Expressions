@@ -40,17 +40,17 @@ class FdmPlugin
     void SetTime(double t)
     {
       // if we are an expression 
-      if constexpr (internal::is_expr_crtp<typename BaseDerived::Derived_t>::value)
+      if constexpr (LinOps::traits::is_expr_crtp<typename BaseDerived::Derived_t>::value)
       {
         auto& expr = static_cast<typename BaseDerived::Derived_t&>(*this);
         // if LHS of expr is LinOp / FdmPugin 
-        if constexpr(internal::is_linop_crtp<typename BaseDerived::Derived_t::LStorage_t>::value) 
+        if constexpr(LinOps::traits::is_linop_crtp<typename BaseDerived::Derived_t::LStorage_t>::value) 
         {
           // LHS sets time 
           expr.Lhs().SetTime(t);
         }
         // if RHS of expr is LinOp / FdmPugin
-        if constexpr(internal::is_linop_crtp<typename BaseDerived::Derived_t::RStorage_t>::value)
+        if constexpr(LinOps::traits::is_linop_crtp<typename BaseDerived::Derived_t::RStorage_t>::value)
         {
           // RHS sets time 
           expr.Rhs().SetTime(t);
@@ -67,17 +67,17 @@ class FdmPlugin
     // get the time this operator is set to
     double Time() const {
       // if we are an expression 
-      if constexpr (internal::is_expr_crtp<typename BaseDerived::Derived_t>::value)
+      if constexpr (traits::is_expr_crtp<typename BaseDerived::Derived_t>::value)
       {
         const auto& expr = static_cast<const typename BaseDerived::Derived_t&>(*this);
         // if LHS of expr is LinOp / FdmPugin 
-        if constexpr(internal::is_linop_crtp<typename BaseDerived::Derived_t::LStorage_t>::value) 
+        if constexpr(LinOps::traits::is_linop_crtp<typename BaseDerived::Derived_t::LStorage_t>::value) 
         {
           // LHS returns time 
           return expr.Lhs().Time();
         }
         // if RHS of expr is LinOp / FdmPugin
-        else if constexpr(internal::is_linop_crtp<typename BaseDerived::Derived_t::RStorage_t>::value)
+        else if constexpr(LinOps::traits::is_linop_crtp<typename BaseDerived::Derived_t::RStorage_t>::value)
         {
           // RHS returns time 
           return expr.Rhs().Time();
