@@ -10,6 +10,7 @@
 #include<iostream>
 #include<vector>
 #include<tuple>
+#include<Eigen/Core>
 #include "../LinOpsXD/MeshXD.hpp"
 #include "../LinOpsXD/DiscretizationXD.hpp"
 
@@ -21,7 +22,9 @@ using BcXDPtr_t = std::shared_ptr<IBoundaryCondXD>;
 
 class IBoundaryCondXD
 {
-  private:
+  protected:
+    // Type Defs 
+    using StridedRef = typename Eigen::Ref<Eigen::VectorXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
     // member data 
     double m_current_time;
     
@@ -35,10 +38,10 @@ class IBoundaryCondXD
     // Member Functions ============================================
     // Must Implement ---------------------------------------------
     // set a DiscretizationXD to an explicit solution 
-    virtual void SetSol(DiscretizationXD& Sol, const std::shared_ptr<const MeshXD>& mesh) const =0; 
+    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const MeshXD>& mesh) const =0; 
 
     // set a DiscretizationXD to an implicit solution 
-    virtual void SetImpSol(DiscretizationXD& Sol, const std::shared_ptr<const MeshXD>& mesh) const =0; 
+    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const MeshXD>& mesh) const =0; 
 
     // set a Matrixs' row according to m_bc_list. making it an implicit stencil  
     virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const =0; 

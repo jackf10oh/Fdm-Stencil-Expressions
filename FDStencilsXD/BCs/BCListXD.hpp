@@ -23,6 +23,9 @@ using namespace LinOps;
 
 class BCListXD : public IBoundaryCondXD
 {
+  protected:  
+    // Type Defs 
+    using StridedRef = typename Eigen::Ref<Eigen::VectorXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
   public:
     // member data. -------------------------------------------------
     // list of boundary conditions. 1 per Dimension 
@@ -36,28 +39,25 @@ class BCListXD : public IBoundaryCondXD
 
     // Member Functions =======================================================
     // set a DiscretizationXD to an explicit solution 
-    virtual void SetSol(DiscretizationXD& Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
+    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
       if(list.empty()) throw std::runtime_error("BCListXD: list must be non empty!"); 
       if(list.size()!=mesh->dims()) throw std::invalid_argument("BCListXD:  length of boundary condition list must be == to # of dims of MeshXD");
-      if(list.size()!=Sol.dims()) throw std::invalid_argument("BCListXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
-      for(std::size_t i=0; i<Sol.dims(); i++){
-        if(Sol.dim_size(i)!=mesh->dim_size(i)) throw std::invalid_argument("BCListXD: Dimension sizes of Discretization1D and MeshXD must match!");
-      };
+      if(Sol.size()!=mesh->sizes_product()) throw std::invalid_argument("BCListXD: # of entries in StrideRef must be == to meshXD->sizes_product().");
 
       // this lambda takes 1 BcPtr_t and applies it to Sol
       // without double assigning to corners/edges of XDim space 
       auto set_dim_boundaries = [&](std::size_t dim, const BCPair& bc_pair){
         auto mesh_1dim = mesh->GetMesh(dim); 
-        auto views = Sol.OneDim_views(dim); 
+        auto views = mesh->OneDim_views(Sol,dim); 
         // iterate through views that look like Mesh1D
         for(std::size_t i=0; i<views.size(); i++){
           // determine if it has been set by lower dimension 
           bool set_by_low_dim = false; 
           std::size_t s1 = 1; 
           for(int dim_i=0; dim_i<dim; dim_i++){
-            std::size_t s2 = Sol.dim_size(dim_i); 
+            std::size_t s2 = mesh->dim_size(dim_i); 
             // in first group of values
             if((i/s1)%s2 == 0) set_by_low_dim = true;  
             // in last group of values
@@ -74,34 +74,32 @@ class BCListXD : public IBoundaryCondXD
       }; // end set_dim_boundaries lambda 
 
       // apply lambda + corresponding bc from list to Sol 
-      for(std::size_t j=0; j<list.size(); j++) set_dim_boundaries(j,list[j]); 
+      std::size_t dim_i=0; 
+      for(auto& bc : list) set_dim_boundaries(dim_i++, bc); 
 
       // void return type       
     }
 
     // set a DiscretizationXD to an implicit solution 
-    virtual void SetImpSol(DiscretizationXD& Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
+    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
       if(list.empty()) throw std::runtime_error("BoundaryCondXD: list must be non empty!"); 
       if(list.size()!=mesh->dims()) throw std::invalid_argument("BoundaryCondXD:  length of boundary condition list must be == to # of dims of MeshXD");
-      if(list.size()!=Sol.dims()) throw std::invalid_argument("BoundaryCondXD: length of boundary condition list must be == to # of dims of DiscretizationXD");
-      for(std::size_t i=0; i<Sol.dims(); i++){
-        if(Sol.dim_size(i)!=mesh->dim_size(i)) throw std::invalid_argument("BoundaryCondXD: Dimension sizes of Discretization1D and MeshXD must match!"); 
-      }; 
+      if(Sol.size()!=mesh->sizes_product()) throw std::invalid_argument("BCListXD: # of entries in StrideRef must be == to meshXD->sizes_product().");
 
       // this lambda takes 1 BcPtr_t and applies it to Sol
       // without double assigning to corners/edges of XDim space 
       auto set_dim_boundaries_imp = [&](std::size_t dim, const BCPair& bc_pair){
         auto mesh_1dim = mesh->GetMesh(dim); 
-        auto views = Sol.OneDim_views(dim); 
+        auto views = mesh->OneDim_views(Sol, dim); 
         // iterate through views that look like Mesh1D
         for(std::size_t i=0; i<views.size(); i++){
           // determine if it has been set by lower dimension 
           bool set_by_low_dim = false; 
           std::size_t s1 = 1; 
           for(int dim_i=0; dim_i<dim; dim_i++){
-            std::size_t s2 = Sol.dim_size(dim_i); 
+            std::size_t s2 = mesh->dim_size(dim_i); 
             // in first group of values
             if((i/s1)%s2 == 0) set_by_low_dim = true;  
             // in last group of values
@@ -169,30 +167,31 @@ class BCListXD : public IBoundaryCondXD
     }
   
     // Set time of each stored BC in 1D 
-    virtual void SetTime(double t){
+    virtual void SetTime(double t)
+    {
       for(auto& bc : list) bc.SetTime(t); 
     }
   private:
     // Unreachable =========================================================== 
-    MatrixStorage_t flat_stencil(const BCPair& p, const std::shared_ptr<const Mesh1D>& mesh) const {
+    MatrixStorage_t flat_stencil(const BCPair& p, const std::shared_ptr<const Mesh1D>& mesh) const 
+    {
+      // empty singuglar row of size == mesh size 
+      MatrixStorage_t result(1, mesh->size()); 
 
-    // empty singuglar row of size == mesh size 
-    MatrixStorage_t result(1, mesh->size()); 
+      // set the row according to left boundary condition. 
+      p.pair.first->SetStencilL(result, mesh); 
 
-    // set the row according to left boundary condition. 
-    p.pair.first->SetStencilL(result, mesh); 
+      // store it into a temp vector 
+      std::vector<double> temp(result.valuePtr(), result.valuePtr()+result.nonZeros()); 
 
-    // store it into a temp vector 
-    std::vector<double> temp(result.valuePtr(), result.valuePtr()+result.nonZeros()); 
+      // set the row according to right boundary condition 
+      p.pair.second->SetStencilR(result, mesh); 
 
-    // set the row according to right boundary condition 
-    p.pair.second->SetStencilR(result, mesh); 
+      // copy left side back in to result 
+      for(auto i=0; i<temp.size(); i++) result.coeffRef(0,i) = temp[i]; 
 
-    // copy left side back in to result 
-    for(auto i=0; i<temp.size(); i++) result.coeffRef(0,i) = temp[i]; 
-
-    return result; 
-  }; 
+      return result; 
+    }; 
 };
 
 } // end namespace Fds 
