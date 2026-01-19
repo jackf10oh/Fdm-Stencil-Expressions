@@ -9,8 +9,10 @@
 
 #include "TimeDerivBase.hpp"
 
+namespace TExprs{
+
 // ===============================================================
-class NthTimeDeriv : public TimeDerivBase<NthTimeDeriv> 
+class NthTimeDeriv : public TExprs::internal::TimeDerivBase<NthTimeDeriv> 
 {
   private:
     // Member Data ---------------
@@ -39,5 +41,7 @@ class NthTimeDeriv : public TimeDerivBase<NthTimeDeriv>
     std::string toString() const {return "hi from NthTimeDeriv"; }; 
 
 }; 
+
+} // end namespace TExprs 
 
 #endif // NthTimeDeriv.hpp

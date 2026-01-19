@@ -9,6 +9,9 @@
 
 #include "TimeDerivBase.hpp"
 
+namespace TExprs{
+namespace internal{
+
 // ====================================================== 
 template<typename... Args>
 class SumExpr : public TimeDerivBase<SumExpr<Args...>> 
@@ -52,5 +55,8 @@ auto make_sumexpr_helper(LHS&& lhs, RHS&& rhs)
   auto cat = std::tuple_cat(left_tup, right_tup); 
   return SumExpr(cat, m); 
 }
+
+} // end namespace internal
+} // end namespace TExprs 
 
 #endif // SumExpr.hpp 

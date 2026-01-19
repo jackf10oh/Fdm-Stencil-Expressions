@@ -7,6 +7,9 @@
 #ifndef TIMEDERIVBASE_H
 #define TIMEDERIVBASE_H 
 
+namespace TExprs{
+
+namespace traits{
 // traits =====================================================
 template<typename T, typename = void> 
 struct is_timederiv_crtp_impl : public std::false_type{}; 
@@ -16,6 +19,12 @@ struct is_timederiv_crtp_impl<T, std::void_t<typename T::is_timederiv_tag>>: pub
 
 template<typename T>
 using is_timederiv_crtp = is_timederiv_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
+
+} // end namespace traits
+
+namespace internal{
+  
+using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
 
 // Base Definition =====================================================
 template<typename Derived>
@@ -69,13 +78,13 @@ class TimeDerivBase
 
     // Operators ================================
     // Binary Addition Ut + Utt (Lvalue)-----------------------
-    template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
+    template<typename RHS, typename = std::enable_if_t<TExprs::traits::is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) & 
     {
       return make_sumexpr_helper(static_cast<Derived&>(*this), std::forward<RHS>(rhs)); 
     }
     // (Rvalue) 
-    template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
+    template<typename RHS, typename = std::enable_if_t<TExprs::traits::is_timederiv_crtp<RHS>::value>>
     auto operator+(RHS&& rhs) &&
     {
       return make_sumexpr_helper(std::move(static_cast<Derived&>(*this)), std::forward<RHS>(rhs)); 
@@ -95,22 +104,15 @@ class TimeDerivBase
     }
 
     // Binary Subtraction (Ut - Utt) -> (Ut) + (-Utt) (Lvalue) ----------------------------------
-    template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
+    template<typename RHS, typename = std::enable_if_t<TExprs::traits::is_timederiv_crtp<RHS>::value>>
     auto operator-(RHS&& rhs)
     {
       return this->operator+(-std::forward<RHS>(rhs)); 
     }
-    // template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
-    // auto operator-(RHS&& rhs) & 
-    // {
-    //   return make_sumexpr_helper(static_cast<Derived&>(*this), -std::forward<RHS>(rhs)); 
-    // }
-    // // (Rvalue) 
-    // template<typename RHS, typename = std::enable_if_t<is_timederiv_crtp<RHS>::value>>
-    // auto operator-(RHS&& rhs) &&
-    // {
-    //   return make_sumexpr_helper(std::move(static_cast<Derived&>(*this)), -std::forward<RHS>(rhs)); 
-    // }
 }; 
+
+} // end namespace internal 
+
+} // end namespace TExprs
 
 #endif

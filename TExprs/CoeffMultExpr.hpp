@@ -14,6 +14,9 @@
 #include "../FDStencils/CoeffOpBase.hpp" // LinOps::internal::is_coeffop_crtp<>
 #include "../FDStencilsXD/CoeffOpBaseXD.hpp" // LinOps::internal::is_coeffopxd_crtp<>
 
+namespace TExprs{
+namespace internal{
+
 // ======================================================
 template<typename COEFF_T, typename RHS_T>
 class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>> 
@@ -94,7 +97,10 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
 
     // using LhsBase<LhsCoeffMultExpr<COEFF_T>>::toTuple; 
     std::string toString() const {return "hi from coeffMult!"; }; 
-}; 
+}; // end class CoeffMultExpr
+
+} // end namespace internal 
+} // end namespace TExprs 
 
 template<
   typename Lhs, 
@@ -105,7 +111,7 @@ template<
         LinOps::internal::is_coeffop_crtp<Lhs>,
         LinOps::internal::is_coeffopxd_crtp<Lhs>
       >,
-      is_timederiv_crtp<Rhs>
+      TExprs::traits::is_timederiv_crtp<Rhs>
     >
   >
 >
@@ -113,19 +119,19 @@ auto operator*(Lhs&& c, Rhs&& rhs)
 {
   // false if Rhs is any form of SumExpr. We don't want to mess with expressions like c*(A+B)
   static_assert(std::tuple_size<decltype(rhs.toTuple())>::value == 1, "operator*(c,TimeDeriv) only meant for single TimeDeriv"); 
-  return CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs)); 
+  return TExprs::internal::CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs)); 
 } 
 
 // Operator for double c, TimeDeriv Ut making expression c*Ut 
 template<
   typename Rhs, 
   typename = std::enable_if_t<
-    is_timederiv_crtp<Rhs>::value
+    TExprs::traits::is_timederiv_crtp<Rhs>::value
   >
 >
 auto operator*(double c, Rhs&& rhs)
 {
-  return CoeffMultExpr<double,Rhs>(c, std::forward<Rhs>(rhs)); 
+  return TExprs::internal::CoeffMultExpr<double,Rhs>(c, std::forward<Rhs>(rhs)); 
 }
 
 #endif // LhsCoeffMultExpr.hpp 

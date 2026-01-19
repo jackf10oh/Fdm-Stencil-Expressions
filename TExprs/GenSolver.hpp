@@ -7,6 +7,7 @@
 #ifndef GENERALSOLVER_H
 #define GENERALSOLVER_H 
 
+#include "TExprExecutor.hpp" // TExprExecutor 
 #include "../LinOps/Mesh.hpp" // Mesh1D
 #include "../LinOpsXD/MeshXD.hpp" // MeshXD 
 #include "../LinOps/Discretization.hpp" // Discretization1D ( unnecessary? )
@@ -14,6 +15,8 @@
 #include "../LinOps/Operators/IOp.hpp" // IOp
 #include "../LinOpsXD/OperatorsXD/IOpXD.hpp" // IOpXD
 #include "../Utilities/FillStencil.hpp" // overwrite_stencil 
+
+namespace TExprs{
 
 template<typename ANYMESH_SHAREDPTR_T, typename ANYBC_SHAREDPTR_T, typename CONTAINER_T>
 struct GenSolverArgs
@@ -47,7 +50,7 @@ class GenSolver
     // Member Data -------------------------------------
     LHS_EXPR& m_lhs; // expression of time derivatives 
     RHS_EXPR& m_rhs; // expression of spatial derivatives 
-    EIGENSOLVER_T<MatrixStorage_t> m_solver; // Eigen sparse iterative solver
+    EIGENSOLVER_T<TExprs::internal::MatrixStorage_t> m_solver; // Eigen sparse iterative solver
 
   public:
     // Constructors + Destructor ===========================
@@ -65,7 +68,7 @@ class GenSolver
     auto Calculate(const GenSolverArgs<M,B,C>& args)
     {
 
-      LhsExecutor exec(m_lhs); 
+      TExprs::internal::TExprExecutor exec(m_lhs); 
 
       exec.set_mesh(args.domain_mesh_ptr);
       m_rhs.set_mesh(args.domain_mesh_ptr); 
@@ -134,7 +137,7 @@ class GenSolver
     {
       m_solver.setMaxIterations(max_iters); 
 
-      LhsExecutor exec(m_lhs); 
+      TExprs::internal::TExprExecutor exec(m_lhs); 
 
       exec.set_mesh(args.domain_mesh_ptr);
       m_rhs.set_mesh(args.domain_mesh_ptr); 
@@ -145,7 +148,7 @@ class GenSolver
       exec.ConsumeSolutionList(args.ICs.cbegin(), args.ICs.cend()); 
       exec.ConsumeTimeList(args.time_mesh_ptr->cbegin(), it); 
 
-      MatrixStorage_t I; 
+      TExprs::internal::MatrixStorage_t I; 
       if constexpr(std::is_same<std::shared_ptr<const LinOps::Mesh1D>, M>::value){
         I = LinOps::IOp(args.domain_mesh_ptr).GetMat();  
       }
@@ -168,7 +171,7 @@ class GenSolver
           args.bcs->SetImpSol(rhs, args.domain_mesh_ptr); 
 
           // build implicit stencil 
-          MatrixStorage_t A = I - exec.inv_coeff_util()*m_rhs.GetMat(); 
+          TExprs::internal::MatrixStorage_t A = I - exec.inv_coeff_util()*m_rhs.GetMat(); 
           args.bcs->SetStencil(A, args.domain_mesh_ptr); 
 
           // Implicit Step 
@@ -182,7 +185,7 @@ class GenSolver
         break;
       
       default: // false 
-        MatrixStorage_t bcs_mask(args.domain_mesh_ptr->size(), args.domain_mesh_ptr->size()); 
+        TExprs::internal::MatrixStorage_t bcs_mask(args.domain_mesh_ptr->size(), args.domain_mesh_ptr->size()); 
         // args.bcs_pair.first->SetStencilL(bcs_mask, args.domain_mesh_ptr);
         args.bcs->SetStencil(bcs_mask, args.domain_mesh_ptr);
         for(; it!= end; it++)
@@ -193,7 +196,7 @@ class GenSolver
           args.bcs->SetImpSol(rhs, args.domain_mesh_ptr); 
 
           // build implicit stencil 
-          MatrixStorage_t A = I - exec.inv_coeff_util()*m_rhs.GetMat(); 
+          TExprs::internal::MatrixStorage_t A = I - exec.inv_coeff_util()*m_rhs.GetMat(); 
           overwrite_stencil(A, bcs_mask); // applies BCs. since the rows don't change through time.
 
           // Implicit Step 
@@ -219,6 +222,8 @@ class GenSolver
     }
 
 }; 
+
+} // end namespace TExprs 
 
 #endif
 

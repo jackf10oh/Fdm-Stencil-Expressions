@@ -11,8 +11,26 @@
 #include "../LinOps/Mesh.hpp" // MeshPtr_t
 #include "../Utilities/SparseDiagExpr.hpp"
 
-using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
+namespace TExprs{
 
+namespace traits{
+// =============================================================================
+template<typename TIMEDERIV_T>
+struct TimeDerivTraits
+{
+  using _coeffatreturntype_unclean_ = decltype(std::declval<TIMEDERIV_T>().CoeffAt(std::declval<std::vector<double>>(),0,0));  
+  using CoeffAtReturnType = std::remove_cv_t<std::remove_reference_t<_coeffatreturntype_unclean_>>;
+}; 
+
+template<typename TIMEDERIV_T>
+struct coeffat_returns_double : public std::is_same<double, typename TimeDerivTraits<TIMEDERIV_T>::CoeffAtReturnType>{}; 
+
+template<typename TIMEDERIV_T>
+struct coeffat_returns_other : public std::negation<coeffat_returns_double<TIMEDERIV_T>>{}; 
+
+} // end namespace traits 
+
+namespace internal{
 // ===========================================================================
 template<template<typename...> class PRED, typename TUP_T>
 auto filter_tup(TUP_T tup)
@@ -44,28 +62,14 @@ auto filter_tup(TUP_T tup)
   ); 
 }
 
-// =============================================================================
-template<typename TIMEDERIV_T>
-struct TimeDerivTraits
-{
-  using _coeffatreturntype_unclean_ = decltype(std::declval<TIMEDERIV_T>().CoeffAt(std::declval<std::vector<double>>(),0,0));  
-  using CoeffAtReturnType = std::remove_cv_t<std::remove_reference_t<_coeffatreturntype_unclean_>>;
-}; 
-
-template<typename TIMEDERIV_T>
-struct coeffat_returns_double : public std::is_same<double, typename TimeDerivTraits<TIMEDERIV_T>::CoeffAtReturnType>{}; 
-
-template<typename TIMEDERIV_T>
-struct coeffat_returns_other : public std::negation<coeffat_returns_double<TIMEDERIV_T>>{}; 
-
 // ===============================================================================
-template<typename LHS_EXPR>
-struct LhsExecutor
+template<typename TEXPR_T>
+struct TExprExecutor
 {
   // Type Defs ------------------------------------------- 
-  using TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(std::declval<LHS_EXPR>().toTuple())>>;
-  using SCALAR_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<coeffat_returns_double>(std::declval<TUP_T&>()))>>;
-  using MAT_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<coeffat_returns_other>(std::declval<TUP_T&>()))>>;
+  using TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(std::declval<TEXPR_T>().toTuple())>>;
+  using SCALAR_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<TExprs::traits::coeffat_returns_double>(std::declval<TUP_T&>()))>>;
+  using MAT_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<TExprs::traits::coeffat_returns_other>(std::declval<TUP_T&>()))>>;
   // Member Data ---------------------------------
   // tuple that stores all entries in expr_init.toTuple() such that .coeffAt(...) returns a double  
   SCALAR_TUP_T m_scalar_coeff_sum_partition; 
@@ -86,19 +90,19 @@ struct LhsExecutor
   FornCalc m_weights_calc; 
 
   // Constructors + Destructor =======================================
-  LhsExecutor()=delete; 
-  LhsExecutor(LHS_EXPR& expr_init) 
+  TExprExecutor()=delete; 
+  TExprExecutor(TEXPR_T& expr_init) 
     :m_order(expr_init.Order()), 
     m_num_nodes(expr_init.Order()+1),  
     m_weights_calc(m_num_nodes, m_order), 
     m_stored_times(m_num_nodes), 
     m_stored_sols(m_order),
-    m_scalar_coeff_sum_partition(filter_tup<coeffat_returns_double>(expr_init.toTuple())), 
-    m_mat_coeff_sum_partition(filter_tup<coeffat_returns_other>(expr_init.toTuple()))
+    m_scalar_coeff_sum_partition(filter_tup<TExprs::traits::coeffat_returns_double>(expr_init.toTuple())), 
+    m_mat_coeff_sum_partition(filter_tup<TExprs::traits::coeffat_returns_other>(expr_init.toTuple()))
   {}
-  LhsExecutor(const LhsExecutor& other)=delete; 
+  TExprExecutor(const TExprExecutor& other)=delete; 
   // destructor 
-  ~LhsExecutor()=default; 
+  ~TExprExecutor()=default; 
 
   // Member Funcs =======================================
   // returns ref to newest solution 
@@ -236,13 +240,13 @@ struct LhsExecutor
     }
     else if constexpr(std::tuple_size<SCALAR_TUP_T>::value == 0){ 
       // all COeffAt's evaluate to matrix -> return (sum(coeffs)).cwiseInverse 
-      MatrixStorage_t A = std::apply(
+      TExprs::internal::MatrixStorage_t A = std::apply(
             [&](auto&&... coeffs){
               return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
             }, 
             m_mat_coeff_sum_partition 
       ); 
-      MatrixStorage_t B = A.cwiseInverse(); 
+      TExprs::internal::MatrixStorage_t B = A.cwiseInverse(); 
       return B; 
     }
     else{ 
@@ -255,7 +259,7 @@ struct LhsExecutor
           m_scalar_coeff_sum_partition
       );
 
-      MatrixStorage_t A = std::apply(
+      TExprs::internal::MatrixStorage_t A = std::apply(
             [&](auto&&... coeffs){
               return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
             }, 
@@ -263,7 +267,7 @@ struct LhsExecutor
       ); 
 
       auto diag = (1.0/s) * Eigen::VectorXd::Ones(A.rows()); 
-      MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
+      TExprs::internal::MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
       return B; 
     }
   } // end inv_coeff_util() 
@@ -289,5 +293,9 @@ struct LhsExecutor
     std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
   }
 }; 
+
+} // end namespace internal
+
+} // end namespace TExprs  
 
 #endif // LhsExecutor.hpp

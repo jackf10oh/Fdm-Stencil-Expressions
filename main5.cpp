@@ -19,12 +19,13 @@
 #include "FDStencilsXD/All.hpp" // likewise ...
 #include "LinOpsXD/All.hpp"
 
-#include "LhsExpressions/All.hpp"
+// #include "LhsExpressions/All.hpp"
+#include "TExprs/All.hpp"
 
 using std::cout, std::endl;
 
-using namespace Fds; 
-using namespace LinOps; 
+// using namespace Fds; 
+// using namespace LinOps; 
 
 int main()
 {
@@ -35,12 +36,12 @@ int main()
   auto r = 10.0; 
   int n_gridpoints = 11;
   // mesh in space 
-  auto my_mesh = Fds::make_meshXD(0.0,r,n_gridpoints,2); 
+  auto my_mesh = LinOps::make_meshXD(0.0,r,n_gridpoints,2); 
   // mesh in time 
-  auto time_mesh = Fds::make_mesh(0.0, 5.0, 101); 
+  auto time_mesh = LinOps::make_mesh(0.0, 5.0, 101); 
 
   // Initializing IC discretizations -------------------------------------------------------
-  Fds::DiscretizationXD my_vals;
+  LinOps::DiscretizationXD my_vals;
 
   // Bump centered at (r/2,r2). Zero at x=0, x=r, y=0, y=r. 
   BumpFunc bump_1d{.L=0.0, .R=r, .c=r/2, .h=1.0, .focus=20.0};
@@ -56,16 +57,16 @@ int main()
   std::shared_ptr<Fds::IBCLeft> left = Fds::make_dirichlet(0.0); 
   std::shared_ptr<Fds::IBCRight> right = Fds::make_dirichlet(0.0); 
 
-  auto bcs = std::make_shared<BCListXD>();
+  auto bcs = std::make_shared<Fds::BCListXD>();
   bcs->list.emplace_back(left,right); 
   bcs->list.emplace_back(left,right); 
 
   // LHS time derivs ----------------------------------------------------------------
-  auto lhs_expr = NthTimeDeriv(1); 
+  auto lhs_expr = TExprs::NthTimeDeriv(1); 
   // auto lhs_expr = NthTimeDeriv(1); 
 
   // Solving --------------------------------------------------------------------- 
-  GenSolverArgs args{
+  TExprs::GenSolverArgs args{
     .domain_mesh_ptr = my_mesh,
     .time_mesh_ptr = time_mesh,
     .bcs = bcs, 
@@ -73,7 +74,7 @@ int main()
     .time_dep_flag = false 
   }; 
 
-  GenSolver s(lhs_expr, expr); 
+  TExprs::GenSolver s(lhs_expr, expr); 
   auto v = s.Calculate(args); 
   // auto v = s.CalculateImp(args); 
 
