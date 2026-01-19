@@ -23,7 +23,7 @@ struct is_coeffopxd_crtp_impl<T, std::void_t<typename T::is_coeffxd_flag>>: publ
 
 namespace traits{
 template<typename T>
-using is_coeffopxd_crtp = is_coeffopxd_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
+using is_coeffopxd_crtp = Fds::internal::is_coeffopxd_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
 } // end namespace traits 
 
 using namespace LinOps; 

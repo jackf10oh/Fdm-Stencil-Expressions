@@ -7,19 +7,23 @@
 #ifndef TIMEDERIVBASE_H
 #define TIMEDERIVBASE_H 
 
+#include<Eigen/Core>
+#include<Eigen/Sparse>
+
 namespace TExprs{
 
-namespace traits{
 // traits =====================================================
+namespace internal{
 template<typename T, typename = void> 
 struct is_timederiv_crtp_impl : public std::false_type{}; 
 
 template<typename T> 
 struct is_timederiv_crtp_impl<T, std::void_t<typename T::is_timederiv_tag>>: public std::true_type{}; 
+} // end namespace internal 
 
+namespace traits{
 template<typename T>
-using is_timederiv_crtp = is_timederiv_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
-
+using is_timederiv_crtp = TExprs::internal::is_timederiv_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
 } // end namespace traits
 
 namespace internal{

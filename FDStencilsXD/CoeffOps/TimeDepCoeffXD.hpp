@@ -32,7 +32,7 @@ class TimeDepCoeffXD : public CoeffOpBaseXD<TimeDepCoeffXD<FUNC_STORAGE_T>>
       : m_function(f_init), m_diag_vals(0), m_prod_after(std::size_t{1}) 
     {
       static_assert(
-        std::is_same<double, typename internal::callable_traits<FUNC_STORAGE_T>::result_type>::value,
+        std::is_same<double, typename LinOps::traits::callable_traits<FUNC_STORAGE_T>::result_type>::value,
         "Error constructing coeff: F doesn't return double"
       );  
       set_mesh(m);
