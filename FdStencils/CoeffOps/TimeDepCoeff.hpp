@@ -7,14 +7,12 @@
 #ifndef TIMEDEPCOEFF_H
 #define TIMEDEPCOEFF_H
 
-#include<Eigen/Core> 
 #include "../CoeffOpBase.hpp"
 #include "../../LinOps/LinOpTraits.hpp" // callable_traits<F> 
 #include "../../LinOps/Discretization.hpp"
 #include "../../Utilities/SparseDiagExpr.hpp"
 
 namespace Fds{
-using namespace LinOps; 
 
 template<typename FUNC_STORAGE_T = std::function<double(double,double)>>
 class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
@@ -23,12 +21,12 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     using Derived_t = TimeDepCoeff; 
   public:
     FUNC_STORAGE_T m_function;  
-    Discretization1D m_diag_vals; 
+    LinOps::Discretization1D m_diag_vals; 
   public:
     // constructors ==========================================================
     TimeDepCoeff()=delete; // no default constructor
     // from callable + mesh 
-    TimeDepCoeff(FUNC_STORAGE_T f_init, MeshPtr_t m = MeshPtr_t{})
+    TimeDepCoeff(FUNC_STORAGE_T f_init, LinOps::MeshPtr_t m = LinOps::MeshPtr_t{})
       : m_function(f_init), m_diag_vals(0)
     {
       static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args > 0, "Assinging functions with no arguments to TimeDepCoeff not allowed"); 
@@ -52,7 +50,7 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
       return SparseDiag(m_diag_vals.values().transpose());
     };
     // updated m_mesh_ptr, resize m_diag_vals
-    void set_mesh(MeshPtr_t m){
+    void set_mesh(LinOps::MeshPtr_t m){
       // ensure we aren't resetting the mesh again
       if(!this->m_mesh_ptr.owner_before(m) && !m.owner_before(this->m_mesh_ptr)) return;
       // do nothing on nullptr. or throw an error 

@@ -13,7 +13,6 @@
 
 namespace Fds{
 
-namespace traits{
 // Given a type, see if it is derived from CoeffOpBase's crtp scheme ------------------------------------
 namespace internal{
 template<typename T, typename = void> 
@@ -23,14 +22,14 @@ template<typename T>
 struct is_coeffop_crtp_impl<T, std::void_t<typename T::is_coeff_flag>>: std::true_type{}; 
 }
 
+namespace traits{
 template<typename T>
-using is_coeffop_crtp = internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
+using is_coeffop_crtp = Fds::internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
 } // end namespace Fds::traits
 
-using namespace LinOps; 
 // BASE INTERFACE ===============================================
 template<typename Derived>
-class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
+class CoeffOpBase : public LinOps::LinOpBase<CoeffOpBase<Derived>>
 {
 
   public:
@@ -56,7 +55,7 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
       return static_cast<const Derived*>(this)->GetMat();
     };
     // set stencil to new mesh............
-    void set_mesh(MeshPtr_t m)
+    void set_mesh(LinOps::MeshPtr_t m)
     {
       static_cast<Derived*>(this)->set_mesh(m); 
       // if(m==nullptr || m==this->m_mesh_ptr) return; // do nothing on nullptr or copy of m_mesh_ptr 
@@ -74,14 +73,14 @@ class CoeffOpBase : public LinOpBase<CoeffOpBase<Derived>>
     auto operator*(LINOP_T&& rhs) &
     {
       static_assert(!Fds::traits::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
-      return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
+      return LinOps::LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
     };
     // operator for scalar multiplication c * L ( Rval overload)
     template<typename LINOP_T>
     auto operator*(LINOP_T&& rhs) &&
     {
       static_assert(!Fds::traits::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
-      return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
+      return LinOps::LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOP_T>(rhs));
     };
     
     // delting a ton of operators out of LinOpBase =====================================

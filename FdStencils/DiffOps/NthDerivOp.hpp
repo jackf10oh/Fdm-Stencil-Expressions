@@ -15,9 +15,8 @@
 #include "../../LinOps/LinearOpBase.hpp"
 
 namespace Fds{
-using namespace LinOps; 
 
-class NthDerivOp : public LinOpBase<NthDerivOp>
+class NthDerivOp : public LinOps::LinOpBase<NthDerivOp>
 {
   private:
     // member data 
@@ -25,10 +24,10 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     std::size_t m_order; 
   public:
     // constructors ---------------------------------
-    NthDerivOp(MeshPtr_t m, std::size_t order=1)
+    NthDerivOp(LinOps::MeshPtr_t m, std::size_t order=1)
       : m_order(order)
     {set_mesh(m);};
-    NthDerivOp(std::size_t order=1, const MeshPtr_t& m=MeshPtr_t{})
+    NthDerivOp(std::size_t order=1, const LinOps::MeshPtr_t& m=LinOps::MeshPtr_t{})
       : m_order(order)
     {set_mesh(m);};
     
@@ -40,7 +39,7 @@ class NthDerivOp : public LinOpBase<NthDerivOp>
     MatrixStorage_t& GetMat(){ return m_stencil; }; 
     const MatrixStorage_t& GetMat() const { return m_stencil; };     
     // set the mesh the derivative operator works on 
-    void set_mesh(MeshPtr_t m)
+    void set_mesh(LinOps::MeshPtr_t m)
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;

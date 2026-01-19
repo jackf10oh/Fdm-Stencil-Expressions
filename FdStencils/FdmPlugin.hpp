@@ -9,16 +9,17 @@
 #ifndef FDMPLUGIN_H
 #define FDMPLUGIN_H 
 
-#define LINOP_PLUGIN Fds::FdmPlugin
-#define CUSTOM_IDENTITY_MATRIX_STORAGE Eigen::SparseMatrix<double,Eigen::RowMajor>
-
 #include<cstdint>
 #include<iostream>
 #include<Eigen/SparseCore>
 #include "../LinOps/LinOpTraits.hpp"
 
 namespace Fds{
-using namespace LinOps; 
+
+// Type Defs + Macros -----------------------------------------------------------------
+using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
+#define CUSTOM_IDENTITY_MATRIX_STORAGE Fds::MatrixStorage_t
+#define LINOP_PLUGIN Fds::FdmPlugin
 
 // Plugin Class Def ================================================= 
 template<typename BaseDerived>
@@ -67,7 +68,7 @@ class FdmPlugin
     // get the time this operator is set to
     double Time() const {
       // if we are an expression 
-      if constexpr (traits::is_expr_crtp<typename BaseDerived::Derived_t>::value)
+      if constexpr (LinOps::traits::is_expr_crtp<typename BaseDerived::Derived_t>::value)
       {
         const auto& expr = static_cast<const typename BaseDerived::Derived_t&>(*this);
         // if LHS of expr is LinOp / FdmPugin 

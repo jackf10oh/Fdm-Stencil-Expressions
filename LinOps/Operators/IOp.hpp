@@ -18,7 +18,7 @@ namespace LinOps{
 #ifndef CUSTOM_IDENTITY_MATRIX_STORAGE
 using CustomStorage_t = Eigen::MatrixXd;
 #else
-using CustomStorage_t = CUSTOM_IDENTITY_MATRIX_STORAGE;
+using CustomStorage_t = typename CUSTOM_IDENTITY_MATRIX_STORAGE;
 #endif
 
 class IOp : public LinOpBase<IOp>

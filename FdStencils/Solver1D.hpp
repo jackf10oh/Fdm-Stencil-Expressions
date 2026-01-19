@@ -9,11 +9,6 @@
 
 #include<cstdint>
 #include<iostream>
-#include<Eigen/Core>
-#include<Eigen/Dense>
-#include<Eigen/LU>
-#include<Eigen/SparseCore>
-#include<Eigen/SparseLU> 
 #include<Eigen/IterativeLinearSolvers> // BICGSTAB
 
 #include "FdmPlugin.hpp"
@@ -24,17 +19,13 @@
 #include "../Utilities/FillStencil.hpp"
 
 namespace Fds{
-using namespace LinOps; 
-
-// Type Defs -------- 
-using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
 struct SolverArgs1D{
   // Member Data -------------------
-  std::shared_ptr<const Mesh1D> domain_mesh_ptr; 
-  std::shared_ptr<const Mesh1D> time_mesh_ptr; 
+  std::shared_ptr<const LinOps::Mesh1D> domain_mesh_ptr; 
+  std::shared_ptr<const LinOps::Mesh1D> time_mesh_ptr; 
   BcPtr_t bcs; 
-  Discretization1D ICs;
+  LinOps::Discretization1D ICs;
   bool time_dep_flag=true; 
 }; 
 
@@ -57,10 +48,10 @@ class Solver1D{
 
     // Member Functions =====================================
     // solve PDE Explicitly -----------------------------------
-    Discretization1D Calculate(const SolverArgs1D& args){
+    LinOps::Discretization1D Calculate(const SolverArgs1D& args){
 
       // initialize Solution to start at ICs 
-      Discretization1D solution = args.ICs; 
+      LinOps::Discretization1D solution = args.ICs; 
 
       // resize stencils  
       m_expr.set_mesh(args.domain_mesh_ptr); 
@@ -118,10 +109,10 @@ class Solver1D{
     }
 
     // solve PDE Implicitly -----------------------------------
-    Discretization1D CalculateImp(const SolverArgs1D& args, std::size_t max_iters=20){
+    LinOps::Discretization1D CalculateImp(const SolverArgs1D& args, std::size_t max_iters=20){
 
       // initialize Solution to start at ICs 
-      Discretization1D solution = args.ICs; 
+      LinOps::Discretization1D solution = args.ICs; 
 
       // resize stencils  
       m_expr.set_mesh(args.domain_mesh_ptr); 
@@ -132,7 +123,7 @@ class Solver1D{
       double t;
       double t_prev = args.time_mesh_ptr->cbegin()[0];  
       MatrixStorage_t stencil; 
-      auto I = IOp(args.domain_mesh_ptr).GetMat();  
+      MatrixStorage_t I = LinOps::IOp(args.domain_mesh_ptr).GetMat();  
       m_solver.setMaxIterations(max_iters); 
       switch (args.time_dep_flag)
       {
