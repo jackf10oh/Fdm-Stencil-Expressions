@@ -99,8 +99,8 @@ class Discretization1D
     template<
     typename F,
     typename = std::enable_if_t<
-      std::is_same<typename internal::callable_traits<F>::result_type, double>::value && 
-      std::bool_constant<internal::callable_traits<F>::num_args == 1>::value
+      std::is_same<typename traits::callable_traits<F>::result_type, double>::value && 
+      std::bool_constant<traits::callable_traits<F>::num_args == 1>::value
       >
     >
     void set_init(F func)
@@ -119,8 +119,8 @@ class Discretization1D
       std::negation<std::is_arithmetic<F>>::value // placed first to short circuit? why doesn't enable_if_t< 1 && 2 && 3 > work here?  
     >, 
     typename = std::enable_if_t<
-      std::is_same<typename internal::callable_traits<F>::result_type, double>::value &&
-      std::bool_constant<internal::callable_traits<F>::num_args == 1>::value
+      std::is_same<typename traits::callable_traits<F>::result_type, double>::value &&
+      std::bool_constant<traits::callable_traits<F>::num_args == 1>::value
       >
     >
     void set_init(MeshPtr_t m, F func)

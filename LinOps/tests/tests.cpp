@@ -423,12 +423,12 @@ TEST(LinearOperatorSuite, LinOpTraits)
   struct bar{};
 
   // given a potential crtp mixin. see if it has .apply(discretization1d) -> const discretization1d method
-  ASSERT_TRUE(has_apply<foo>::value); 
-  ASSERT_FALSE(has_apply<bar>::value); 
+  ASSERT_TRUE(traits::has_apply<foo>::value); 
+  ASSERT_FALSE(traits::has_apply<bar>::value); 
 
   // see if a given type is a derived from the LinOpBase<> CRTP class
-  ASSERT_TRUE(is_linop_crtp<RandLinOp>::value);
-  ASSERT_FALSE(is_linop_crtp<int>::value); 
+  ASSERT_TRUE(traits::is_linop_crtp<RandLinOp>::value);
+  ASSERT_FALSE(traits::is_linop_crtp<int>::value); 
 }
 
 

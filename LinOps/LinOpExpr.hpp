@@ -23,8 +23,8 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
   public:
     // Type Defs --------------------------------------
     using Derived_t = LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>; 
-    using LStorage_t = typename internal::Storage_t<Lhs_t>::type;
-    using RStorage_t = typename internal::Storage_t<Rhs_t>::type;
+    using LStorage_t = typename traits::Storage_t<Lhs_t>::type;
+    using RStorage_t = typename traits::Storage_t<Rhs_t>::type;
   private:
     // Member Data ---------------------------------------------
     LStorage_t m_Lhs;
@@ -65,8 +65,8 @@ class LinOpExpr : public LinOpBase<LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t>>
     void set_mesh(MeshPtr_t m)
     {
       this->m_mesh_ptr=m; 
-      if constexpr(internal::is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
-      if constexpr(internal::is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
+      if constexpr(traits::is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
+      if constexpr(traits::is_linop_crtp<Rhs_t>::value) m_Rhs.set_mesh(m);
     }; 
 };
 
@@ -77,7 +77,7 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase<LinOpExpr<Lhs_t, void
   public:
     // Type Defs ------------------------------------------------------------------
     using Derived_t = LinOpExpr<Lhs_t, void, UnaryOp_t>; 
-    using LStorage_t = typename internal::Storage_t<Lhs_t>::type;
+    using LStorage_t = typename traits::Storage_t<Lhs_t>::type;
     using RStorage_t = void; // not storing a second argument anymore 
   private:
     // Member Data -------------------------------------------------------------
@@ -122,7 +122,7 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase<LinOpExpr<Lhs_t, void
       // store mesh into expression 
       this->m_mesh_ptr=m; 
       // if Lhs is linop, call its set_mesh() as well
-      if constexpr(internal::is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
+      if constexpr(traits::is_linop_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
     }; 
 };
 

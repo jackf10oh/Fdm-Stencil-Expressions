@@ -69,7 +69,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // multiply the underlying expression with Discretization's underlying vecXd
     Discretization1D apply(const Discretization1D& d) const 
     {
-      if constexpr (internal::has_apply<LinOpMixIn<LinOpBase<Derived>>>::value)
+      if constexpr (traits::has_apply<LinOpMixIn<LinOpBase<Derived>>>::value)
       {
         return LinOpMixIn<LinOpBase<Derived>>::apply(d);
       }
@@ -109,7 +109,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp) &
     {
-      static_assert(internal::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
       return compose_impl<DerivedInner,Derived_t&>(std::forward<DerivedInner>(InnerOp)); 
     }; // end .compose(other) & lvalue overload 
 
@@ -117,7 +117,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename DerivedInner>
     auto compose(DerivedInner&& InnerOp) && 
     {
-      static_assert(internal::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
       return compose_impl<DerivedInner,Derived_t&&>(std::forward<DerivedInner>(InnerOp)); 
     }; // end .compose(other) && rvalue overload  
 
@@ -127,17 +127,17 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename DerivedInner, typename Lhs_t = Derived_t> 
     auto compose_impl(DerivedInner&& InnerOp)
     {
-      static_assert(internal::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-      if constexpr(internal::is_add_expr<std::remove_reference_t<DerivedInner>>::value){
+      static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      if constexpr(traits::is_add_expr<std::remove_reference_t<DerivedInner>>::value){
         return compose(InnerOp.Lhs())+compose(InnerOp.Rhs());
       }
-      else if constexpr(internal::is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(traits::is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
         return compose(InnerOp.Lhs())-compose(InnerOp.Rhs());
       }
-      else if constexpr(internal::is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(traits::is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
         return -compose(InnerOp.Lhs());
       }
-      else if constexpr(internal::is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(traits::is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
         return InnerOp.Lhs() * compose(InnerOp.Rhs()); 
       }
       else{
@@ -174,7 +174,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
   public:
     // Operators ================================================================================ 
     // L1 + L2 (lval) ---------------------------------------------- 
-    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) & {
         return LinOpExpr<Derived&, LINOP_T, internal::linop_bin_add_op>(
         static_cast<Derived&>(*this),  // lhs
@@ -185,7 +185,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }
     
     // L1 + L2 (rval)  
-    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) && {
         return LinOpExpr<Derived&&, LINOP_T, internal::linop_bin_add_op>(
         static_cast<Derived&&>(*this), // lhs 
@@ -196,7 +196,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }
     
     // L1 - L2 (lval) ---------------------------------------------- 
-    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) & {
         return LinOpExpr<Derived&, LINOP_T, internal::linop_bin_subtract_op>(
         static_cast<Derived&>(*this), //lhs
@@ -207,7 +207,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     }
     
     // L1 - L2 (rval)  
-    template<typename LINOP_T, typename = std::enable_if_t<internal::is_linop_crtp<LINOP_T>::value>>
+    template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) && {
         return LinOpExpr<Derived&&, LINOP_T, internal::linop_bin_subtract_op>(
         static_cast<Derived&&>(*this), // lhs
@@ -221,7 +221,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     template<typename LINOP_T, typename>
     friend auto operator*(double scalar, LINOP_T&& rhs); 
     template<typename T>
-    friend struct internal::supports_left_scalar_mult;
+    friend struct traits::supports_left_scalar_mult;
     // unary operator-() (lval) ---------------------------------------------- 
     auto operator-() & {
         return LinOpExpr<Derived&, void, internal::unary_negate_op>(
@@ -243,7 +243,7 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
 // operator*(c,L) outside of class .... 
 template<typename LINOP_T, 
   typename = std::enable_if_t<
-    internal::supports_left_scalar_mult<LINOP_T>::value
+    traits::supports_left_scalar_mult<LINOP_T>::value
   >
 >
 auto operator*(double c, LINOP_T&& rhs){

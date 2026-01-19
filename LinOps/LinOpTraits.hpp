@@ -11,7 +11,7 @@
 
 namespace LinOps{
 
-// Forward Declarations -------------------------------------------------
+// Forward Declarations - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class Discretization1D; 
 
 template<typename Derived>
@@ -20,9 +20,9 @@ class LinOpBase;
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
 class LinOpExpr; 
 
+// (Binary Operator Function Objects) ==================================================
 namespace internal{
-
-// Flags for binary + unary ops -----------------------------------------------------------------------
+// Flags for binary + unary ops - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // flag for composition. i.e. L1( L2( . ) )
 struct OperatorComposition_t{}; 
 
@@ -38,7 +38,7 @@ struct ScalarMultiply_t{};
 // flag type for negation. i.e. -L1
 struct OperatorNegation_t{}; 
 
-// Structs for binary operations f(L1,L2) to get matrix of expression -----------------------------------------------------------------------
+// Structs for binary operations f(L1,L2) to get matrix of expression - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // L1 + L2 
 struct linop_bin_add_op : public internal::OperatorAddition_t
 {
@@ -70,19 +70,26 @@ struct linopXlinop_mult_op : public internal::OperatorComposition_t
   auto operator()(const L1& A, const L2& B) const { return  (A.GetMat())*(B.GetMat()); }
 }; 
 
+} // end namespace internal 
 
 // Traits =====================================================================
-// given a type, detect if it is derived from linopbase<> ---------------------
+// given a type, detect if it is derived from linopbase<> - - - - - - - - - - - - 
+namespace internal{
 template<typename T, typename = void>
 struct is_linop_crtp_impl : std::false_type {};
 
 template<typename T>
 struct is_linop_crtp_impl<T, std::void_t<typename T::is_linop_tag>> : std::true_type {};
 
-template<typename T>
-using is_linop_crtp = is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
+} // end namespace internal 
 
-// given a type T see if it is an expression ----------------------------------------
+namespace traits{
+template<typename T>
+using is_linop_crtp = internal::is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
+} // end namespace traits 
+
+// given a type T see if it is an expression - - - - - - - - - - - - - - - - - - - - - - - - 
+namespace internal{
 template<typename T>
 struct is_expr_crtp_impl : public std::false_type
 {};
@@ -90,26 +97,31 @@ struct is_expr_crtp_impl : public std::false_type
 template<typename L, typename R, typename OP>
 struct is_expr_crtp_impl<LinOpExpr<L,R,OP>>: public std::true_type
 {};
+} // end namespace internal 
 
+namespace traits{
 template<typename T>
-using is_expr_crtp = is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;
+using is_expr_crtp = internal::is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;
+} // end namespace traits
 
-// given a linop expression. detect if it is a composition L1( L2( . )) ---------------
+// (Different Binary Operator Detections) ===================================================
+namespace traits{
+// given a linop expression. detect if it is a composition L1( L2( . )) - - - - - - - - - - - - - 
 template<typename T>
 struct is_compose_expr: public std::false_type
 {};
 
 template<typename L, typename R, typename OP>
-struct is_compose_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorComposition_t, std::remove_reference_t<OP>>
+struct is_compose_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorComposition_t, std::remove_reference_t<OP>>
 {};
 
-// given a linop expression. detect if it is a binary addition L1+L2 ---------------------
+// given a linop expression. detect if it is a binary addition L1+L2 - - - - - - - - - - - - - 
 template<typename T>
 struct is_add_expr: public std::false_type
 {};
 
 template<typename L, typename R, typename OP>
-struct is_add_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorAddition_t, std::remove_reference_t<OP>>
+struct is_add_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorAddition_t, std::remove_reference_t<OP>>
 {};
 
 // given a linop expression. detect if it is a scalar multiply c*L ---------------------
@@ -118,7 +130,7 @@ struct is_scalar_multiply_expr: public std::false_type
 {};
 
 template<typename L, typename R, typename OP>
-struct is_scalar_multiply_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<ScalarMultiply_t, std::remove_reference_t<OP>>
+struct is_scalar_multiply_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::ScalarMultiply_t, std::remove_reference_t<OP>>
 {};
 
 // given a linop expression. detect if it is unary negation  -L ---------------------
@@ -127,7 +139,7 @@ struct is_negation_expr: public std::false_type
 {};
 
 template<typename L, typename R, typename OP>
-struct is_negation_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorNegation_t, std::remove_reference_t<OP>>
+struct is_negation_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorNegation_t, std::remove_reference_t<OP>>
 {};
 
 // given a linop expression. detect if it is binary subtraction L1-L2 ---------------------
@@ -136,10 +148,13 @@ struct is_subtraction_expr: public std::false_type
 {};
 
 template<typename L, typename R, typename OP>
-struct is_subtraction_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<OperatorSubtraction_t, std::remove_reference_t<OP>>
+struct is_subtraction_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorSubtraction_t, std::remove_reference_t<OP>>
 {};
 
-// given a type T we may need to store it  ----------------------------------------
+} // end namespace traits
+
+// given a type T we may need to store it  - - - - - - - - - - - - - - - - - - - - - - - - - 
+namespace traits{
 // as a reference or a value in a binary expression
 template<typename T, typename = void>
 struct Storage_t 
@@ -157,7 +172,10 @@ struct Storage_t<LINOP_T, std::enable_if_t< is_linop_crtp<LINOP_T>::value > >
   >; 
 }; 
 
-// given type T, see if instances have .left_scalar_mult_impl(double) -------------------------
+} // end namespace traits 
+
+// given type T, see if instances have .left_scalar_mult_impl(double) - - - - - - - - - - 
+namespace traits{
 template<typename T, typename = void>
 struct supports_left_scalar_mult : public std::false_type{}; 
 
@@ -168,14 +186,20 @@ struct supports_left_scalar_mult<T,
   >
 > : public std::true_type{}; 
 
-// given a type T that will be a mixin, see if it has .apply() const method ----------------------------------
+} // end namespace traits 
+
+// given a type T that will be a mixin, see if it has .apply() const method - - - - - - - - - - 
+namespace traits{
 template<typename T, typename = void>
 struct has_apply : public std::false_type {};
 
 template<typename T>
 struct has_apply<T, std::void_t<decltype(std::declval<const T>().apply(std::declval<const Discretization1D&>()))>> : public std::true_type{};
 
+} // end namespace traits 
+
 // minimum # of doubles + return type of callable type F --------------------------------
+namespace traits{
 template<typename F>
 class callable_traits
 {
@@ -260,7 +284,8 @@ class callable_traits
   using BindFirst_t = std::enable_if_t<num_args, BindFirst_impl<num_args-1, F>>;
 }; // end callable_traits<F> 
 
-} // end namespace internal 
+} // end namespace traits 
+
 } // end namespace LinOps 
 
 #endif // LinOpTraits.hpp
