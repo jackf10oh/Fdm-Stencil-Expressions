@@ -12,14 +12,10 @@
 #include<Eigen/Core>
 #include<utility> // std::pair
 #include "../../LinOps/Mesh.hpp"
-#include "../../LinOps/Discretization.hpp"
+#include "../BoundaryCond.hpp"
 #include "BCLeftRight.hpp"
 
 namespace Fds{
-using namespace LinOps; 
-
-// type alias 
-using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
 // Base Class for Boundary Conditions. All operators make no changes to stencil / solution 
 class BCPair : public IBoundaryCond
@@ -56,21 +52,21 @@ class BCPair : public IBoundaryCond
 
     // Pure Virtual ---------------------------------------------------
     // change last (right boundary) row of the fdm stencil matrix
-    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const final
+    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const final
     {
       pair.first->SetStencilL(Mat, mesh); 
       pair.second->SetStencilR(Mat, mesh); 
     }
     
     // change the last entries in an impicit solution vector 
-    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const final
+    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const final
     {
       pair.first->SetImpSolL(Sol, mesh); 
       pair.second->SetImpSolR(Sol, mesh); 
     }
 
     // change the last (right boundary) entry of a vector  
-    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const final
+    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const final
     {
       pair.first->SetSolL(Sol, mesh); 
       pair.second->SetSolR(Sol, mesh); 

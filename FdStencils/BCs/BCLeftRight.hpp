@@ -7,17 +7,14 @@
 #ifndef BCLEFTRIGHT_H
 #define BCLEFTRIGHT_H 
 
-#include<memory>
+#include<memory> // std::shared_ptr<>
 #include<cstdint>
 #include<Eigen/Core>
-#include<utility> // std::pair 
+#include "../FdmPlugin.hpp" // MatrixStorage_t 
 #include "../../LinOps/Mesh.hpp"
-#include "../../LinOps/Discretization.hpp"
 
 namespace Fds{
-using namespace LinOps; 
 
-using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 using StridedRef = Eigen::Ref<Eigen::VectorXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
 
 class IBCLeft
@@ -40,13 +37,13 @@ class IBCLeft
 
     // Pure Virtual ---------------------------------------------------
     // change first (left boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh)const=0; 
+    virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const LinOps::Mesh1D>& mesh)const=0; 
     
     // change the first entries in an impicit solution vector 
-    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh)const=0;
 
     // change the first (left boundary) entry of a vector  
-    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh)const=0;
 };
 
 class IBCRight
@@ -69,13 +66,13 @@ class IBCRight
 
     // Pure Virtual ---------------------------------------------------
     // change last (right boundary) row of the fdm stencil matrix
-    virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh)const=0; 
+    virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const LinOps::Mesh1D>& mesh)const=0; 
     
     // change the last entries in an impicit solution vector 
-    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh)const=0;
 
     // change the last (right boundary) entry of a vector  
-    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh)const=0;
+    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh)const=0;
 };
 
 } // end namespace Fds 

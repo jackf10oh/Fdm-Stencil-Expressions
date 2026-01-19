@@ -12,7 +12,6 @@
 #include "../../Utilities/FornbergCalc.hpp"
 
 namespace Fds{
-using namespace LinOps; 
 
 class RobinBC : public IBCLeft, public IBCRight 
 {
@@ -32,7 +31,7 @@ class RobinBC : public IBCLeft, public IBCRight
     virtual ~RobinBC()=default; 
     // Member Funcs ----------------------------------------------
     // change first/last (left/right boundary) row of the fdm stencil matrix
-    virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
+    virtual void SetStencilL(MatrixStorage_t& Mat, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {
       Mat.topRows(1) *= 0;
       // first order derivative approximation 
@@ -40,7 +39,7 @@ class RobinBC : public IBCLeft, public IBCRight
       Mat.coeffRef(0,0)=  val_coeff + deriv_coeff*(-1.0/h);
       Mat.coeffRef(0,1)=  deriv_coeff*(1.0/h);
     }; 
-    virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const Mesh1D>& mesh) const override
+    virtual void SetStencilR(MatrixStorage_t& Mat, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {
       Mat.bottomRows(1) *= 0; 
       // first order derivative approximation 
@@ -49,13 +48,13 @@ class RobinBC : public IBCLeft, public IBCRight
       Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=  val_coeff + deriv_coeff*(1.0/h);
     };
 
-    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
+    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {Sol[0] = boundary_target;};
-    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override
+    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {Sol[Sol.size()-1] = boundary_target;};
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
+    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
     { 
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
@@ -76,7 +75,7 @@ class RobinBC : public IBCLeft, public IBCRight
       Sol[0] = target;  
       // void return type
     };
-    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const Mesh1D>& mesh) const override 
+    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
     {
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
