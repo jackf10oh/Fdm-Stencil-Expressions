@@ -63,7 +63,7 @@ class TimeDepCoeffXD : public CoeffOpBaseXD<TimeDepCoeffXD<FUNC_STORAGE_T>>
     void SetTime_impl(double t){
       auto locked = this->m_mesh_ptr.lock(); 
       if(!locked) return; 
-      constexpr std::size_t N = internal::callable_traits<FUNC_STORAGE_T>::num_args; 
+      constexpr std::size_t N = LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args; 
       static_assert(N>=1, "Time Dep Coeff Requires # args >= 1 i.e. a(t, ...)"); 
       if constexpr(N==1){
         m_diag_vals.resize( locked ); 
@@ -75,7 +75,7 @@ class TimeDepCoeffXD : public CoeffOpBaseXD<TimeDepCoeffXD<FUNC_STORAGE_T>>
       for(auto i=0; i<N-1; i++) s[i] = locked->GetMesh(i);  
       auto sub_dims = std::make_shared<const MeshXD>(s); 
 
-      using Bind_t = typename internal::callable_traits<FUNC_STORAGE_T>::BindFirst_t; 
+      using Bind_t = typename LinOps::traits::callable_traits<FUNC_STORAGE_T>::BindFirst_t; 
       Bind_t binded(m_function, t); 
       m_diag_vals.resize( sub_dims ); 
       m_diag_vals.set_init( binded );

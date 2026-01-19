@@ -33,7 +33,7 @@ class AutonomousCoeffXD : public CoeffOpBaseXD<AutonomousCoeffXD<FUNC_STORAGE_T>
       : m_function(f_init), m_diag_vals(0), m_prod_after(std::size_t{1}) 
     {
       static_assert(
-        std::is_same<double, typename internal::callable_traits<FUNC_STORAGE_T>::result_type>::value,
+        std::is_same<double, typename LinOps::traits::callable_traits<FUNC_STORAGE_T>::result_type>::value,
         "Error constructing coeff: F doesn't return double"
       );  
       set_mesh(m);
@@ -58,7 +58,7 @@ class AutonomousCoeffXD : public CoeffOpBaseXD<AutonomousCoeffXD<FUNC_STORAGE_T>
     void set_mesh(MeshXDPtr_t m){
       auto locked = m.lock(); 
       if(!locked) return; 
-      constexpr std::size_t N = internal::callable_traits<FUNC_STORAGE_T>::num_args; 
+      constexpr std::size_t N = LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args; 
 
       if constexpr(N==0){
         m_diag_vals.set_init( m, m_function() ); 

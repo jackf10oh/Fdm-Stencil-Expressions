@@ -10,21 +10,22 @@
 #include "FdmPluginXD.hpp"
 #include "../LinOpsXD/LinearOpBaseXD.hpp"
 
-namespace LinOps{
-namespace internal{
+namespace Fds{
+
 // Given a type, see if it is derived from CoeffOpBase's crtp scheme ------------------------------------
+namespace internal{
 template<typename T, typename = void> 
 struct is_coeffopxd_crtp_impl : public std::false_type{}; 
 
 template<typename T>
 struct is_coeffopxd_crtp_impl<T, std::void_t<typename T::is_coeffxd_flag>>: public std::true_type{};
+} // end namespace internal 
 
+namespace traits{
 template<typename T>
 using is_coeffopxd_crtp = is_coeffopxd_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
-}
-}
+} // end namespace traits 
 
-namespace Fds{
 using namespace LinOps; 
 
 // BASE INTERFACE ===============================================
@@ -71,14 +72,14 @@ class CoeffOpBaseXD : public LinOpBaseXD<CoeffOpBaseXD<Derived>>
     template<typename LINOPXD_T>
     auto operator*(LINOPXD_T&& rhs) &
     {
-      static_assert(!internal::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      static_assert(!Fds::traits::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
       return LinOpBaseXD<CoeffOpBaseXD<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
     };
     // operator for scalar multiplication c * L ( Rval overload)
     template<typename LINOPXD_T>
     auto operator*(LINOPXD_T&& rhs) &&
     {
-      static_assert(!internal::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      static_assert(!Fds::traits::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
       return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
     };
     
