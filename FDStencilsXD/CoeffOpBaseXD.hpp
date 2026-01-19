@@ -10,6 +10,20 @@
 #include "FdmPluginXD.hpp"
 #include "../LinOpsXD/LinearOpBaseXD.hpp"
 
+namespace LinOps{
+namespace internal{
+// Given a type, see if it is derived from CoeffOpBase's crtp scheme ------------------------------------
+template<typename T, typename = void> 
+struct is_coeffopxd_crtp_impl : public std::false_type{}; 
+
+template<typename T>
+struct is_coeffopxd_crtp_impl<T, std::void_t<typename T::is_coeffxd_flag>>: public std::true_type{};
+
+template<typename T>
+using is_coeffopxd_crtp = is_coeffopxd_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
+}
+}
+
 namespace Fds{
 using namespace LinOps; 
 
@@ -17,15 +31,6 @@ using namespace LinOps;
 template<typename Derived>
 class CoeffOpBaseXD : public LinOpBaseXD<CoeffOpBaseXD<Derived>>
 {
-  private:
-    // Private Traits ---------------------------------------------
-    // Given a type, see if it is derived from CoeffOpBase's crtp scheme ------------------------------------
-    template<typename T, typename = void> 
-    struct is_coeffopxd_crtp : std::false_type{}; 
-
-    template<typename T>
-    struct is_coeffopxd_crtp<T, std::void_t<typename std::remove_cv_t<std::remove_reference_t<T>>::is_coeffxd_flag>>: std::true_type{}; 
-
   public:
     // flag type for any derived class to be picked up by is_coeffop_crtp<>::value trait 
     struct is_coeffxd_flag{}; 
@@ -66,14 +71,14 @@ class CoeffOpBaseXD : public LinOpBaseXD<CoeffOpBaseXD<Derived>>
     template<typename LINOPXD_T>
     auto operator*(LINOPXD_T&& rhs) &
     {
-      static_assert(!is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      static_assert(!internal::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
       return LinOpBaseXD<CoeffOpBaseXD<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
     };
     // operator for scalar multiplication c * L ( Rval overload)
     template<typename LINOPXD_T>
     auto operator*(LINOPXD_T&& rhs) &&
     {
-      static_assert(!is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      static_assert(!internal::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
       return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
     };
     

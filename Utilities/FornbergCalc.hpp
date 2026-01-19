@@ -17,14 +17,12 @@
 class FornCalc
 {
   public:
-    // member data
-    // maximum order of derivative stencil 
-    std::size_t m_order; 
-    // number of nodes to use in approximation 
-    std::size_t m_n_nodes; 
-    // single allocation of memory rows*cols big 
-    std::vector<double> m_arr; 
+    // Member Data ----------------------------------------------------------
+    std::size_t m_order;                // maximum order of derivative stencil  
+    std::size_t m_n_nodes;              // number of nodes to use in approximation
+    std::vector<double> m_arr;          // single allocation of memory rows*cols big 
   public:
+    // Constructors + Destructor =========================================================
     FornCalc()=delete;
     FornCalc(std::size_t max_nodes, std::size_t max_order_init=1)
       : m_n_nodes(max_nodes), m_order(max_order_init), m_arr(m_n_nodes*(m_order+1))
@@ -33,9 +31,23 @@ class FornCalc
       // for(double& val : m_arr) val=0.0; 
     };
     FornCalc(const FornCalc& other)=delete; 
+    // destructor 
     ~FornCalc()=default; 
+    
+    // Member Funcs ======================================================================================
     template<typename Input_Iter>
     Eigen::Map<const Eigen::VectorXd> GetWeights(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
+    {
+      // Update m_arr weight values 
+      Calculate(x_bar, start, end, order); 
+
+      // return non owning view of last row of Weights;
+      return Eigen::Map<const Eigen::VectorXd>(m_arr.data()+(m_n_nodes*order), m_n_nodes); 
+    };
+
+    // Updates m_arr to contain weights up to order n
+    template<typename Input_Iter>
+    void Calculate(double x_bar, Input_Iter start, Input_Iter end, std::size_t order=1)
     {
       // Matrix of Order+1 rows, N cols
       // row m from Weights is the coeffs for derivative of order m (m= 0, ... , order)
@@ -123,10 +135,8 @@ class FornCalc
 
       // Weights now contains LaGrange Interpolant Polynomials for 
       // nodes a0, a1, ..., an evaluated at x_bar
-      // return non owning view of last row of Weights;
-      return Eigen::Map<const Eigen::VectorXd>(m_arr.data()+(m_n_nodes*order), m_n_nodes); 
-    };
-
+      
+    } // end Calculate ------------
 };
 
 #endif // FornbergCalc.hpp

@@ -88,7 +88,7 @@ class SolverXD{
           // explicit step;
           Eigen::VectorXd v = solution.values() + (t-t_prev) * m_expr.GetMat() * solution.values(); 
           solution = std::move(v); 
-          args.bcs->SetSol(solution, args.domain_mesh_ptr); 
+          args.bcs->SetSol(solution.values(), args.domain_mesh_ptr); 
 
 
           // update into old_time 
@@ -158,7 +158,7 @@ class SolverXD{
 
           // set solutions L/R side 
           // args.bcs_pair.first->SetImpSolL(solution.values(), args.domain_mesh_ptr);
-          args.bcs->SetImpSol(solution, args.domain_mesh_ptr);
+          args.bcs->SetImpSol(solution.values(), args.domain_mesh_ptr);
 
           // implicit step. modifies solution in place 
           m_solver.compute(stencil);
@@ -186,7 +186,7 @@ class SolverXD{
           overwrite_stencil(stencil, bcs_mask);
 
           // set solutions L/R side 
-          args.bcs->SetImpSol(solution, args.domain_mesh_ptr);
+          args.bcs->SetImpSol(solution.values(), args.domain_mesh_ptr);
 
           // implicit step. modifies solution in place 
           m_solver.compute(stencil);
