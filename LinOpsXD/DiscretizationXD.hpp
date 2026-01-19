@@ -133,7 +133,7 @@ struct DiscretizationXD
     template<
     typename F,
     typename = std::enable_if_t<
-      std::is_same_v<double, typename internal::callable_traits<F>::result_type>
+      std::is_same_v<double, typename traits::callable_traits<F>::result_type>
       >
     >
     void set_init(MeshXDPtr_t m, F func)
@@ -150,7 +150,7 @@ struct DiscretizationXD
     template<
     typename F,
     typename = std::enable_if_t<
-      std::is_same_v<double, typename internal::callable_traits<F>::result_type>
+      std::is_same_v<double, typename traits::callable_traits<F>::result_type>
       >
     >
     void set_init(F func)
@@ -159,7 +159,7 @@ struct DiscretizationXD
       if(!locked){ m_vals.resize(0); return;} 
 
       // check there are enough dimensions to use callable type F
-      static constexpr std::size_t num_args = internal::callable_traits<F>::num_args; 
+      static constexpr std::size_t num_args = traits::callable_traits<F>::num_args; 
       if(dims() < num_args) throw std::invalid_argument("# dims of MeshXDPtr_t must be >= # args in callable F"); 
 
       // some initializations before looping ------------------------------------------

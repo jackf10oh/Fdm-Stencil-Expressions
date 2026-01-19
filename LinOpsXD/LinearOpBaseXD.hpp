@@ -72,7 +72,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     // multiply the underlying expression with Discretization's underlying vecXd
     DiscretizationXD apply(const DiscretizationXD& d) const 
     {
-      if constexpr (internal::has_apply<LinOpXDMixIn<LinOpBaseXD<Derived>>>::value)
+      if constexpr (traits::has_apply<LinOpXDMixIn<LinOpBaseXD<Derived>>>::value)
       {
         return LinOpXDMixIn<LinOpBaseXD<Derived>>::apply(d);
       }
@@ -112,7 +112,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp) &
     {
-      static_assert(internal::is_linopxd_crtp<DerivedInner>::value, "compose only works on other  XD linear operators!"); 
+      static_assert(traits::is_linopxd_crtp<DerivedInner>::value, "compose only works on other  XD linear operators!"); 
       return compose_impl<DerivedInner,Derived_t&>(std::forward<DerivedInner>(InnerOp)); 
     }; // end .compose(other) & lvalue overload 
 
@@ -120,7 +120,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     template<typename DerivedInner>
     auto compose(DerivedInner&& InnerOp) && 
     {
-      static_assert(internal::is_linopxd_crtp<DerivedInner>::value, "compose only works on other XD linear operators!"); 
+      static_assert(traits::is_linopxd_crtp<DerivedInner>::value, "compose only works on other XD linear operators!"); 
       return compose_impl<DerivedInner,Derived_t&&>(std::forward<DerivedInner>(InnerOp)); 
     }; // end .compose(other) && rvalue overload  
 
@@ -130,17 +130,17 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     template<typename DerivedInner, typename Lhs_t = Derived_t> 
     auto compose_impl(DerivedInner&& InnerOp)
     {
-      static_assert(internal::is_linopxd_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-      if constexpr(internal::is_add_expr<std::remove_reference_t<DerivedInner>>::value){
+      static_assert(traits::is_linopxd_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
+      if constexpr(traits::is_add_expr<std::remove_reference_t<DerivedInner>>::value){
         return compose(InnerOp.Lhs())+compose(InnerOp.Rhs());
       }
-      else if constexpr(internal::is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(traits::is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
         return compose(InnerOp.Lhs())-compose(InnerOp.Rhs());
       }
-      else if constexpr(internal::is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(traits::is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
         return -compose(InnerOp.Lhs());
       }
-      else if constexpr(internal::is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
+      else if constexpr(traits::is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
         return InnerOp.Lhs() * compose(InnerOp.Rhs()); 
       }
       else{
@@ -177,7 +177,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
   public:
     // Operators ================================================================================ 
     // L1 + L2 (lval) ---------------------------------------------- 
-    template<typename LINOPXD_T, typename = std::enable_if_t<internal::is_linopxd_crtp<LINOPXD_T>::value>>
+    template<typename LINOPXD_T, typename = std::enable_if_t<traits::is_linopxd_crtp<LINOPXD_T>::value>>
     auto operator+(LINOPXD_T&& rhs) & {
         return LinOpExprXD<Derived&, LINOPXD_T, internal::linop_bin_add_op>(
         static_cast<Derived&>(*this),  // lhs
@@ -188,7 +188,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     }
     
     // L1 + L2 (rval)  
-    template<typename LINOPXD_T, typename = std::enable_if_t<internal::is_linopxd_crtp<LINOPXD_T>::value>>
+    template<typename LINOPXD_T, typename = std::enable_if_t<traits::is_linopxd_crtp<LINOPXD_T>::value>>
     auto operator+(LINOPXD_T&& rhs) && {
         return LinOpExprXD<Derived&&, LINOPXD_T, internal::linop_bin_add_op>(
         static_cast<Derived&&>(*this), // lhs 
@@ -199,7 +199,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     }
     
     // L1 - L2 (lval) ---------------------------------------------- 
-    template<typename LINOPXD_T, typename = std::enable_if_t<internal::is_linopxd_crtp<LINOPXD_T>::value>>
+    template<typename LINOPXD_T, typename = std::enable_if_t<traits::is_linopxd_crtp<LINOPXD_T>::value>>
     auto operator-(LINOPXD_T&& rhs) & {
         return LinOpExprXD<Derived&, LINOPXD_T, internal::linop_bin_subtract_op>(
         static_cast<Derived&>(*this), //lhs
@@ -210,7 +210,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     }
     
     // L1 - L2 (rval)  
-    template<typename LINOPXD_T, typename = std::enable_if_t<internal::is_linopxd_crtp<LINOPXD_T>::value>>
+    template<typename LINOPXD_T, typename = std::enable_if_t<traits::is_linopxd_crtp<LINOPXD_T>::value>>
     auto operator-(LINOPXD_T&& rhs) && {
         return LinOpExprXD<Derived&&, LINOPXD_T, internal::linop_bin_subtract_op>(
         static_cast<Derived&&>(*this), // lhs
@@ -224,7 +224,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     template<typename LINOPXD_T, typename>
     friend auto operator*(double scalar, LINOPXD_T&& rhs); 
     template<typename T>
-    friend struct internal::supports_left_scalar_mult;
+    friend struct traits::supports_left_scalar_mult;
 
     // unary operator-() (lval) ---------------------------------------------- 
     auto operator-() & {
@@ -250,7 +250,7 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
 // operator*(c,L) outside of class .... 
 template<typename LINOP_T, 
   typename = std::enable_if_t<
-    internal::supports_left_scalar_mult<LINOP_T>::value
+    traits::supports_left_scalar_mult<LINOP_T>::value
   >
 >
 auto operator*(double c, LINOP_T&& rhs){
@@ -260,4 +260,4 @@ auto operator*(double c, LINOP_T&& rhs){
 
 } // end namespace LinOps 
 
-#endif // LinearOpBaseXD.hpp 
+#endif // LinearOpBaseXD.hpp
