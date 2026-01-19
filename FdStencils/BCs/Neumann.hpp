@@ -43,13 +43,13 @@ class NeumannBC : public IBCLeft, public IBCRight
       Mat.coeffRef(Mat.rows()-1, Mat.cols()-1)=  1.0/h;
     };
 
-    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
+    virtual void SetImpSolL(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {Sol[0] = boundary_flux;};
-    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
+    virtual void SetImpSolR(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {Sol[Sol.size()-1] = boundary_flux;};
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
+    virtual void SetSolL(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
     { 
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 
@@ -70,7 +70,7 @@ class NeumannBC : public IBCLeft, public IBCRight
       Sol[0] = target;  
       // void return type
     };
-    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
+    virtual void SetSolR(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
     {
       // if(Sol.size()<3 || mesh->size()<3) throw std::runtime_error("Discretization1D or Mesh1D size too small!(must be >= 3)"); 
 

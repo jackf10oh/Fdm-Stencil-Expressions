@@ -35,15 +35,15 @@ class DirichletBC : public IBCLeft, public IBCRight
     }
 
     // change the first/last (left/right boundary) entry of a vector to implicit solution   
-    virtual void SetImpSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
+    virtual void SetImpSolL(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {Sol[0] = boundary_val;}
-    virtual void SetImpSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
+    virtual void SetImpSolR(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override
     {Sol[Sol.size()-1] = boundary_val;}
     
     // change the first/last (left/right boundary) entry of a vector  
-    virtual void SetSolL(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
+    virtual void SetSolL(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
     { Sol[0] = boundary_val;}
-    virtual void SetSolR(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
+    virtual void SetSolR(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const override 
     {Sol[Sol.size()-1] = boundary_val;}
 };
 

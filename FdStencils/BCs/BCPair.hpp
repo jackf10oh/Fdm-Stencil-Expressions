@@ -20,10 +20,6 @@ namespace Fds{
 // Base Class for Boundary Conditions. All operators make no changes to stencil / solution 
 class BCPair : public IBoundaryCond
 {
-  protected:  
-    // TypeDefs  
-    using StridedRef = Eigen::Ref<Eigen::VectorXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
-
   public:
     // Member Data -----------------------------------------------------------
     std::pair<std::shared_ptr<IBCLeft>, std::shared_ptr<IBCRight>> pair;   
@@ -59,14 +55,14 @@ class BCPair : public IBoundaryCond
     }
     
     // change the last entries in an impicit solution vector 
-    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const final
+    virtual void SetImpSol(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const final
     {
       pair.first->SetImpSolL(Sol, mesh); 
       pair.second->SetImpSolR(Sol, mesh); 
     }
 
     // change the last (right boundary) entry of a vector  
-    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const final
+    virtual void SetSol(StridedRef_t Sol, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const final
     {
       pair.first->SetSolL(Sol, mesh); 
       pair.second->SetSolR(Sol, mesh); 
