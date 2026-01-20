@@ -1,6 +1,6 @@
 // main4.cpp 
 //
-// Testing out GenSolver on PDEs 
+// Testing out GenSolver on 1D PDEs 
 //
 // JAF 1/17/2026 
 
@@ -18,13 +18,9 @@
 #include "LinOps/All.hpp" 
 // #include "FDStencilsXD/All.hpp" // likewise ...
 // #include "LinOpsXD/All.hpp"
-
-#include "LhsExpressions/All.hpp"
+#include "TExprs/All.hpp"
 
 using std::cout, std::endl;
-
-using namespace Fds; 
-using namespace LinOps; 
 
 int main()
 {
@@ -33,7 +29,7 @@ int main()
 
   // defining Domain Mesh --------------------------------------
   auto r = 10.0; 
-  int n_gridpoints = 101;
+  int n_gridpoints = 16;
   // mesh in space 
   auto my_mesh = Fds::make_mesh(0.0,r,n_gridpoints); 
   // mesh in time 
@@ -55,14 +51,14 @@ int main()
   std::shared_ptr<Fds::IBCLeft> left = Fds::make_dirichlet(0.0); 
   std::shared_ptr<Fds::IBCRight> right = Fds::make_neumann(0.0); 
 
-  auto bcs = std::make_shared<BCPair>(left,right); 
+  auto bcs = std::make_shared<Fds::BCPair>(left,right); 
 
   // LHS time derivs ----------------------------------------------------------------
   // auto lhs_expr = NthTimeDeriv(1); 
-  auto lhs_expr = NthTimeDeriv(1); 
+  auto lhs_expr = TExprs::NthTimeDeriv(1); 
 
   // Solving --------------------------------------------------------------------- 
-  GenSolverArgs args{
+  TExprs::GenSolverArgs args{
     .domain_mesh_ptr = my_mesh,
     .time_mesh_ptr = time_mesh,
     .bcs = bcs, 
@@ -70,11 +66,12 @@ int main()
     .time_dep_flag = false 
   }; 
 
-  GenSolver s(lhs_expr, expr); 
+  TExprs::GenSolver s(lhs_expr, expr, TExprs::PrintWrite{}); 
   // auto v = s.Calculate(args); 
-  auto v = s.CalculateImp(args); 
+  // auto v = s.CalculateImp(args); 
+  s.CalculateImp(args); 
 
   // Printing ---------------------------------------------------------------- 
   print_vec(my_vals, "ICs"); 
-  print_vec(v,"Sol"); 
+  // print_vec(v,"Sol"); 
 };

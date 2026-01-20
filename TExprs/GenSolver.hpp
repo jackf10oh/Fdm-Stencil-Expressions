@@ -22,7 +22,6 @@ template<typename ANYMESH_SHAREDPTR_T, typename ANYBC_SHAREDPTR_T, typename CONT
 struct GenSolverArgs
 {
   // shared_ptr to const Mesh1D or const MeshXD 
-  // std::variant<std::shared_ptr<const Mesh1D>, std::shared_ptr<const MeshXD>> domain_mesh_ptr; 
   ANYMESH_SHAREDPTR_T domain_mesh_ptr; 
 
   // shared_ptr to const Mesh1D 
@@ -43,7 +42,50 @@ template<typename M, typename B, typename C>
 GenSolverArgs(M, std::shared_ptr<const LinOps::Mesh1D>, B, C, bool)
 -> GenSolverArgs<M, B, C>;
 
-template<typename LHS_EXPR, typename RHS_EXPR, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
+// Write Policies. i.e. write previous solution to cout, write to std::vector, write to CSV 
+struct EmptyWrite
+{
+  // no member data 
+  EmptyWrite()=default; 
+  void SaveSolution(Eigen::VectorXd&& sol){}; 
+  void ConsumeLastSolution(Eigen::VectorXd&& sol){}; 
+};
+
+struct FinalWrite
+{
+  // no member data 
+  FinalWrite()=default; 
+  void SaveSolution(Eigen::VectorXd&& sol){}; 
+  auto ConsumeLastSolution(Eigen::VectorXd&& sol){ return sol; }; 
+};
+
+struct PrintWrite
+{
+  // no member data 
+  PrintWrite()=default; 
+  void SaveSolution(Eigen::VectorXd&& sol)
+  {
+    std::cout << "[["; 
+    auto it=sol.cbegin(); 
+    auto end = std::prev(sol.cend()); 
+    for(; it!=end; it++){
+      std::cout << *it << ", ";
+    }
+    std::cout << *it << "],\n";  
+  }; 
+  void ConsumeLastSolution(Eigen::VectorXd&& sol)
+  {
+    std::cout << "["; 
+    auto it=sol.cbegin(); 
+    auto end = std::prev(sol.cend()); 
+    for(; it!=end; it++){
+      std::cout << *it << ", ";
+    }
+    std::cout << *it << "]]\n";  
+  }; 
+};
+
+template<typename LHS_EXPR, typename RHS_EXPR, typename WRITE_POLICY_T=FinalWrite, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
 class GenSolver
 {
   private:
@@ -51,12 +93,13 @@ class GenSolver
     LHS_EXPR& m_lhs; // expression of time derivatives 
     RHS_EXPR& m_rhs; // expression of spatial derivatives 
     EIGENSOLVER_T<TExprs::internal::MatrixStorage_t> m_solver; // Eigen sparse iterative solver
+    WRITE_POLICY_T m_write_p; 
 
   public:
     // Constructors + Destructor ===========================
     GenSolver()=delete; 
-    GenSolver(LHS_EXPR& l_init, RHS_EXPR& r_init)
-      : m_lhs(l_init), m_rhs(r_init), m_solver()
+    GenSolver(LHS_EXPR& l_init, RHS_EXPR& r_init, WRITE_POLICY_T wp_init=WRITE_POLICY_T{})
+      : m_lhs(l_init), m_rhs(r_init), m_write_p(wp_init), m_solver() 
     {}
     GenSolver(const GenSolver& other)=delete;
     // destructor 
@@ -96,6 +139,9 @@ class GenSolver
           // Apply BCs 
           args.bcs->SetSol(next_sol, args.domain_mesh_ptr); 
 
+          // give expiring solution to WRITE_POLICY_T
+          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
+
           // push Solution, time to executor 
           exec.ConsumeSolution(next_sol);
           exec.ConsumeTime(*it); 
@@ -113,22 +159,23 @@ class GenSolver
           // Apply BCs 
           args.bcs->SetSol(next_sol, args.domain_mesh_ptr); 
 
+          // give expiring solution to WRITE_POLICY_T
+          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
+
           // push Solution, time to executor 
           exec.ConsumeSolution(next_sol);
           exec.ConsumeTime(*it); 
         }
         break;
       } // end switch(args.time_dep_flag)
-      // pack last solution into Discretization1D (XD) and store mesh 
-      using DISCRETIZATION_T = std::conditional_t<
-        std::is_same<std::shared_ptr<const LinOps::Mesh1D>, M>::value,
-        LinOps::Discretization1D, 
-        LinOps::DiscretizationXD
-      >; 
-      DISCRETIZATION_T result; 
-      result = std::move(exec.MostRecentSol()); 
-      result.resize(args.domain_mesh_ptr); 
-      return result; 
+
+      // Write remaining solutions to m_write_p 
+      for(auto i=1; i<exec.StoredSols().size()-1; i++){
+        m_write_p.SaveSolution( std::move(exec.StoredSols()[i]) );  
+      }
+
+      // write policy also determines return type 
+      return m_write_p.ConsumeLastSolution(std::move( exec.MostRecentSol() )); 
     }
 
     // Takes GenSolverArgs and find solution U(t=T) with explicit steps 
@@ -178,6 +225,9 @@ class GenSolver
           m_solver.compute(A); 
           Eigen::VectorXd next_sol = m_solver.solveWithGuess(rhs,rhs); 
 
+          // give expiring solution to WRITE_POLICY_T
+          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
+
           // push Solution, time to executor 
           exec.ConsumeSolution(next_sol);
           exec.ConsumeTime(*it); 
@@ -186,7 +236,6 @@ class GenSolver
       
       default: // false 
         TExprs::internal::MatrixStorage_t bcs_mask(args.domain_mesh_ptr->size(), args.domain_mesh_ptr->size()); 
-        // args.bcs_pair.first->SetStencilL(bcs_mask, args.domain_mesh_ptr);
         args.bcs->SetStencil(bcs_mask, args.domain_mesh_ptr);
         for(; it!= end; it++)
         {
@@ -203,22 +252,23 @@ class GenSolver
           m_solver.compute(A); 
           Eigen::VectorXd next_sol = m_solver.solveWithGuess(rhs,rhs); 
 
+          // give expiring solution to WRITE_POLICY_T
+          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
+
           // push Solution, time to executor 
           exec.ConsumeSolution(next_sol);
           exec.ConsumeTime(*it); 
         }
         break;
       } // end switch(args.time_dep_flag)
-      // pack last solution into Discretization1D (XD) and store mesh 
-      using DISCRETIZATION_T = std::conditional_t<
-        std::is_same<std::shared_ptr<const LinOps::Mesh1D>, M>::value,
-        LinOps::Discretization1D, 
-        LinOps::DiscretizationXD
-      >; 
-      DISCRETIZATION_T result; 
-      result = std::move(exec.MostRecentSol()); 
-      result.resize(args.domain_mesh_ptr); 
-      return result; 
+
+      // Write remaining solutions to m_write_p 
+      for(auto i=1; i<exec.StoredSols().size()-1; i++){
+        m_write_p.SaveSolution( std::move(exec.StoredSols()[i]) );  
+      }
+
+      // write policy also determines return type 
+      return m_write_p.ConsumeLastSolution(std::move( exec.MostRecentSol() )); 
     }
 
 }; 
