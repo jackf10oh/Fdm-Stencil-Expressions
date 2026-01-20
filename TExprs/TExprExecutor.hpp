@@ -246,7 +246,7 @@ struct TExprExecutor
             }, 
             m_mat_coeff_sum_partition 
       ); 
-      TExprs::internal::MatrixStorage_t B = A.cwiseInverse(); 
+      MatrixStorage_t B = A.cwiseInverse(); 
       return B; 
     }
     else{ 
@@ -259,7 +259,7 @@ struct TExprExecutor
           m_scalar_coeff_sum_partition
       );
 
-      TExprs::internal::MatrixStorage_t A = std::apply(
+      MatrixStorage_t A = std::apply(
             [&](auto&&... coeffs){
               return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
             }, 
@@ -267,7 +267,7 @@ struct TExprExecutor
       ); 
 
       auto diag = (1.0/s) * Eigen::VectorXd::Ones(A.rows()); 
-      TExprs::internal::MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
+      MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
       return B; 
     }
   } // end inv_coeff_util() 

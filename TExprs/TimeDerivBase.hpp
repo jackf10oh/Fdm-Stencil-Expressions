@@ -7,8 +7,7 @@
 #ifndef TIMEDERIVBASE_H
 #define TIMEDERIVBASE_H 
 
-#include<Eigen/Core>
-#include<Eigen/Sparse>
+#include "../FDStencils/FdmPlugin.hpp" // MatrixStorage_t 
 
 namespace TExprs{
 
@@ -28,7 +27,7 @@ using is_timederiv_crtp = TExprs::internal::is_timederiv_crtp_impl<std::remove_c
 
 namespace internal{
   
-using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
+using MatrixStorage_t = Fds::MatrixStorage_t; 
 
 // Base Definition =====================================================
 template<typename Derived>
