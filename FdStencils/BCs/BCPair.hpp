@@ -9,9 +9,7 @@
 
 #include<memory>
 #include<cstdint>
-#include<Eigen/Core>
 #include<utility> // std::pair
-#include "../../LinOps/Mesh.hpp"
 #include "../BoundaryCond.hpp"
 #include "BCLeftRight.hpp"
 

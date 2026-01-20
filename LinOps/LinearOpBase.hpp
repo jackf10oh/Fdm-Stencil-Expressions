@@ -19,6 +19,7 @@
 
 namespace LinOps{
 
+namespace internal{
 #ifndef LINOP_PLUGIN
 // use an empty struct if no plugin given.
 struct empty{}; 
@@ -28,12 +29,13 @@ using LinOpMixIn = empty;
 template<typename T>
 using LinOpMixIn = LINOP_PLUGIN<T>; 
 #endif
+} // end namespace internal 
 
 template<typename Derived>
-class LinOpBase : public LinOpMixIn<LinOpBase<Derived>> 
+class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>> 
 {
   // friend classes. LINOP_PLUGIN<T> can use private members of T 
-  friend LinOpMixIn<LinOpBase>; 
+  friend internal::LinOpMixIn<LinOpBase>; 
 
   // Type Defs -----------------------------------------------------
   public:
@@ -69,9 +71,9 @@ class LinOpBase : public LinOpMixIn<LinOpBase<Derived>>
     // multiply the underlying expression with Discretization's underlying vecXd
     Discretization1D apply(const Discretization1D& d) const 
     {
-      if constexpr (traits::has_apply<LinOpMixIn<LinOpBase<Derived>>>::value)
+      if constexpr (traits::has_apply<internal::LinOpMixIn<LinOpBase<Derived>>>::value)
       {
-        return LinOpMixIn<LinOpBase<Derived>>::apply(d);
+        return internal::LinOpMixIn<LinOpBase<Derived>>::apply(d);
       }
       else
       {

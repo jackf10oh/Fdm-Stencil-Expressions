@@ -14,9 +14,11 @@
 #include "MeshXD.hpp"
 #include "DiscretizationXD.hpp" 
 #include "LinOpTraitsXD.hpp"
+#include "LinOpExprXD.hpp"
 
 namespace LinOps{
 
+namespace internal{
 #ifndef LINOPXD_PLUGIN
 // use an empty struct if no plugin given.
 struct emptyXD{}; 
@@ -26,6 +28,7 @@ using LinOpXDMixIn = emptyXD;
 template<typename T>
 using LinOpXDMixIn = LINOPXD_PLUGIN<T>; 
 #endif
+} // end namespace internal 
 
 #ifndef CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE
 #define CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Eigen::SparseMatrix<double, Eigen::RowMajor>
@@ -33,10 +36,10 @@ using LinOpXDMixIn = LINOPXD_PLUGIN<T>;
 
 
 template<typename Derived>
-class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>> 
+class LinOpBaseXD : public internal::LinOpXDMixIn<LinOpBaseXD<Derived>> 
 {
   // friend classes. LINOP_PLUGIN<T> can use private members of T 
-  // friend LinOpXDMixIn<LinOpBase>; 
+  friend internal::LinOpXDMixIn<LinOpBaseXD>; 
 
   // Type Defs -----------------------------------------------------
   public:
@@ -72,9 +75,9 @@ class LinOpBaseXD : public LinOpXDMixIn<LinOpBaseXD<Derived>>
     // multiply the underlying expression with Discretization's underlying vecXd
     DiscretizationXD apply(const DiscretizationXD& d) const 
     {
-      if constexpr (traits::has_apply<LinOpXDMixIn<LinOpBaseXD<Derived>>>::value)
+      if constexpr (traits::has_apply<internal::LinOpXDMixIn<LinOpBaseXD<Derived>>>::value)
       {
-        return LinOpXDMixIn<LinOpBaseXD<Derived>>::apply(d);
+        return internal::LinOpXDMixIn<LinOpBaseXD<Derived>>::apply(d);
       }
       else
       {

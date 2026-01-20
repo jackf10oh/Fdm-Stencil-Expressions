@@ -10,7 +10,6 @@
 #include<vector>
 #include<Eigen/Core>
 #include "MeshXD.hpp"
-// #include "LinOpTraitsXD.hpp"
 #include "../LinOps/LinOpTraits.hpp" // callable_traits<T> 
 
 namespace LinOps{

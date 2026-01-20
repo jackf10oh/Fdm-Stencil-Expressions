@@ -9,7 +9,6 @@
 
 #include<memory> // std::shared_ptr<>
 #include<cstdint>
-#include<Eigen/Core>
 #include "../FdmPlugin.hpp" // MatrixStorage_t 
 #include "../../LinOps/Mesh.hpp"
 
