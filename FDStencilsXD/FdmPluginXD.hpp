@@ -7,15 +7,16 @@
 #ifndef FDMPLUGINXD_H
 #define FDMPLUGINXD_H
 
-#define LINOPXD_PLUGIN Fds::FdmPluginXD
-
 #include<cstdint>
 #include<iostream>
 #include<Eigen/SparseCore>
+#include "../FDStencils/FdmPlugin.hpp" // MatrixStorage_t 
 #include "../LinOpsXD/LinOpTraitsXD.hpp"
 
+#define LINOPXD_PLUGIN Fds::FdmPluginXD
+#define CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Fds::MatrixStorage_t
+
 namespace Fds{
-using namespace LinOps; 
 
 // Plugin Class Def ================================================= 
 template<typename BaseDerived>

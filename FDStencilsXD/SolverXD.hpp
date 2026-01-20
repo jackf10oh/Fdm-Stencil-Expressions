@@ -10,10 +10,6 @@
 #include<cstdint>
 #include<iostream>
 #include<Eigen/Core>
-#include<Eigen/Dense>
-#include<Eigen/LU>
-#include<Eigen/SparseCore>
-#include<Eigen/SparseLU> 
 #include<Eigen/IterativeLinearSolvers> // BICGSTAB
 
 #include "FdmPluginXD.hpp"
@@ -24,17 +20,13 @@
 #include "../Utilities/FillStencil.hpp"
 
 namespace Fds{
-using namespace LinOps; 
-
-// Type Defs -------- 
-using MatrixStorage_t = Eigen::SparseMatrix<double, Eigen::RowMajor>; 
 
 struct SolverArgsXD{
   // Member Data -------------------
-  std::shared_ptr<const MeshXD> domain_mesh_ptr; // XD ! 
-  std::shared_ptr<const Mesh1D> time_mesh_ptr; // 1D ! 
+  std::shared_ptr<const LinOps::MeshXD> domain_mesh_ptr; // XD ! 
+  std::shared_ptr<const LinOps::Mesh1D> time_mesh_ptr; // 1D ! 
   BcXDPtr_t bcs; 
-  DiscretizationXD ICs; // XD ! 
+  LinOps::DiscretizationXD ICs; // XD ! 
   bool time_dep_flag=true; 
 }; 
 
@@ -57,10 +49,10 @@ class SolverXD{
 
     // Member Functions =====================================
     // solve PDE Explicitly -----------------------------------
-    DiscretizationXD Calculate(const SolverArgsXD& args){
+    LinOps::DiscretizationXD Calculate(const SolverArgsXD& args){
 
       // initialize Solution to start at ICs 
-      DiscretizationXD solution = args.ICs; 
+      LinOps::DiscretizationXD solution = args.ICs; 
 
       // resize stencils  
       m_expr.set_mesh(args.domain_mesh_ptr); 
@@ -118,10 +110,10 @@ class SolverXD{
     }
 
     // solve PDE Implicitly -----------------------------------
-    DiscretizationXD CalculateImp(const SolverArgsXD& args, std::size_t max_iters=20){
+    LinOps::DiscretizationXD CalculateImp(const SolverArgsXD& args, std::size_t max_iters=20){
 
       // initialize Solution to start at ICs 
-      DiscretizationXD solution = args.ICs; 
+      LinOps::DiscretizationXD solution = args.ICs; 
 
       // resize stencils  
       m_expr.set_mesh(args.domain_mesh_ptr); 
@@ -132,7 +124,7 @@ class SolverXD{
       double t;
       double t_prev = args.time_mesh_ptr->cbegin()[0];  
       MatrixStorage_t stencil; 
-      auto I = IOpXD(args.domain_mesh_ptr).GetMat();  
+      MatrixStorage_t I = LinOps::IOpXD(args.domain_mesh_ptr).GetMat();  
       m_solver.setMaxIterations(max_iters); 
       switch (args.time_dep_flag)
       {
@@ -173,7 +165,6 @@ class SolverXD{
       // PDE is not time dependent 
       default: // false  
         MatrixStorage_t bcs_mask(args.domain_mesh_ptr->sizes_product(), args.domain_mesh_ptr->sizes_product()); 
-        // args.bcs_pair.first->SetStencilL(bcs_mask, args.domain_mesh_ptr);
         args.bcs->SetStencil(bcs_mask, args.domain_mesh_ptr);
         for(; it!=end; it++){
           // get new time, and dt 

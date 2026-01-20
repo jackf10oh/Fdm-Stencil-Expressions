@@ -34,7 +34,6 @@ using LinOpXDMixIn = LINOPXD_PLUGIN<T>;
 #define CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Eigen::SparseMatrix<double, Eigen::RowMajor>
 #endif 
 
-
 template<typename Derived>
 class LinOpBaseXD : public internal::LinOpXDMixIn<LinOpBaseXD<Derived>> 
 {

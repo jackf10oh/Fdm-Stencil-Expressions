@@ -16,16 +16,11 @@
 #include "../../Utilities/FillStencil.hpp"
 #include "../../Utilities/FornbergCalc.hpp"
 #include "../../LinOpsXD/MeshXD.hpp"
-#include "../../LinOpsXD/DiscretizationXD.hpp"
 
 namespace Fds{
-using namespace LinOps; 
 
 class BCListXD : public IBoundaryCondXD
 {
-  protected:  
-    // Type Defs 
-    using StridedRef = typename Eigen::Ref<Eigen::VectorXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
   public:
     // member data. -------------------------------------------------
     // list of boundary conditions. 1 per Dimension 
@@ -39,12 +34,12 @@ class BCListXD : public IBoundaryCondXD
 
     // Member Functions =======================================================
     // set a DiscretizationXD to an explicit solution 
-    virtual void SetSol(StridedRef Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
+    virtual void SetSol(StridedRef_t Sol, const std::shared_ptr<const LinOps::MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
       if(list.empty()) throw std::runtime_error("BCListXD: list must be non empty!"); 
       if(list.size()!=mesh->dims()) throw std::invalid_argument("BCListXD:  length of boundary condition list must be == to # of dims of MeshXD");
-      if(Sol.size()!=mesh->sizes_product()) throw std::invalid_argument("BCListXD: # of entries in StrideRef must be == to meshXD->sizes_product().");
+      if(Sol.size()!=mesh->sizes_product()) throw std::invalid_argument("BCListXD: # of entries in StridedRef_t must be == to meshXD->sizes_product().");
 
       // this lambda takes 1 BcPtr_t and applies it to Sol
       // without double assigning to corners/edges of XDim space 
@@ -81,12 +76,12 @@ class BCListXD : public IBoundaryCondXD
     }
 
     // set a DiscretizationXD to an implicit solution 
-    virtual void SetImpSol(StridedRef Sol, const std::shared_ptr<const MeshXD>& mesh) const override 
+    virtual void SetImpSol(StridedRef_t Sol, const std::shared_ptr<const LinOps::MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
       if(list.empty()) throw std::runtime_error("BoundaryCondXD: list must be non empty!"); 
       if(list.size()!=mesh->dims()) throw std::invalid_argument("BoundaryCondXD:  length of boundary condition list must be == to # of dims of MeshXD");
-      if(Sol.size()!=mesh->sizes_product()) throw std::invalid_argument("BCListXD: # of entries in StrideRef must be == to meshXD->sizes_product().");
+      if(Sol.size()!=mesh->sizes_product()) throw std::invalid_argument("BCListXD: # of entries in StridedRef_t must be == to meshXD->sizes_product().");
 
       // this lambda takes 1 BcPtr_t and applies it to Sol
       // without double assigning to corners/edges of XDim space 
@@ -121,7 +116,7 @@ class BCListXD : public IBoundaryCondXD
     }
 
     // set a Matrixs' row according to list. making it an implicit stencil  
-    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const override 
+    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const LinOps::MeshXD>& mesh) const override 
     {
       // check args are compaitble ---------------------------------
       if(list.empty()) throw std::runtime_error("list must be non empty!"); 
@@ -173,7 +168,7 @@ class BCListXD : public IBoundaryCondXD
     }
   private:
     // Unreachable =========================================================== 
-    MatrixStorage_t flat_stencil(const BCPair& p, const std::shared_ptr<const Mesh1D>& mesh) const 
+    MatrixStorage_t flat_stencil(const BCPair& p, const std::shared_ptr<const LinOps::Mesh1D>& mesh) const 
     {
       // empty singuglar row of size == mesh size 
       MatrixStorage_t result(1, mesh->size()); 

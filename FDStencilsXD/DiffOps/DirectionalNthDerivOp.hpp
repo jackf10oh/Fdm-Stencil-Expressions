@@ -10,18 +10,17 @@
 #include<cstdint>
 #include<Eigen/Sparse> 
 #include<unsupported/Eigen/KroneckerProduct> 
+#include "../FdmPluginXD.hpp" // MatrixStorage_t
 #include "../../LinOpsXD/LinearOpBaseXD.hpp"
 #include "../../FDStencils/DiffOps/NthDerivOp.hpp"
 
 namespace Fds{
-using namespace LinOps; 
 
-class DirectionalNthDerivOp : public LinOpBaseXD<DirectionalNthDerivOp>
+class DirectionalNthDerivOp : public LinOps::LinOpBaseXD<DirectionalNthDerivOp>
 {
   private:
-    typedef typename CUSTOM_LINOPSXD_SPARSE_MATRIX_STORAGE Matrix_t; 
     // Member Data ----------------------------------------------
-    Matrix_t m_mat; 
+    MatrixStorage_t m_mat; 
     std::size_t m_dir; 
     std::size_t m_order; 
     std::size_t m_prod_before; 
@@ -30,10 +29,10 @@ class DirectionalNthDerivOp : public LinOpBaseXD<DirectionalNthDerivOp>
 
   public:
     // Constructors + Destructor =====================================================
-    DirectionalNthDerivOp(MeshXDPtr_t m, std::size_t order=1, std::size_t dir=0)
+    DirectionalNthDerivOp(LinOps::MeshXDPtr_t m, std::size_t order=1, std::size_t dir=0)
       : m_order(order), m_dir(dir), m_prod_before(std::size_t{1}), m_prod_after(std::size_t{1}), m_onedim_stencil(order) 
     {set_mesh(m);};
-    DirectionalNthDerivOp(std::size_t order=1, std::size_t dir=0, MeshXDPtr_t m=MeshXDPtr_t{})
+    DirectionalNthDerivOp(std::size_t order=1, std::size_t dir=0, LinOps::MeshXDPtr_t m=LinOps::MeshXDPtr_t{})
       : m_order(order), m_dir(dir), m_prod_before(std::size_t{1}), m_prod_after(std::size_t{1}), m_onedim_stencil(order) 
     {set_mesh(m);};
     // destructor 
@@ -42,7 +41,7 @@ class DirectionalNthDerivOp : public LinOpBaseXD<DirectionalNthDerivOp>
     // Member Functions =====================================================
     auto& GetMat(){ return m_mat; } 
     const auto& GetMat() const{return m_mat;} 
-    void set_mesh(MeshXDPtr_t m)
+    void set_mesh(LinOps::MeshXDPtr_t m)
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
@@ -63,24 +62,19 @@ class DirectionalNthDerivOp : public LinOpBaseXD<DirectionalNthDerivOp>
       m_prod_before = locked->sizes_middle_product(0,m_dir); 
       m_prod_after = (locked->dims() > m_dir) ? locked->sizes_middle_product(m_dir+1, locked->dims()) : 1; 
 
-      // std::cout <<"dims before" <<  m_prod_before << std::endl; 
-      // std::cout <<"dims after" <<  m_prod_after << std::endl; 
-      
-      Matrix_t I; 
+      MatrixStorage_t I; 
       if(m_prod_before>1){
         I.resize(m_prod_before, m_prod_before); 
         I.setIdentity(); 
         m_mat = Eigen::KroneckerProductSparse(m_onedim_stencil.GetMat(), I); 
-        // std::cout << "intermediary ---------------" << std::endl << m_mat << std::endl; 
       }
       else{
         m_mat = m_onedim_stencil.GetMat(); 
-        // std::cout << "moved ---------------" << std::endl << m_mat << std::endl; 
       }; 
       if(m_prod_after>1){
         I.resize(m_prod_after, m_prod_after); 
         I.setIdentity(); 
-        Matrix_t temp = Eigen::KroneckerProductSparse(I, m_mat);  
+        MatrixStorage_t temp = Eigen::KroneckerProductSparse(I, m_mat);  
         m_mat = std::move(temp); 
       }; 
     }

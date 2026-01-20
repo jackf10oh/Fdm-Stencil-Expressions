@@ -26,11 +26,9 @@ template<typename T>
 using is_coeffopxd_crtp = Fds::internal::is_coeffopxd_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>; 
 } // end namespace traits 
 
-using namespace LinOps; 
-
 // BASE INTERFACE ===============================================
 template<typename Derived>
-class CoeffOpBaseXD : public LinOpBaseXD<CoeffOpBaseXD<Derived>>
+class CoeffOpBaseXD : public LinOps::LinOpBaseXD<CoeffOpBaseXD<Derived>>
 {
   public:
     // flag type for any derived class to be picked up by is_coeffop_crtp<>::value trait 
@@ -55,7 +53,7 @@ class CoeffOpBaseXD : public LinOpBaseXD<CoeffOpBaseXD<Derived>>
       return static_cast<const Derived*>(this)->GetMat();
     };
     // set stencil to new mesh............
-    void set_mesh(MeshXDPtr_t m)
+    void set_mesh(LinOps::MeshXDPtr_t m)
     {
       static_cast<Derived*>(this)->set_mesh(m); 
       // if(m==nullptr || m==this->m_mesh_ptr) return; // do nothing on nullptr or copy of m_mesh_ptr 
@@ -73,14 +71,14 @@ class CoeffOpBaseXD : public LinOpBaseXD<CoeffOpBaseXD<Derived>>
     auto operator*(LINOPXD_T&& rhs) &
     {
       static_assert(!Fds::traits::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
-      return LinOpBaseXD<CoeffOpBaseXD<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
+      return LinOps::LinOpBaseXD<CoeffOpBaseXD<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
     };
     // operator for scalar multiplication c * L ( Rval overload)
     template<typename LINOPXD_T>
     auto operator*(LINOPXD_T&& rhs) &&
     {
       static_assert(!Fds::traits::is_coeffopxd_crtp<LINOPXD_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
-      return LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
+      return LinOps::LinOpBase<CoeffOpBase<Derived>>::compose(std::forward<LINOPXD_T>(rhs));
     };
     
     // delting a ton of operators out of LinOpBase =====================================
