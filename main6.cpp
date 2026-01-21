@@ -1,8 +1,8 @@
-// main5.cpp 
+// main6.cpp 
 //
-// Testing out GenSolver on 2D PDEs 
+// Testing out GenInterp (wraps GenSolver) on 1D PDEs 
 //
-// JAF 1/17/2026 
+// JAF 1/120/2026 
 
 #include<cstdint>
 #include<iostream>
@@ -19,6 +19,8 @@
 #include "FDStencilsXD/All.hpp" // likewise ...
 #include "LinOpsXD/All.hpp"
 #include "TExprs/All.hpp"
+
+#include "TExprs/GenInterp.hpp" // GenInterp 
 
 using std::cout, std::endl;
 
@@ -71,14 +73,16 @@ int main()
     .time_dep_flag = false 
   }; 
 
-  TExprs::GenSolver s(lhs_expr, expr); 
-  auto v = s.Calculate(args); 
+  // TExprs::GenSolver s(lhs_expr, expr); 
+  // auto v = s.Calculate(args); 
   // auto v = s.CalculateImp(args); 
+
+  TExprs::GenInterp my_interp(lhs_expr, expr, args); 
 
   // Printing ---------------------------------------------------------------- 
   // print_vec(my_vals, "ICs"); 
   // print_vec(v,"Sol"); 
 
-  print_mat(my_mesh->OneDim_views(my_vals.values(),0), "ICs"); 
-  print_mat(my_mesh->OneDim_views(v.values(),0), "Sol"); 
+  // print_mat(my_mesh->OneDim_views(my_vals.values(),0), "ICs"); 
+  // print_mat(my_mesh->OneDim_views(v,0), "Sol"); 
 };

@@ -18,6 +18,7 @@
 
 namespace TExprs{
 
+// Generalized Args for PDEs in 1D or XD
 template<typename ANYMESH_SHAREDPTR_T, typename ANYBC_SHAREDPTR_T, typename CONTAINER_T>
 struct GenSolverArgs
 {
@@ -61,11 +62,15 @@ struct FinalWrite
 
 struct PrintWrite
 {
-  // no member data 
+  bool first_entry=true; 
   PrintWrite()=default; 
   void SaveSolution(Eigen::VectorXd&& sol)
   {
-    std::cout << "[["; 
+    if(first_entry){
+      std::cout << "[";
+      first_entry=false;
+    }
+    std::cout << "["; 
     auto it=sol.cbegin(); 
     auto end = std::prev(sol.cend()); 
     for(; it!=end; it++){
@@ -85,6 +90,7 @@ struct PrintWrite
   }; 
 };
 
+// Generalized Solver for PDEs in 1D or XD
 template<typename LHS_EXPR, typename RHS_EXPR, typename WRITE_POLICY_T=FinalWrite, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
 class GenSolver
 {
