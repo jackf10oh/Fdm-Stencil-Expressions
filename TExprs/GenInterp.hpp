@@ -19,7 +19,7 @@ namespace TExprs{
 template<typename LHS_EXPR, typename RHS_EXPR, typename M, typename B, typename C>
 class GenInterp
 {
-  private:
+  public:
     // Type Defs ----------------------------- 
     struct VecSaveWrite
     {
@@ -56,23 +56,19 @@ class GenInterp
 
     // Member Funcs ====================================================
     // get value of Solution at any point t,x1,x2,...xn in time/space 
-    double at(double t, std::vector<double>& coords){
+    double at(double t, const std::vector<double>& coords){
       // if m_data is empty... 
-      if(!m_calculated)
-      {
-        // WritePolicy moves all solutions at each time step to m_data
-        m_solver.CalculateImp(m_args); 
-        m_calculated = true; 
-      }
+      if(!m_calculated) FillVals(); 
+
       // find index in m_args.time_mesh_ptr
-      auto time_interval_pair = get_interval(m_args.time_mesh_ptr, t);
+      auto time_interval_pair = get_interval(*m_args.time_mesh_ptr, t);
 
       // find left / right value in linear interpolation 
       double val_01 =  LinearInterp_impl(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.first)]); 
       double val_02 =  LinearInterp_impl(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.second)]);
       
       // linear interpolation (t-t1) * (y2 - y1) / (t2 - t1) 
-      return (t - *time_interval_pair.first) * (val_02 - val_01) / (*time_interval_pair.second - *time_interval_pair.first); 
+      return val_01 + (t - *time_interval_pair.first) * (val_02 - val_01) / (*time_interval_pair.second - *time_interval_pair.first); 
     }
 
     // set m_args to a new input
@@ -81,9 +77,22 @@ class GenInterp
       m_args = args_switch; 
       m_data->resize(0); 
       m_data->reserve(m_args.time_mesh_ptr->size()); 
+      m_calculated=false; 
     }
 
-  private:
+    // Populate m_data with solutions at each step in time 
+    void FillVals(std::size_t num_iters=20)
+    {
+      if(!m_calculated)
+      {
+        std::for_each(m_args.ICs.cbegin(), m_args.ICs.cend(), [&](const auto& ic){m_data->push_back(ic);});  
+        // WritePolicy moves all solutions at each time step to m_data
+        m_solver.CalculateImp(m_args, num_iters); 
+        m_calculated = true; 
+      }
+    }
+
+  public:
     // Unreachable ----------------------------------------------------
     double LinearInterp_impl(const std::vector<double>& coords, const Eigen::VectorXd& v)
     {
@@ -102,7 +111,7 @@ class GenInterp
 
       std::pair<double,double> sub_dim_vals = LinearInterp_recursive_impl(coords, v, high_dim_m, coords.size()-1); 
 
-      return (coords[coords.size()-1] - *interval_pair.first) * (sub_dim_vals.second - sub_dim_vals.first) / (*interval_pair.second - *interval_pair.first);  
+      return sub_dim_vals.first + (coords[coords.size()-1] - *interval_pair.first) * (sub_dim_vals.second - sub_dim_vals.first) / (*interval_pair.second - *interval_pair.first);  
     }
 
     std::pair<double,double> LinearInterp_recursive_impl(
