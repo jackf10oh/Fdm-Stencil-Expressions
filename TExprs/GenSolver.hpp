@@ -241,7 +241,14 @@ class GenSolver
         break;
       
       default: // false 
-        TExprs::internal::MatrixStorage_t bcs_mask(args.domain_mesh_ptr->size(), args.domain_mesh_ptr->size()); 
+        std::size_t s1; 
+        if constexpr(std::is_same<M,std::shared_ptr<const LinOps::MeshXD>>::value){
+          s1 = args.domain_mesh_ptr->sizes_product(); 
+        }
+        else{
+          s1 = args.domain_mesh_ptr->size(); 
+        }
+        TExprs::internal::MatrixStorage_t bcs_mask(s1, s1); 
         args.bcs->SetStencil(bcs_mask, args.domain_mesh_ptr);
         for(; it!= end; it++)
         {

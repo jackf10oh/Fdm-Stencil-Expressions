@@ -55,8 +55,15 @@ class GenInterp
     ~GenInterp()=default; 
 
     // Member Funcs ====================================================
+    template<typename... Scalars>
+    double at(double t, Scalars... coords)
+    {
+      std::array<double, sizeof...(coords)> c{coords...};
+      return at(t, c); 
+    }
     // get value of Solution at any point t,x1,x2,...xn in time/space 
-    double at(double t, const std::vector<double>& coords){
+    template<typename Cont_C>
+    double at(double t, const Cont_C& coords){
       // if m_data is empty... 
       if(!m_calculated) FillVals(); 
 
@@ -64,8 +71,8 @@ class GenInterp
       auto time_interval_pair = get_interval(*m_args.time_mesh_ptr, t);
 
       // find left / right value in linear interpolation 
-      double val_01 =  LinearInterp_impl(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.first)]); 
-      double val_02 =  LinearInterp_impl(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.second)]);
+      double val_01 =  LinearInterp(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.first)]); 
+      double val_02 =  LinearInterp(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.second)]);
       
       // linear interpolation (t-t1) * (y2 - y1) / (t2 - t1) 
       return val_01 + (t - *time_interval_pair.first) * (val_02 - val_01) / (*time_interval_pair.second - *time_interval_pair.first); 
@@ -87,100 +94,81 @@ class GenInterp
       {
         std::for_each(m_args.ICs.cbegin(), m_args.ICs.cend(), [&](const auto& ic){m_data->push_back(ic);});  
         // WritePolicy moves all solutions at each time step to m_data
-        m_solver.CalculateImp(m_args, num_iters); 
+        // m_solver.CalculateImp(m_args, num_iters); 
+        m_solver.Calculate(m_args); 
         m_calculated = true; 
       }
     }
 
   public:
     // Unreachable ----------------------------------------------------
-    double LinearInterp_impl(const std::vector<double>& coords, const Eigen::VectorXd& v)
-    {
-      std::shared_ptr<const LinOps::MeshXD> high_dim_m = nullptr; 
+template<typename Cont_C, typename Cont_V>
+double LinearInterp(const Cont_C& coords, const Cont_V& v)
+{
+  std::shared_ptr<const LinOps::MeshXD> high_dim_m; 
+  if constexpr(std::is_same<std::shared_ptr<const LinOps::MeshXD>, M>::value){
+    high_dim_m = m_args.domain_mesh_ptr; 
+  }
+  else{
+    std::vector<std::shared_ptr<const LinOps::Mesh1D>> temp(0); 
+    temp.emplace_back(m_args.domain_mesh_ptr); 
+    high_dim_m = std::make_shared<const LinOps::MeshXD>(temp); 
+  }
+  return LinearInterp_recursive_impl(coords, v, high_dim_m, coords.size()-1);
+}; 
 
-      if constexpr(std::is_same<M, std::shared_ptr<const LinOps::MeshXD>>::value) high_dim_m = m_args.domain_mesh_ptr; 
-      else high_dim_m = std::make_shared<const LinOps::MeshXD>( std::vector<std::shared_ptr<const LinOps::Mesh1D>>(1, m_args.domain_mesh_ptr) ); 
+template<typename Cont_C, typename Cont_V>
+double LinearInterp_recursive_impl(
+  const Cont_C& coords, 
+  const Cont_V& v, 
+  const std::shared_ptr<const LinOps::MeshXD>& m,
+  std::size_t ith_dim,
+  std::size_t cumulative_offset = 0
+)
+{
+  auto sub_dim_m = m->GetMeshAt(ith_dim); 
+  auto bounding_interval = get_interval(*sub_dim_m, coords[ith_dim]);  
 
-      if(coords.size() != high_dim_m->dims()) throw std::runtime_error(" GenInterp::LinearInterp(...) error. coords.size() != GenSolverArgs.domain_mesh_ptr->dims(). or != in case of Mesh1D"); 
+  if(ith_dim == 0)
+  {
+    std::size_t final_offset_01 = cumulative_offset + std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
+    std::size_t final_offset_02 = final_offset_01 + 1; 
+    // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
+    double result = v[final_offset_01] + (coords[ith_dim] - *bounding_interval.first) * (v[final_offset_02]-v[final_offset_01]) / (*bounding_interval.second - *bounding_interval.first);  
+    return result; 
+  }
+  else
+  {
+    std::size_t stride_size = m->sizes_middle_product(0,ith_dim); 
+    std::size_t interval_start_idx = std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
+    std::size_t offset_01 = cumulative_offset + stride_size * (interval_start_idx); 
+    std::size_t offset_02 = cumulative_offset + stride_size * (interval_start_idx+1); 
 
-      // Current Mesh1D we are working on 
-      const auto sub_dim_m = high_dim_m->GetMeshAt(high_dim_m->dims()-1); 
+    double endpoint_01 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_01); 
+    double endpoint_02 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_02);
+    
+    // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
+    double result = endpoint_01 + (coords[ith_dim] - *bounding_interval.first) * (endpoint_02 - endpoint_01) / (*bounding_interval.second - *bounding_interval.first); 
+    return result; 
+  }
+}; 
 
-      // find pair [x1, x2] with x1 <= x <= x2 (x = coords[ith_dim])
-      auto interval_pair = get_interval(*sub_dim_m, coords[coords.size()-1]); 
+template<typename Cont>
+auto get_interval(const Cont& v, double c)
+{
+// runtime checks 
+if(v.size() < 2) throw std::runtime_error("size of v < 2"); 
+if(c < v.cbegin()[0]) throw std::runtime_error("c < v[0]"); 
 
-      std::pair<double,double> sub_dim_vals = LinearInterp_recursive_impl(coords, v, high_dim_m, coords.size()-1); 
+// right side a(i+1) 
+auto after = std::lower_bound(v.cbegin(), v.cend(), c);
+if(after == v.cend()) throw std::runtime_error("right bound == v.cend()"); 
 
-      return sub_dim_vals.first + (coords[coords.size()-1] - *interval_pair.first) * (sub_dim_vals.second - sub_dim_vals.first) / (*interval_pair.second - *interval_pair.first);  
-    }
+// if a(i+1) == v[0] bump it by 1. 
+auto before = (after==v.cbegin()) ? after++ : std::prev(after); 
+return std::pair(before, after); 
+}; 
 
-    std::pair<double,double> LinearInterp_recursive_impl(
-      const std::vector<double>& coords, 
-      const Eigen::VectorXd& v, 
-      const std::shared_ptr<const LinOps::MeshXD>& m,
-      std::size_t ith_dim,
-      std::size_t cumulative_offset = 0
-    )
-    {
-      // Current Mesh1D we are working on 
-      const auto sub_dim_m = m->GetMeshAt(ith_dim); 
-
-      // find pair [x1, x2] with x1 <= x <= x2 (x = coords[ith_dim])
-      auto internval_pair = get_interval(*sub_dim_m, coords[ith_dim]); 
-
-      // if this is first dimension 
-      if(ith_dim == 0)
-      {
-        // ! requires offsets of all higher dimension. 
-        // ! actually return disc(idx(...) + some_offset_from_higher_dims)
-        // return discretization(cumulative_offset+idx(p.first)), discretization(cumulative_offset+idx(p.second)) 
-        double val1 = v[cumulative_offset + std::distance(sub_dim_m->cbegin(), internval_pair.first)]; 
-        double val2 = v[cumulative_offset + std::distance(sub_dim_m->cbegin(), internval_pair.second)]; 
-        return std::pair(val1,val2); 
-      }
-      else if(ith_dim == (coords.size()-1)) // this is the outtermost dimension. 
-      {
-        // cumulative offset needs to be manually set to nonzero before it can accumulate products 
-        cumulative_offset = m->sizes_middle_product(0, ith_dim) * std::distance(sub_dim_m->cbegin(), internval_pair.first); 
-        
-        // gets 2 linear interpretations from lower dimension 
-        std::pair<double,double> val_pair = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, cumulative_offset);
-        return val_pair; 
-      }
-      else // this is an intermediate dimension
-      {
-        // calculate new offset by incorporating this 
-        std::size_t cumulative_offset_01 = cumulative_offset + m->sizes_middle_product(0, ith_dim) * std::distance(sub_dim_m->cbegin(), internval_pair.first); 
-        std::size_t cumulative_offset_02 = cumulative_offset + m->sizes_middle_product(0, ith_dim) * std::distance(sub_dim_m->cbegin(), internval_pair.second); 
-
-        // get 2 pairs of linear interpolant along subdimension (ith_dim-1)
-        std::pair<double,double> val_pair_01 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, cumulative_offset_01);
-        std::pair<double,double> val_pair_02 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, cumulative_offset_02);
-
-        // perform linear interpolation in this dimension to produce pair of values 
-        double val_01 = (coords[ith_dim] - *internval_pair.first) * (val_pair_01.second-val_pair_01.first) / (*internval_pair.second-*internval_pair.first);
-        double val_02 = (coords[ith_dim] - *internval_pair.first) * (val_pair_02.second-val_pair_02.first) / (*internval_pair.second-*internval_pair.first);
-
-        // return std::pair<double,double> 
-        return {val_01, val_02}; 
-      }
-    }; 
-
-    template<typename Cont>
-    auto get_interval(const Cont& v, double c)
-    {
-    // runtime checks 
-    if(v.size() < 2) throw std::runtime_error("size of v < 2"); 
-    if(c < v.cbegin()[0]) throw std::runtime_error("c < v[0]"); 
-
-    // right side a(i+1) 
-    auto after = std::lower_bound(v.cbegin(), v.cend(), c);
-    if(after == v.cend()) throw std::runtime_error("right bound == v.cend()"); 
-
-    // if a(i+1) == v[0] bump it by 1. 
-    auto before = (after==v.cbegin()) ? after++ : std::prev(after); 
-    return std::pair(before, after); 
-    }; 
 }; 
 
 } // end namespace TExprs 
@@ -274,3 +262,22 @@ if this is an intermediate dimension
 )
 */
 
+
+
+// else if(ith_dim == (coords.size()-1)) // this is the outtermost dimension. 
+// {
+// // calculate new offset by incorporating this 
+// std::size_t cumulative_offset_01 = cumulative_offset + m->sizes_middle_product(0, ith_dim) * std::distance(sub_dim_m->cbegin(), internval_pair.first); 
+// std::size_t cumulative_offset_02 = cumulative_offset + m->sizes_middle_product(0, ith_dim) * std::distance(sub_dim_m->cbegin(), internval_pair.second); 
+
+// // get 2 pairs of linear interpolant along subdimension (ith_dim-1)
+// std::pair<double,double> val_pair_01 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, cumulative_offset_01);
+// std::pair<double,double> val_pair_02 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, cumulative_offset_02);
+
+// // perform linear interpolation in this dimension to produce pair of values 
+// double val_01 = val_pair_01.first + (coords[ith_dim] - *internval_pair.first) * (val_pair_01.second-val_pair_01.first) / (*internval_pair.second-*internval_pair.first);
+// double val_02 = val_pair_02.first + (coords[ith_dim] - *internval_pair.first) * (val_pair_02.second-val_pair_02.first) / (*internval_pair.second-*internval_pair.first);
+
+// // return std::pair<double,double> 
+// return {val_01, val_02}; 
+// }
