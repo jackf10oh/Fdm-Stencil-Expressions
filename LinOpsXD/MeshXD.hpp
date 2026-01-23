@@ -63,9 +63,14 @@ class MeshXD
       }
     }
     
-    // from std::vector<> of MeshPtr_t (Mesh1D's)
+    // from std::vector<> of shared_ptr<const Mesh1D>
     MeshXD(const std::vector<std::shared_ptr<const Mesh1D>>& init_vec) : m_mesh_vec(init_vec){}; 
+    // from std::vector<> (RVAL) of shared_ptr<const Mesh1D>
+    MeshXD(std::vector<std::shared_ptr<const Mesh1D>>&& init_vec) : m_mesh_vec(std::move(init_vec)){}; 
     
+    // from shared_ptr const Mesh1D
+    MeshXD(std::shared_ptr<const Mesh1D> m1d_init) : m_mesh_vec{m1d_init}{};  
+
     // Copy 
     MeshXD(const MeshXD& other)=default; 
     
@@ -142,6 +147,15 @@ auto make_meshXD(Args... args)
   static_assert(std::is_base_of<MeshXD,MeshXD_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
   return std::make_shared<const MeshXD_t>(args...); 
 }
+
+// just return the input args if called on a shared_ptr<const MeshXD> 
+std::shared_ptr<const MeshXD> make_meshXD(const std::shared_ptr<const MeshXD>& other)
+{
+  // static_assert(std::is_base_of<MeshXD,MeshXD_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
+  return other; 
+}
+
+
 
 } // end namespace LinOps 
 

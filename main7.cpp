@@ -82,7 +82,7 @@ int main()
 
   // manual printing ---------------------------------------------------------------- 
   my_interp.FillVals(); 
-  auto views = my_mesh->OneDim_views(my_interp.m_data->at(100));
+  auto views = my_mesh->OneDim_views(my_interp.m_data.at(100));
   print_mat(views, "Sol at t=3.0"); 
 
   // Interpolating! ---------------------------------------------------------------
@@ -97,7 +97,7 @@ int main()
     std::cout <<"["; 
     for(auto it = my_mesh->GetMeshAt(1)->cbegin(); it != my_mesh->GetMeshAt(1)->cend(); it++)
     {
-      std::cout << my_interp.at(t,*x_it,*it); 
+      std::cout << my_interp.SolAt(t,*x_it,*it); 
       std::cout << ((it != std::prev(my_mesh->GetMeshAt(1)->cend())) ? "," : "]"); 
     } 
       std::cout << ((x_it != std::prev(my_mesh->GetMeshAt(0)->cend())) ? ",\n" : ""); 

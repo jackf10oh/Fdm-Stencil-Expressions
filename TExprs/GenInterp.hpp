@@ -23,56 +23,64 @@ class GenInterp
     // Type Defs ----------------------------- 
     struct VecSaveWrite
     {
-      std::shared_ptr<std::vector<Eigen::VectorXd>> m_ptr; 
+      std::vector<Eigen::VectorXd>& m_vec; 
       VecSaveWrite()=delete; 
-      VecSaveWrite(std::shared_ptr<std::vector<Eigen::VectorXd>> p_init) : m_ptr(p_init){}; 
-      VecSaveWrite(const VecSaveWrite& other) : m_ptr(other.m_ptr){}; 
-      void SaveSolution(Eigen::VectorXd&& sol){ m_ptr->emplace_back(sol); }; 
-      void ConsumeLastSolution(Eigen::VectorXd&& sol){ m_ptr->emplace_back(sol); }; 
+      VecSaveWrite(std::vector<Eigen::VectorXd>& v_init) : m_vec(v_init){}; 
+      VecSaveWrite(const VecSaveWrite& other) : m_vec(other.m_vec){}; 
+      void SaveSolution(Eigen::VectorXd&& sol){ m_vec.emplace_back(sol); }; 
+      void ConsumeLastSolution(Eigen::VectorXd&& sol){ m_vec.emplace_back(sol); }; 
     }; 
 
     // Member Data ------------------------------
-    std::shared_ptr<std::vector<Eigen::VectorXd>> m_data; 
-    VecSaveWrite m_sol_writer = VecSaveWrite(m_data); 
+    std::vector<Eigen::VectorXd> m_data; 
+    VecSaveWrite m_sol_writer; 
     GenSolver<LHS_EXPR, RHS_EXPR, VecSaveWrite> m_solver; 
     GenSolverArgs<M,B,C> m_args; 
+    std::shared_ptr<const LinOps::MeshXD> m_high_dim_mesh; 
     bool m_calculated; 
 
   public: 
     // Constructors + Destructor ===================================
     GenInterp()=delete; 
     GenInterp(LHS_EXPR& lhs, RHS_EXPR& rhs, const GenSolverArgs<M,B,C>& args_init = GenSolverArgs<M,B,C>{})
-      : m_data(std::make_shared<std::vector<Eigen::VectorXd>>(0)), 
+      : m_data(0), 
       m_sol_writer(m_data), 
       m_args(args_init), 
+      m_high_dim_mesh(LinOps::make_meshXD(args_init.domain_mesh_ptr)), 
       m_solver(lhs,rhs,m_sol_writer), 
       m_calculated(false) 
     {
-      if(m_args.time_mesh_ptr) m_data->reserve(m_args.time_mesh_ptr->size());     
+      if(m_args.time_mesh_ptr) m_data.reserve(m_args.time_mesh_ptr->size());     
     }
     GenInterp(const GenInterp& other)=delete; 
     // destructor 
     ~GenInterp()=default; 
 
     // Member Funcs ====================================================
+    // Getters to m_data 
+    auto& StoredData(){ return m_data; }; 
+    const auto& StoredData() const { return m_data; }; 
+
+    // get value of Solution at any point t,x1,x2,...xn in time/space 
     template<typename... Scalars>
-    double at(double t, Scalars... coords)
+    double SolAt(double t, Scalars... coords)
     {
       std::array<double, sizeof...(coords)> c{coords...};
-      return at(t, c); 
+      return SolAt(t, c); 
     }
-    // get value of Solution at any point t,x1,x2,...xn in time/space 
+    // ... with container of spatial coords
     template<typename Cont_C>
-    double at(double t, const Cont_C& coords){
+    double SolAt(double t, const Cont_C& coords){
       // if m_data is empty... 
       if(!m_calculated) FillVals(); 
 
       // find index in m_args.time_mesh_ptr
       auto time_interval_pair = get_interval(*m_args.time_mesh_ptr, t);
+      auto time_idx = std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.first); 
 
       // find left / right value in linear interpolation 
-      double val_01 =  LinearInterp(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.first)]); 
-      double val_02 =  LinearInterp(coords, (*m_data)[std::distance(m_args.time_mesh_ptr->cbegin(), time_interval_pair.second)]);
+      double val_01 =  LinearInterp(coords, m_data[time_idx]); 
+      double val_02 =  LinearInterp(coords, m_data[time_idx+1]);
       
       // linear interpolation (t-t1) * (y2 - y1) / (t2 - t1) 
       return val_01 + (t - *time_interval_pair.first) * (val_02 - val_01) / (*time_interval_pair.second - *time_interval_pair.first); 
@@ -82,8 +90,9 @@ class GenInterp
     void SetArgs(const GenSolverArgs<M,B,C>& args_switch)
     {
       m_args = args_switch; 
-      m_data->resize(0); 
-      m_data->reserve(m_args.time_mesh_ptr->size()); 
+      m_high_dim_mesh = LinOps::make_meshXD(args_switch.domain_mesh_ptr); 
+      m_data.resize(0); 
+      m_data.reserve(m_args.time_mesh_ptr->size()); 
       m_calculated=false; 
     }
 
@@ -92,7 +101,7 @@ class GenInterp
     {
       if(!m_calculated)
       {
-        std::for_each(m_args.ICs.cbegin(), m_args.ICs.cend(), [&](const auto& ic){m_data->push_back(ic);});  
+        std::for_each(m_args.ICs.cbegin(), m_args.ICs.cend(), [&](const auto& ic){m_data.push_back(ic);});  
         // WritePolicy moves all solutions at each time step to m_data
         // m_solver.CalculateImp(m_args, num_iters); 
         m_solver.Calculate(m_args); 
@@ -105,16 +114,7 @@ class GenInterp
 template<typename Cont_C, typename Cont_V>
 double LinearInterp(const Cont_C& coords, const Cont_V& v)
 {
-  std::shared_ptr<const LinOps::MeshXD> high_dim_m; 
-  if constexpr(std::is_same<std::shared_ptr<const LinOps::MeshXD>, M>::value){
-    high_dim_m = m_args.domain_mesh_ptr; 
-  }
-  else{
-    std::vector<std::shared_ptr<const LinOps::Mesh1D>> temp(0); 
-    temp.emplace_back(m_args.domain_mesh_ptr); 
-    high_dim_m = std::make_shared<const LinOps::MeshXD>(temp); 
-  }
-  return LinearInterp_recursive_impl(coords, v, high_dim_m, coords.size()-1);
+  return LinearInterp_recursive_impl(coords, v, m_high_dim_mesh, coords.size()-1);
 }; 
 
 template<typename Cont_C, typename Cont_V>

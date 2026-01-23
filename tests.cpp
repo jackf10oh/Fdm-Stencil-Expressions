@@ -80,45 +80,57 @@ double LinearInterp(const std::vector<double>& coords, const Eigen::VectorXd& v,
   return LinearInterp_recursive_impl(coords, v, m, coords.size()-1);
 }; 
 
-
 int main()
 {
   // iomanip 
   // std::cout << std::setprecision(4); 
   
   // Domain MeshXD ----------------------------------------
-  // auto my_mesh = LinOps::make_meshXD(0.0,4.0,5,3); 
+  auto my_mesh = LinOps::make_mesh(0.0,4.0,5); 
+
   // double r = 4.0;
   // std::size_t N = 5;
   // auto my_mesh = LinOps::make_meshXD(0.0,r,N, 2);
 
-  std::vector<std::pair<double,double>> end_points = {{0.0,1.0}, {0.0,5.0}}; 
-  std::vector<std::size_t> n_steps = {4,9}; 
-  auto my_mesh = LinOps::make_meshXD(end_points, n_steps);
+  // std::vector<std::pair<double,double>> end_points = {{0.0,1.0}, {0.0,5.0}}; 
+  // std::vector<std::size_t> n_steps = {4,9}; 
+  // auto my_mesh = LinOps::make_meshXD(end_points, n_steps);
+
+  std::cout << "my_mesh type: " << typeid(decltype(my_mesh)).name() << std::endl; 
   
+
+  std::shared_ptr<const LinOps::MeshXD> copied = make_meshXD(my_mesh); 
+
+  std::cout << "# Dims: " << copied->dims() << std::endl; 
+  std::cout << "dim(0) size: " << copied->dim_size(0) << std::endl; 
+  std::cout << "sizes prod: " << copied->sizes_product() << std::endl; 
+
+};
+
+
   // ICs --------------
-  LinOps::DiscretizationXD my_vals;
+  // LinOps::DiscretizationXD my_vals;
 
   // Bump centered at (r/2,r2). Zero at x=0, x=r, y=0, y=r. 
   // BumpFunc bump_1d{.L=0.0, .R=r, .c=r/2, .h=5.0, .focus=15.0};
   // auto f_lambda = [&](double x, double y){ return bump_1d(x) * bump_1d(y); }; 
-  auto f_lambda = [](double x, double y){ return x + y; };
-  my_vals.set_init(my_mesh, f_lambda); 
+  // auto f_lambda = [](double x, double y){ return x + y; };
+  // my_vals.set_init(my_mesh, f_lambda); 
 
 
   // Print Matrix
-  auto views = my_mesh->OneDim_views(my_vals.values(), 1); 
-  print_mat(views, "Matrix"); 
+  // auto views = my_mesh->OneDim_views(my_vals.values(), 1); 
+  // print_mat(views, "Matrix"); 
 
-  std::vector<double> coords(2); 
-  while(true)
-  {
-    std::cout << "enter x: "; 
-    std::cin >> coords[0]; 
-    std::cout << "enter y: "; 
-    std::cin >> coords[1];
-    std::cout << "value at (x,y) : " << LinearInterp(coords, my_vals.values(), my_mesh)<<std::endl; 
-  }
+  // std::vector<double> coords(2); 
+  // while(true)
+  // {
+  //   std::cout << "enter x: "; 
+  //   std::cin >> coords[0]; 
+  //   std::cout << "enter y: "; 
+  //   std::cin >> coords[1];
+  //   std::cout << "value at (x,y) : " << LinearInterp(coords, my_vals.values(), my_mesh)<<std::endl; 
+  // }
 
 
   // print interpolations 
@@ -131,9 +143,6 @@ int main()
   //   LinearInterp_impl(coords, my_vals.values(), my_mesh); 
   //   // std::cout << coords[0] << ", " << coords[1] << ":" << LinearInterp_impl(coords, my_vals.values(), my_mesh) << std::endl; 
   // }
-};
-
-
 
   // DiscretizationXD + ICs
   // LinOps::DiscretizationXD my_vals; 
