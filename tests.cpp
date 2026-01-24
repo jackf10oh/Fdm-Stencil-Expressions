@@ -12,7 +12,6 @@
 #include<Eigen/Dense>
 
 #include "FDStencils/All.hpp" // must be first for plugin macro.
-// #include "FDStencils/Interp1D.hpp" // Interp1D class 
 #include "LinOps/All.hpp" 
 #include "FDStencilsXD/All.hpp" // likewise ...
 #include "LinOpsXD/All.hpp"
