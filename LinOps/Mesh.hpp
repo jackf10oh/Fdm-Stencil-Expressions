@@ -37,6 +37,9 @@ class Mesh1D
       for(std::size_t i=0; i<n_steps-1; i++) m_vals[i] = x1 + i*dx; 
       m_vals[n_steps-1] = x2; 
     }
+    // from std::vector
+    Mesh1D(const std::vector<double>& vals_init) : m_vals(vals_init){}; 
+    Mesh1D(std::vector<double>&& vals_init) : m_vals(std::move(vals_init)){}; 
     // copy constructors
     Mesh1D(const Mesh1D& other): m_vals(other.m_vals){}; 
 

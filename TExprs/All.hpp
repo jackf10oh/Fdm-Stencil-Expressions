@@ -13,5 +13,6 @@
 #include "SumExpr.hpp"
 #include "TExprExecutor.hpp"
 #include "GenSolver.hpp"
+#include "GenInterp.hpp"
 
 #endif // All.hpp 

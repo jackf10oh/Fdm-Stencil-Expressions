@@ -87,6 +87,14 @@ class GenInterp
     }
 
     // set m_args to a new input
+    void Reset()
+    {      
+      m_data.resize(0); 
+      m_data.reserve(m_args.time_mesh_ptr->size()); 
+      m_calculated=false; 
+    }
+    auto& Args(){ return m_args; }; 
+    const auto& Args() const { return m_args; }; 
     void SetArgs(const GenSolverArgs<M,B,C>& args_switch)
     {
       m_args = args_switch; 

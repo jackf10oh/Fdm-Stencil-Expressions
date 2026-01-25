@@ -71,4 +71,15 @@ endif()
 #   -DCMAKE_CXX_COMPILER=C:/msys64/mingw64/bin/g++.exe `
 #   -DEigen3_DIR=C:/eigen-install/share/eigen3/cmake `
 #   -DGTest_DIR=C:\gtest-mingw\lib\cmake\GTest
+
+# cmake .. `
+#   -G "MinGW Makefiles" `
+#   -DCMAKE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe `
+#   -DCMAKE_CXX_COMPILER=C:/msys64/mingw64/bin/g++.exe `
+#   -DEigen3_DIR=C:/eigen-install/share/eigen3/cmake `
+#   -DGTest_DIR=C:\gtest-mingw\lib\cmake\GTest `
+#   -Dpybind11_DIR=C:\Users\jackf\anaconda3\Lib\site-packages\pybind11\share\cmake\pybind11 `
+#   -DCMAKE_PREFIX_PATH=C:\Users\jackf\anaconda3
+
+
       
