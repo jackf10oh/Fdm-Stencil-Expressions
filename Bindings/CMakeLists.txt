@@ -40,7 +40,6 @@ target_link_libraries(PyFds
 
 # Apply static linking flags as compile options
 target_link_options(PyFds PRIVATE 
-  -static 
   -static-libgcc 
   -static-libstdc++ 
   -lpthread
