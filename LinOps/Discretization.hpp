@@ -80,7 +80,7 @@ class Discretization1D
     // set vector to same size as mesh -----------------
     void resize(const Mesh1D_SPtr_t& m){
       m_mesh_ptr=m;
-      m_vals.resize(m->size()); 
+      m_vals.conservativeResize(m->size()); 
     }
 
     // set vector to a constant -------------------------------------------------------------

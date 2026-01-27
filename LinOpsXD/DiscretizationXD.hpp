@@ -90,7 +90,7 @@ struct DiscretizationXD
     // set discretization to same size as meshxd's sizes_product
     void resize(const MeshXD_SPtr_t& m) { 
       m_mesh_ptr=m; 
-      m_vals.resize(m->sizes_product()); 
+      m_vals.conservativeResize(m->sizes_product()); 
       return; 
     }
     // set discretization to a constant

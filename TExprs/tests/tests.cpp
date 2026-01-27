@@ -27,7 +27,6 @@ TEST(DerivExpressionSuite, NthTimeDeriv)
   ASSERT_EQ(order_2.Order(), 2); 
   ASSERT_EQ(order_3.Order(), 3); 
 
-
   // testing .CoeffAt() method
   std::vector<double> weights = {0,1,2,   3,4,5,    6,7,8,   9,10,11}; 
   std::size_t node_per_row = 3; 
@@ -52,8 +51,8 @@ TEST(DerivExpressionSuite, CoeffMultExpr)
   double coeff_01 = 2.0; 
   double coeff_02 = 5.0; 
 
-  TExprs::internal::CoeffMultExpr mult_01(coeff_01, order_1);
-  TExprs::internal::CoeffMultExpr mult_02(coeff_02, order_2); 
+  TExprs::internal::CoeffMultExpr<decltype(coeff_01), decltype(order_1)> mult_01(coeff_01, order_1);
+  TExprs::internal::CoeffMultExpr<decltype(coeff_02), decltype(order_2)> mult_02(coeff_02, order_2); 
   
   // testing .Order() method 
   ASSERT_EQ(mult_01.Order(), 1); 
