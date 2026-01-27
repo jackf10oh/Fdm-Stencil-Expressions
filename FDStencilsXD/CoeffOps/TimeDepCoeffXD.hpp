@@ -30,14 +30,14 @@ class TimeDepCoeffXD : public CoeffOpBaseXD<TimeDepCoeffXD<FUNC_STORAGE_T>>
     // Constructors + Destructor ==========================================================
     TimeDepCoeffXD()=delete; // no default constructor
     // from callable + mesh 
-    TimeDepCoeffXD(FUNC_STORAGE_T f_init, LinOps::MeshXDPtr_t m = LinOps::MeshXDPtr_t{})
+    TimeDepCoeffXD(FUNC_STORAGE_T f_init, const LinOps::MeshXD_SPtr_t& m = nullptr)
       : m_function(f_init), m_diag_vals(0), m_prod_after(std::size_t{1}) 
     {
       static_assert(
         std::is_same<double, typename LinOps::traits::callable_traits<FUNC_STORAGE_T>::result_type>::value,
         "Error constructing coeff: F doesn't return double"
       );  
-      set_mesh(m);
+      if(m) set_mesh(m);
       SetTime_impl( this->m_current_time ); 
     }
     // copy constructor
@@ -57,7 +57,7 @@ class TimeDepCoeffXD : public CoeffOpBaseXD<TimeDepCoeffXD<FUNC_STORAGE_T>>
       return SparseDiag<Eigen::VectorXd, SparseDiagPattern::CYCLE>(m_diag_vals.values(), m_prod_after); 
     };
     // updated m_mesh_ptr
-    void set_mesh(LinOps::MeshXDPtr_t m){
+    void set_mesh(const LinOps::MeshXD_SPtr_t& m){
       this->m_mesh_ptr = m; 
     }
     // update state of AutonomousCoeff from a given t 
@@ -72,9 +72,9 @@ class TimeDepCoeffXD : public CoeffOpBaseXD<TimeDepCoeffXD<FUNC_STORAGE_T>>
       }
       else{
 
-      std::vector<std::shared_ptr<const LinOps::Mesh1D>> s(N-1);
+      std::vector<Mesh1D_SPtr_t> s(N-1);
       for(auto i=0; i<N-1; i++) s[i] = locked->GetMesh(i);  
-      auto sub_dims = std::make_shared<const LinOps::MeshXD>(s); 
+      auto sub_dims = std::make_shared<const LinOps::MeshXD>(std::move(s)); 
 
       using Bind_t = typename LinOps::traits::callable_traits<FUNC_STORAGE_T>::BindFirst_t; 
       Bind_t binded(m_function, t); 

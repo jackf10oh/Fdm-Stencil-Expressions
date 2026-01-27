@@ -31,7 +31,7 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     {
       static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args > 0, "Assinging functions with no arguments to TimeDepCoeff not allowed"); 
       static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args <=2, "In 1D, TimeDepCoeff must have form a(t,x) or a(t)");  
-      set_mesh(m);
+      if(m) set_mesh(m);
     }
     // copy constructor
     TimeDepCoeff(const TimeDepCoeff& other)=delete; 

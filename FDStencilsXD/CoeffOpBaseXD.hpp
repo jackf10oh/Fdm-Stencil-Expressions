@@ -53,7 +53,7 @@ class CoeffOpBaseXD : public LinOps::LinOpBaseXD<CoeffOpBaseXD<Derived>>
       return static_cast<const Derived*>(this)->GetMat();
     };
     // set stencil to new mesh............
-    void set_mesh(LinOps::MeshXDPtr_t m)
+    void set_mesh(const LinOps::MeshXD_SPtr_t& m)
     {
       static_cast<Derived*>(this)->set_mesh(m); 
       // if(m==nullptr || m==this->m_mesh_ptr) return; // do nothing on nullptr or copy of m_mesh_ptr 

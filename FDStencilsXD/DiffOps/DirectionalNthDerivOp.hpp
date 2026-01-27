@@ -29,38 +29,35 @@ class DirectionalNthDerivOp : public LinOps::LinOpBaseXD<DirectionalNthDerivOp>
 
   public:
     // Constructors + Destructor =====================================================
-    DirectionalNthDerivOp(LinOps::MeshXDPtr_t m, std::size_t order=1, std::size_t dir=0)
+    DirectionalNthDerivOp(const LinOps::MeshXD_SPtr_t& m, std::size_t order=1, std::size_t dir=0)
       : m_order(order), m_dir(dir), m_prod_before(std::size_t{1}), m_prod_after(std::size_t{1}), m_onedim_stencil(order) 
     {set_mesh(m);};
-    DirectionalNthDerivOp(std::size_t order=1, std::size_t dir=0, LinOps::MeshXDPtr_t m=LinOps::MeshXDPtr_t{})
-      : m_order(order), m_dir(dir), m_prod_before(std::size_t{1}), m_prod_after(std::size_t{1}), m_onedim_stencil(order) 
-    {set_mesh(m);};
+    DirectionalNthDerivOp(std::size_t order=1, std::size_t dir=0)
+      : m_order(order), m_dir(dir), m_prod_before(1), m_prod_after(1), m_onedim_stencil(order) 
+    {};
     // destructor 
     ~DirectionalNthDerivOp()=default; 
 
     // Member Functions =====================================================
     auto& GetMat(){ return m_mat; } 
     const auto& GetMat() const{return m_mat;} 
-    void set_mesh(LinOps::MeshXDPtr_t m)
+    void set_mesh(const LinOps::MeshXD_SPtr_t& m)
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
-      // do nothing on nullptr. or throw an error 
-      auto locked = m.lock(); 
-      // take ownership of mesh 
-      if(!locked) return;
+
       // store the mesh   
       m_mesh_ptr = m; 
 
-      // perform work on locked... 
+      // perform work on m ... 
 
       // check this->direction < mesh-> # dims 
-      if(m_dir >= locked->dims()) throw std::runtime_error("DirectionalNthDerivOp.set_mesh() error: direction >= MeshXD.dims()"); 
-      m_onedim_stencil.set_mesh(locked->GetMeshAt(m_dir)); 
+      if(m_dir >= m->dims()) throw std::runtime_error("DirectionalNthDerivOp.set_mesh() error: direction >= MeshXD.dims()"); 
+      m_onedim_stencil.set_mesh(m->GetMeshAt(m_dir)); 
       // std::cout << m_onedim_stencil.GetMat() << std::endl;
 
-      m_prod_before = locked->sizes_middle_product(0,m_dir); 
-      m_prod_after = (locked->dims() > m_dir) ? locked->sizes_middle_product(m_dir+1, locked->dims()) : 1; 
+      m_prod_before = m->sizes_middle_product(0,m_dir); 
+      m_prod_after = (m->dims() > m_dir) ? m->sizes_middle_product(m_dir+1, m->dims()) : 1; 
 
       MatrixStorage_t I; 
       if(m_prod_before>1){

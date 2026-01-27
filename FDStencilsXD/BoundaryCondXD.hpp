@@ -38,13 +38,13 @@ class IBoundaryCondXD
     // Member Functions ============================================
     // Must Implement ---------------------------------------------
     // set a DiscretizationXD to an explicit solution 
-    virtual void SetSol(StridedRef_t Sol, const std::shared_ptr<const MeshXD>& mesh) const =0; 
+    virtual void SetSol(StridedRef_t Sol, const LinOps::MeshXD_SPtr_t& mesh) const =0; 
 
     // set a DiscretizationXD to an implicit solution 
-    virtual void SetImpSol(StridedRef_t Sol, const std::shared_ptr<const MeshXD>& mesh) const =0; 
+    virtual void SetImpSol(StridedRef_t Sol, const LinOps::MeshXD_SPtr_t& mesh) const =0; 
 
     // set a Matrixs' row according to m_bc_list. making it an implicit stencil  
-    virtual void SetStencil(MatrixStorage_t& Mat, const std::shared_ptr<const MeshXD>& mesh) const =0; 
+    virtual void SetStencil(MatrixStorage_t& Mat, const LinOps::MeshXD_SPtr_t& mesh) const =0; 
 
     // Default Implemented ---------------------------------------------
     virtual void SetTime(double t){m_current_time=t;}; 

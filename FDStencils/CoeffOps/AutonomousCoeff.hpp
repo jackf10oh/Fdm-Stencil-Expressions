@@ -30,7 +30,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
       : m_function(f_init), m_diag_vals(0)
     {
       static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args==1, "In 1D, AutonomousCoeff must have form a(x)");  
-      set_mesh(m);
+      if(m) set_mesh(m);
     }
     // copy constructor
     AutonomousCoeff(const AutonomousCoeff& other)=default; 
