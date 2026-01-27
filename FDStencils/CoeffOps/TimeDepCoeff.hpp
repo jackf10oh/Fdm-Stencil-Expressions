@@ -26,7 +26,7 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
     // constructors ==========================================================
     TimeDepCoeff()=delete; // no default constructor
     // from callable + mesh 
-    TimeDepCoeff(FUNC_STORAGE_T f_init, LinOps::MeshPtr_t m = LinOps::MeshPtr_t{})
+    TimeDepCoeff(FUNC_STORAGE_T f_init, const LinOps::Mesh1D_SPtr_t& m = nullptr)
       : m_function(f_init), m_diag_vals(0)
     {
       static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args > 0, "Assinging functions with no arguments to TimeDepCoeff not allowed"); 
@@ -50,27 +50,26 @@ class TimeDepCoeff : public CoeffOpBase<TimeDepCoeff<FUNC_STORAGE_T>>
       return SparseDiag(m_diag_vals.values().transpose());
     };
     // updated m_mesh_ptr, resize m_diag_vals
-    void set_mesh(LinOps::MeshPtr_t m){
+    void set_mesh(const LinOps::Mesh1D_SPtr_t& m){
       // ensure we aren't resetting the mesh again
       if(!this->m_mesh_ptr.owner_before(m) && !m.owner_before(this->m_mesh_ptr)) return;
-      // do nothing on nullptr. or throw an error 
-      auto locked = m.lock(); 
 
-      if(!locked) return; 
-      this->m_mesh_ptr = m; // store the mesh  
-      // perform work on locked 
+      // store the mesh  
+      this->m_mesh_ptr = m; 
+
+      // resize m_Diag_vals
       m_diag_vals.resize(m);
     }
     // update state of TimeDepCoeff from a given t 
     void SetTime_impl(double t){
       // SetTime() stores the new time... 
       // Store the result of m_function(t,x)  
-      if constexpr(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args==2){
+      if constexpr(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args == 2){
         auto binded = std::bind(m_function, t, std::placeholders::_1); 
-        m_diag_vals.set_init(this->m_mesh_ptr, binded); 
+        m_diag_vals.set_init(this->m_mesh_ptr.lock(), binded); 
       }
       // set diag to be f(t) 
-      if constexpr(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args==1){
+      if constexpr(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args == 1){
         m_diag_vals.set_init( m_function(t) ); 
       }
     };

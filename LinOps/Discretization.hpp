@@ -22,7 +22,7 @@ class Discretization1D
 {
   private:
     // Member Data --------------------------------------------------------------------
-    MeshPtr_t m_mesh_ptr; // weak pointer to mesh the function "maps" into the reals
+    Mesh1D_WPtr_t m_mesh_ptr; // weak pointer to mesh the function "maps" into the reals
     Eigen::VectorXd m_vals; // eigen array of functions vals at mesh points
   public:
     // Constructors / Destructors ==============================================================
@@ -30,9 +30,8 @@ class Discretization1D
     // from size 
     Discretization1D(std::size_t size_init=0): m_mesh_ptr(), m_vals(size_init){};
     // from mesh
-    // Discretization1D(MeshPtr_t mesh_init): m_mesh_ptr(mesh_init), m_vals(mesh_init ? mesh_init->size() : 0){};
     // from const shared_ptr<Mesh1D>
-    Discretization1D(MeshPtr_t mesh_init) : m_mesh_ptr(mesh_init){resize(mesh_init);}
+    Discretization1D(Mesh1D_WPtr_t mesh_init) : m_mesh_ptr(mesh_init){resize(mesh_init.lock());}
     
     // Copy -----------------------------
     Discretization1D(const Discretization1D& other)
@@ -47,13 +46,11 @@ class Discretization1D
     // Move ---------------------------
     Discretization1D(Discretization1D&& other)
       : m_mesh_ptr(std::move(other.m_mesh_ptr)), m_vals(std::move(other.m_vals))
-    {
-      other.m_mesh_ptr=MeshPtr_t{};
-    }; 
+    {}; 
     
     // move from Eigen::VectorXD
-    Discretization1D(Eigen::VectorXd&& other)
-      : m_mesh_ptr(), m_vals(other)
+    Discretization1D(Eigen::VectorXd&& other, Mesh1D_WPtr_t mesh_init = Mesh1D_WPtr_t{})
+      : m_mesh_ptr(mesh_init), m_vals(std::move(other))
     {}; 
     // destructors ----------------------------------
     ~Discretization1D()=default; 
@@ -74,25 +71,24 @@ class Discretization1D
 
     // get underlying mesh ------------------------------
     // const auto mesh(){return m_mesh_ptr.lock(); }; 
-    MeshPtr_t mesh() const{return m_mesh_ptr; }
+    Mesh1D_SPtr_t mesh() const{return m_mesh_ptr.lock(); }
+    Mesh1D_WPtr_t mesh_weak_ptr() const {return m_mesh_ptr;}
 
     // set the mesh the discretization is on -----------
-    void set_mesh(MeshPtr_t m){ 
+    void set_mesh(Mesh1D_WPtr_t m){ 
       m_mesh_ptr=m;
     }
     // set vector to same size as mesh -----------------
-    void resize(MeshPtr_t m){
+    void resize(const Mesh1D_SPtr_t& m){
       m_mesh_ptr=m;
-      auto locked = m.lock(); 
-      if(!locked) m_vals.resize(0);
-      else m_vals.resize(locked->size()); 
+      m_vals.resize(m->size()); 
     }
 
     // set vector to a constant -------------------------------------------------------------
     void set_init(double val){ m_vals.setConstant(val);}
     
     // resize + set constant 
-    void set_init(MeshPtr_t m, double val){ resize(m), set_init(val); }
+    void set_init(const Mesh1D_SPtr_t& m, double val){ resize(m), set_init(val); }
 
     // set_init() TEMPLATE ----------------------------------------------------------------- 
     // set vector F(x0),...,F(xN) for x0,...,xN in stored mesh 
@@ -106,11 +102,7 @@ class Discretization1D
     void set_init(F func)
     {
       auto locked = m_mesh_ptr.lock(); 
-      if(!locked) return; 
-      std::size_t s1 = locked->size();
-      auto data = locked->cbegin(); 
-      m_vals.resize(s1); 
-      for(auto i=0; i<s1; i++) m_vals[i] = func(data[i]); 
+      set_init(locked, std::move(func));
     }
     // resize + set vector F(x0),...,F(xN) for x0,...,xN in stored mesh 
     template<
@@ -123,10 +115,15 @@ class Discretization1D
       std::bool_constant<traits::callable_traits<F>::num_args == 1>::value
       >
     >
-    void set_init(MeshPtr_t m, F func)
+    void set_init(const Mesh1D_SPtr_t& m, F func)
     {
-      resize(m); 
-      set_init(func); 
+      m_mesh_ptr = m; 
+
+      std::size_t s1 = m->size();
+      auto data = m->cbegin(); 
+
+      m_vals.resize(s1); 
+      for(auto i=0; i<s1; i++) m_vals[i] = func(data[i]); 
     }
     
     // forward iterators -------------------------------------------------------
@@ -144,7 +141,6 @@ class Discretization1D
     Discretization1D& operator=(const Discretization1D& other) = default;
     Discretization1D& operator=(Discretization1D&& other){
       m_mesh_ptr = std::move(other.m_mesh_ptr); 
-      other.m_mesh_ptr=MeshPtr_t{}; 
       m_vals=std::move(other.m_vals); 
       return *this;
     }; 

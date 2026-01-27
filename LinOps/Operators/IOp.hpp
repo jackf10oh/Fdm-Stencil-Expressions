@@ -31,7 +31,7 @@ class IOp : public LinOpBase<IOp>
     {
       resize(s_init); 
     } 
-    IOp(MeshPtr_t m)
+    IOp(const Mesh1D_SPtr_t& m)
     {
       set_mesh(m);
     } 
@@ -44,16 +44,13 @@ class IOp : public LinOpBase<IOp>
     { 
       return d_arr;
     }; 
-    void set_mesh(MeshPtr_t m)
+    void set_mesh(const Mesh1D_SPtr_t& m)
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
-      // do nothing on nullptr. or throw an error 
-      auto locked = m.lock(); 
-      if(!locked) return; 
       m_mesh_ptr = m; // store the mesh  
       // set m_Mat to I(s,s) 
-      m_Mat.resize(locked->size(), locked->size()); 
+      m_Mat.resize(m->size(), m->size()); 
       m_Mat.setIdentity(); 
     };
     void resize(std::size_t s=0)

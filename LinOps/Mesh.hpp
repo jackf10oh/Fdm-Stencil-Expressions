@@ -18,7 +18,8 @@ namespace LinOps{
 
 // forward declaration -> aliases
 class Mesh1D; 
-using MeshPtr_t = std::weak_ptr<const Mesh1D>;
+using Mesh1D_SPtr_t = std::shared_ptr<const Mesh1D>;
+using Mesh1D_WPtr_t = std::weak_ptr<const Mesh1D>;
 
 class Mesh1D
 {

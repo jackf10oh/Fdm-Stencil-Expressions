@@ -23,7 +23,7 @@ class RandLinOp : public LinOpBase<RandLinOp>
     {
       m_Mat = Eigen::MatrixXd::Random(s,s); 
     }
-    RandLinOp(MeshPtr_t m)
+    RandLinOp(const Mesh1D_SPtr_t& m)
     {
       set_mesh(m);  
     }
@@ -32,16 +32,13 @@ class RandLinOp : public LinOpBase<RandLinOp>
     // member funcs
     Eigen::MatrixXd& GetMat() { return m_Mat; };
     const Eigen::MatrixXd& GetMat() const { return m_Mat; };
-    void set_mesh(MeshPtr_t m)
+    void set_mesh(const Mesh1D_SPtr_t& m)
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
-      // do nothing on nullptr. or throw an error 
-      auto locked = m.lock(); 
-      if(!locked) return; 
       m_mesh_ptr = m; // store the mesh  
       // fill m_Mat with random entries 
-      m_Mat = Eigen::MatrixXd::Random(locked->size(),locked->size()); 
+      m_Mat = Eigen::MatrixXd::Random(m->size(),m->size()); 
     };
     void resize(std::size_t s)
     {

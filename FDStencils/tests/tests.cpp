@@ -196,7 +196,7 @@ TEST(NthDerivOpSuite, NthDerivOpConstructible)
 {
   NthDerivOp my_deriv; 
   NthDerivOp order_2(2); 
-  NthDerivOp from_mesh(MeshPtr_t{}, 2); 
+  NthDerivOp from_mesh(nullptr, 2); 
 }
 
 // testing set_mesh() completes with no errors. 
@@ -263,12 +263,12 @@ TEST(FdmPluginSuite, StandardLinOps)
   {
     // default construct uses nullptr
     IOp Identity01;
-    ASSERT_EQ(Identity01.mesh().lock(), nullptr);
+    ASSERT_EQ(Identity01.mesh(), nullptr);
 
     // construct with ptr arg
     auto my_mesh = make_mesh(); 
     IOp Identity02(my_mesh);
-    ASSERT_EQ(Identity02.mesh().lock(), my_mesh);   
+    ASSERT_EQ(Identity02.mesh(), my_mesh);   
 
     // Check that entries on diag are 1
     int s = my_mesh->size()-1; 
@@ -285,12 +285,12 @@ TEST(FdmPluginSuite, StandardLinOps)
   {
     // default construct uses nullptr
     RandLinOp Rand01;
-    ASSERT_FALSE(Rand01.mesh().lock());
+    ASSERT_FALSE(Rand01.mesh());
 
     // construct with ptr arg
     auto my_mesh = make_mesh(); 
     RandLinOp Rand02(my_mesh);
-    ASSERT_EQ(Rand02.mesh().lock(), my_mesh);   
+    ASSERT_EQ(Rand02.mesh(), my_mesh);   
   };
 
   // /*TEST(LinearOperatorSuite, RandLinOpGetMat)*/ 
@@ -299,7 +299,7 @@ TEST(FdmPluginSuite, StandardLinOps)
     auto my_mesh = make_mesh(); 
     RandLinOp Rand01(my_mesh);
 
-    ASSERT_EQ(Rand01.mesh().lock(), my_mesh);   
+    ASSERT_EQ(Rand01.mesh(), my_mesh);   
 
     Eigen::MatrixXd result = Rand01.GetMat(); 
   };
@@ -369,8 +369,8 @@ TEST(FdmPluginSuite, StandardLinOps)
     Expr.set_mesh(my_mesh); 
 
     // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-    ASSERT_EQ(I_lval.mesh().lock(), my_mesh);
-    ASSERT_EQ(Expr.Rhs().mesh().lock(), my_mesh);
+    ASSERT_EQ(I_lval.mesh(), my_mesh);
+    ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
 
     // test again for scalar multiply  // construct without mesh ptrs 
     IOp I2_lval;
@@ -380,9 +380,9 @@ TEST(FdmPluginSuite, StandardLinOps)
     Expr2.set_mesh(my_mesh); 
     Expr3.set_mesh(my_mesh); 
     // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-    ASSERT_EQ(I2_lval.mesh().lock(), my_mesh);
-    ASSERT_EQ(Expr2.Rhs().mesh().lock(), my_mesh);
-    ASSERT_EQ(Expr3.Rhs().mesh().lock(), my_mesh);
+    ASSERT_EQ(I2_lval.mesh(), my_mesh);
+    ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
+    ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
 
     // test again for composition 
     RandLinOp I3_lval; 
@@ -392,9 +392,9 @@ TEST(FdmPluginSuite, StandardLinOps)
     Expr4.set_mesh(my_mesh); 
     Expr5.set_mesh(my_mesh); 
     // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-    ASSERT_EQ(I3_lval.mesh().lock(), my_mesh);
-    ASSERT_EQ(Expr4.Rhs().mesh().lock(), my_mesh);
-    ASSERT_EQ(Expr5.Rhs().mesh().lock(), my_mesh);
+    ASSERT_EQ(I3_lval.mesh(), my_mesh);
+    ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
+    ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
   }
 }
 

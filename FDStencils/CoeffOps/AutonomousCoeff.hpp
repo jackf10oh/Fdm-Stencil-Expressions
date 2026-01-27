@@ -26,7 +26,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
     // constructors ==========================================================
     AutonomousCoeff()=delete; // no default constructor
     // from callable + mesh 
-    AutonomousCoeff(FUNC_STORAGE_T f_init, LinOps::MeshPtr_t m = LinOps::MeshPtr_t{})
+    AutonomousCoeff(FUNC_STORAGE_T f_init, const LinOps::Mesh1D_SPtr_t& m = nullptr)
       : m_function(f_init), m_diag_vals(0)
     {
       static_assert(LinOps::traits::callable_traits<FUNC_STORAGE_T>::num_args==1, "In 1D, AutonomousCoeff must have form a(x)");  
@@ -49,7 +49,7 @@ class AutonomousCoeff : public CoeffOpBase<AutonomousCoeff<FUNC_STORAGE_T>>
       return SparseDiag(m_diag_vals.values().transpose());
     };
     // updated m_mesh_ptr, resize m_diag_vals
-    void set_mesh(LinOps::MeshPtr_t m){
+    void set_mesh(const LinOps::Mesh1D_SPtr_t& m){
       m_diag_vals.set_init(m, m_function); 
     }
     // update state of AutonomousCoeff from a given t 

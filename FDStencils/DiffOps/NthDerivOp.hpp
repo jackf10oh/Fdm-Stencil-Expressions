@@ -24,12 +24,12 @@ class NthDerivOp : public LinOps::LinOpBase<NthDerivOp>
     std::size_t m_order; 
   public:
     // constructors ---------------------------------
-    NthDerivOp(LinOps::MeshPtr_t m, std::size_t order=1)
+    NthDerivOp(const LinOps::Mesh1D_SPtr_t& m, std::size_t order=1)
       : m_order(order)
     {set_mesh(m);};
-    NthDerivOp(std::size_t order=1, const LinOps::MeshPtr_t& m=LinOps::MeshPtr_t{})
+    NthDerivOp(std::size_t order=1)
       : m_order(order)
-    {set_mesh(m);};
+    {};
     
     // Destructors -----------------------------------
     ~NthDerivOp()=default; 
@@ -39,20 +39,16 @@ class NthDerivOp : public LinOps::LinOpBase<NthDerivOp>
     MatrixStorage_t& GetMat(){ return m_stencil; }; 
     const MatrixStorage_t& GetMat() const { return m_stencil; };     
     // set the mesh the derivative operator works on 
-    void set_mesh(LinOps::MeshPtr_t m)
+    void set_mesh(const LinOps::Mesh1D_SPtr_t& m)
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
-      // do nothing on nullptr. or throw an error 
-      auto locked = m.lock(); 
-      if(!locked) return;
+
       // store the mesh
       m_mesh_ptr = m;  
 
-      // perform work on locked   
-      
-      m_mesh_ptr = m; 
-      const std::size_t mesh_size = locked->size();
+      // perform work on m
+      const std::size_t mesh_size = m->size();
 
       // resize matrix to fit
       m_stencil.resize(mesh_size,mesh_size);
@@ -75,7 +71,7 @@ class NthDerivOp : public LinOps::LinOpBase<NthDerivOp>
         // #pragma omp for nowait 
         for(std::size_t i=0; i<centered_skirt; i++)
         {
-          auto left = locked->cbegin()+i;
+          auto left = m->cbegin()+i;
           auto right = left+one_sided_skirt+1; 
           auto weights = weight_calc.GetWeights(*left, left,right, m_order); 
           std::size_t offset=i; 
@@ -89,9 +85,9 @@ class NthDerivOp : public LinOps::LinOpBase<NthDerivOp>
         // #pragma omp for nowait 
         for(std::size_t i=centered_skirt;i<mesh_size-centered_skirt; i++)
         {
-          auto left = locked->cbegin()-centered_skirt+i;  
+          auto left = m->cbegin()-centered_skirt+i;  
           auto right = left+(centered_skirt+1+centered_skirt);
-          auto weights = weight_calc.GetWeights(locked->at(i), left,right, m_order);
+          auto weights = weight_calc.GetWeights(m->at(i), left,right, m_order);
           int offset = -centered_skirt;
           for(auto& w : weights){
             tripletList[centered_skirt*(1+one_sided_skirt) 
@@ -104,7 +100,7 @@ class NthDerivOp : public LinOps::LinOpBase<NthDerivOp>
         // #pragma omp for nowait 
         for(std::size_t i = mesh_size-centered_skirt; i<mesh_size; i++)
         {
-          auto right = locked->cbegin() + i; 
+          auto right = m->cbegin() + i; 
           auto left = right-(one_sided_skirt+1); 
           auto weights = weight_calc.GetWeights(*right, left,right, m_order); 
           int offset= -one_sided_skirt;
@@ -147,7 +143,7 @@ class NthDerivOp : public LinOps::LinOpBase<NthDerivOp>
       // if taking derivative of another derivative 
       else if constexpr(std::is_same<cleaned_rhs_t,NthDerivOp>::value){
         // specialize composing to Derivatives to add order
-        return NthDerivOp(m_order+InnerOp.Order(), m_mesh_ptr); 
+        return NthDerivOp(m_order+InnerOp.Order()); 
       }
       // all other cases use default LinOpBase implementation 
       else{

@@ -44,18 +44,19 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
 
   protected:
     // Member Data -------------------------------------------------
-    MeshPtr_t m_mesh_ptr; // all LinOps keep weak pointers to mesh they operate on
+    Mesh1D_WPtr_t m_mesh_ptr; // all LinOps keep weak pointers to mesh they operate on
     // member data for matrix kept in derived classes
 
   public:
     // Constructors / destructors ============================================================ 
     LinOpBase()=default; 
-    LinOpBase(MeshPtr_t m) : m_mesh_ptr(m){}; 
+    LinOpBase(Mesh1D_WPtr_t m) : m_mesh_ptr(m){}; 
     LinOpBase(const LinOpBase& other)=default; 
     ~LinOpBase()=default; 
+
     // member functions ============================================================
+
     // must be implemented by derived class =====================================
-    
     // get the matrix form of linear operator ---------------------------------
     decltype(auto) GetMat()
     {
@@ -67,7 +68,6 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
     };
 
     // defaults given. can be overriden =====================================
-    
     // multiply the underlying expression with Discretization's underlying vecXd
     Discretization1D apply(const Discretization1D& d) const 
     {
@@ -77,19 +77,18 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
       }
       else
       {
-        MeshPtr_t m = d.mesh(); 
+        Mesh1D_WPtr_t m = d.mesh_weak_ptr(); 
         if(m_mesh_ptr.owner_before(m) || m.owner_before(m_mesh_ptr)){
           throw std::runtime_error("Linear Operator L and discretization d point to different Mesh1D!");
         }
         Eigen::VectorXd v = GetMat() * d.values();  // calculate A*b
-        Discretization1D result = std::move(v); // move A*b into result's values 
-        result.set_mesh(m); // make result point to same mesh as d 
+        Discretization1D result(std::move(v), std::move(m)); // move A*b into result's values 
         return result;
       }
     };
 
     // fit operator to a mesh of rectangular domain ----------------------------------------
-    void set_mesh(MeshPtr_t m) 
+    void set_mesh(const Mesh1D_SPtr_t& m) 
     {
       // // ensure we aren't resetting the mesh again
       // if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
@@ -101,10 +100,10 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
       static_cast<Derived*>(this)->set_mesh(m);
     };
     
-    // return reference to stored MeshPtr_t ----------------------------------------------
-    MeshPtr_t mesh() const 
+    // return lock of Mesh1D pointed to  ----------------------------------------------
+    Mesh1D_SPtr_t mesh() const 
     { 
-      return this->m_mesh_ptr; 
+      return this->m_mesh_ptr.lock(); 
     } 
 
     // Composition of Linear Ops L1(L2( . )) (lval) ---------------------------------------------------
