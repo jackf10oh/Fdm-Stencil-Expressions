@@ -26,12 +26,14 @@ class DirectionalRandOp: public LinOpBaseXD<DirectionalRandOp>
   public:
     // constructors
     // direction only 
-    DirectionalRandOp(std::size_t dir_init): m_direction(dir_init){ this->m_mesh_ptr=MeshXDPtr_t{}; }  
+    DirectionalRandOp(std::size_t dir_init) 
+      : m_direction(dir_init), LinOpBaseXD<DirectionalRandOp>()
+    {};
+
     // mesh + direction 
-    DirectionalRandOp(MeshXDPtr_t m=MeshXDPtr_t{}, std::size_t dir_init=0) 
+    DirectionalRandOp(const MeshXD_SPtr_t& m, std::size_t dir_init=0) 
       : m_direction(dir_init) 
     {set_mesh(m);}; 
-
 
     // destructors 
     ~DirectionalRandOp()=default; 
@@ -40,40 +42,35 @@ class DirectionalRandOp: public LinOpBaseXD<DirectionalRandOp>
     const auto& GetMat() const { return m_mat; }; 
     DiscretizationXD apply(const DiscretizationXD& d){ 
 
-      // result copies mesh and dims from d 
-      DiscretizationXD result;
-      result.mesh() = d.mesh(); 
-      result.dims_list() = d.dims_list();  
+      // calculate Eigen::VectorXd, std::move() later
+      Eigen::VectorXd v = m_mat * d.values(); 
 
-      // use move operator from result Eigen::VectorXd
-      result = m_mat * d.values(); 
+      // result copies mesh from this (DirectionalRandOp) 
+      DiscretizationXD result(std::move(v),this->m_mesh_ptr); 
 
       return result; 
     }; 
     
-    void set_mesh(MeshXDPtr_t m){
+    void set_mesh(const MeshXD_SPtr_t& m){
       // ensure we aren't resetting the mesh again
       if(!this->m_mesh_ptr.owner_before(m) && !m.owner_before(this->m_mesh_ptr)) return;
-      // do nothing on nullptr. or throw an error 
-      auto locked = m.lock(); 
-      // do nothing on nullptr
-      if(!locked) return; 
+
       // store the mesh
       this->m_mesh_ptr = m;   
 
-      // perform work on locked ...
+      // perform work on m ...
       
       // check this->direction < mesh-> # dims 
-      if(m_direction >= locked->dims()) throw std::runtime_error("DirectionalNthDerivOp.set_mesh() error: direction >= MeshXD.dims()"); 
+      if(m_direction >= m->dims()) throw std::runtime_error("DirectionalNthDerivOp.set_mesh() error: direction >= MeshXD.dims()"); 
 
       // get a random matrix R that matches specific direction 
-      std::size_t s = locked->dim_size(m_direction); 
+      std::size_t s = m->dim_size(m_direction); 
       Matrix_t R = Eigen::MatrixXd::Random(s,s).sparseView();      
       // identity matrix for calculations later 
       Matrix_t I;  
 
-      std::size_t prod_before = locked->sizes_middle_product(0,m_direction); 
-      std::size_t prod_after = (locked->dims() > m_direction) ? locked->sizes_middle_product(m_direction+1, locked->dims()) : 1; 
+      std::size_t prod_before = m->sizes_middle_product(0,m_direction); 
+      std::size_t prod_after = (m->dims() > m_direction) ? m->sizes_middle_product(m_direction+1, m->dims()) : 1; 
 
       if(prod_before>1){
         I.resize(prod_before, prod_before); 

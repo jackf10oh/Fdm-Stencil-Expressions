@@ -31,7 +31,7 @@ class Discretization1D
     Discretization1D(std::size_t size_init=0): m_mesh_ptr(), m_vals(size_init){};
     // from mesh
     // from const shared_ptr<Mesh1D>
-    Discretization1D(Mesh1D_WPtr_t mesh_init) : m_mesh_ptr(mesh_init){resize(mesh_init.lock());}
+    Discretization1D(const Mesh1D_SPtr_t& mesh_init) : m_mesh_ptr(mesh_init){resize(mesh_init);}
     
     // Copy -----------------------------
     Discretization1D(const Discretization1D& other)
@@ -39,8 +39,8 @@ class Discretization1D
     {};
     
     // copy from Eigen::VectorXd
-    Discretization1D(const Eigen::VectorXd& other)
-      : m_mesh_ptr(), m_vals(other)
+    Discretization1D(const Eigen::VectorXd& other, Mesh1D_WPtr_t mesh_init = Mesh1D_WPtr_t{})
+      : m_mesh_ptr(mesh_init), m_vals(other)
     {}; 
     
     // Move ---------------------------
@@ -72,7 +72,6 @@ class Discretization1D
     // get underlying mesh ------------------------------
     // const auto mesh(){return m_mesh_ptr.lock(); }; 
     Mesh1D_SPtr_t mesh() const{return m_mesh_ptr.lock(); }
-    Mesh1D_WPtr_t mesh_weak_ptr() const {return m_mesh_ptr;}
 
     // set the mesh the discretization is on -----------
     void set_mesh(Mesh1D_WPtr_t m){ 

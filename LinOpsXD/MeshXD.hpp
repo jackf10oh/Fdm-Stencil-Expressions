@@ -18,7 +18,8 @@ namespace LinOps{
 
 // forward declaration -> aliases
 class MeshXD; 
-using MeshXDPtr_t = std::weak_ptr<const MeshXD>;
+using MeshXD_SPtr_t = std::shared_ptr<const MeshXD>;
+using MeshXD_WPtr_t = std::weak_ptr<const MeshXD>;
 
 class MeshXD
 {
@@ -28,7 +29,7 @@ class MeshXD
     using Stride_t = typename Eigen::Stride<0,Eigen::Dynamic>; 
     using StrideView_t = typename Eigen::Map<Eigen::VectorXd, Eigen::Unaligned, Stride_t>; 
     // member data --------------------------------------------------------------------------
-    std::vector<std::shared_ptr<const Mesh1D>> m_mesh_vec; // dynamic array of meshes. 
+    std::vector<Mesh1D_SPtr_t> m_mesh_vec; // dynamic array of meshes. 
 
   public:
     // Constructors + Destructor =============================================================== 
@@ -64,12 +65,12 @@ class MeshXD
     }
     
     // from std::vector<> of shared_ptr<const Mesh1D>
-    MeshXD(const std::vector<std::shared_ptr<const Mesh1D>>& init_vec) : m_mesh_vec(init_vec){}; 
+    MeshXD(const std::vector<Mesh1D_SPtr_t>& init_vec) : m_mesh_vec(init_vec){}; 
     // from std::vector<> (RVAL) of shared_ptr<const Mesh1D>
-    MeshXD(std::vector<std::shared_ptr<const Mesh1D>>&& init_vec) : m_mesh_vec(std::move(init_vec)){}; 
+    MeshXD(std::vector<Mesh1D_SPtr_t>&& init_vec) : m_mesh_vec(std::move(init_vec)){}; 
     
     // from shared_ptr const Mesh1D
-    MeshXD(std::shared_ptr<const Mesh1D> m1d_init) : m_mesh_vec{m1d_init}{};  
+    MeshXD(const Mesh1D_SPtr_t& m1d_init) : m_mesh_vec{m1d_init}{};  
 
     // Copy 
     MeshXD(const MeshXD& other)=default; 
@@ -103,10 +104,10 @@ class MeshXD
     std::size_t dims() const {return m_mesh_vec.size(); } 
 
     // get a specific mesh 
-    std::shared_ptr<const Mesh1D> GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
+    Mesh1D_SPtr_t GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
 
     // Get a specific mesh (check index < size)
-    std::shared_ptr<const Mesh1D> GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
+    Mesh1D_SPtr_t GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
 
     // From a VectorXd representing flattened DiscretizationXD produce list of views that "look" like 1 dimensional slices 
     std::vector<StrideView_t> OneDim_views(StridedRef vec, std::size_t ith_dim=0) const 
@@ -148,8 +149,8 @@ auto make_meshXD(Args... args)
   return std::make_shared<const MeshXD_t>(args...); 
 }
 
-// just return the input args if called on a shared_ptr<const MeshXD> 
-std::shared_ptr<const MeshXD> make_meshXD(const std::shared_ptr<const MeshXD>& other)
+// just return the input args if called on a shared_ptr<const MeshXD>
+auto make_meshXD(const MeshXD_SPtr_t& other)
 {
   // static_assert(std::is_base_of<MeshXD,MeshXD_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
   return other; 

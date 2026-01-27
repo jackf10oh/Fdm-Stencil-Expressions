@@ -57,7 +57,7 @@ TEST(MeshXDSuite, MeshXDMesh1DGetters){
   MeshXD from_dims_only(X); 
   const MeshXD from_dims_only_const(X); 
 
-  MeshPtr_t resulting_mesh1d = from_dims_only.GetMesh(0);
+  auto resulting_mesh1d = from_dims_only.GetMesh(0);
   // !!! not safe to index 
   from_dims_only.GetMesh(X+5); 
   EXPECT_ANY_THROW(resulting_mesh1d = from_dims_only.GetMeshAt(X+5));  
@@ -114,8 +114,8 @@ TEST(DiscretizationXDSuite, DiscretizationXDConstructible){
   DiscretizationXD from_size_1d(N); 
 
   // from X dimensional MeshXDPtr_t
-  MeshXDPtr_t meshes_1d = std::make_shared<MeshXD>(std::size_t{1}); 
-  MeshXDPtr_t meshes_3d = std::make_shared<MeshXD>(std::size_t{3}); 
+  auto meshes_1d = std::make_shared<MeshXD>(std::size_t{1}); 
+  auto meshes_3d = std::make_shared<MeshXD>(std::size_t{3}); 
   DiscretizationXD from_meshes_1d(meshes_1d); 
   DiscretizationXD from_meshes_3d(meshes_3d); 
 
@@ -184,7 +184,7 @@ TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
 // Testing set_init() for constant
 TEST(DiscretizationXDSuite, DiscretizationXDSetByConstant){
 
-  MeshXDPtr_t my_meshes = make_meshXD(); 
+  auto my_meshes = make_meshXD(); 
   DiscretizationXD my_disc(my_meshes); 
   
   double val_init = 6.7; 

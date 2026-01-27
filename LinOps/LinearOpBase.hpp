@@ -77,12 +77,13 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
       }
       else
       {
-        Mesh1D_WPtr_t m = d.mesh_weak_ptr(); 
-        if(m_mesh_ptr.owner_before(m) || m.owner_before(m_mesh_ptr)){
-          throw std::runtime_error("Linear Operator L and discretization d point to different Mesh1D!");
-        }
+        // no longer checking... Discretization1D and LinOp can point to 2 differernt Mesh1D! 
+        // Mesh1D_WPtr_t m = d.mesh_weak_ptr(); 
+        // if(m_mesh_ptr.owner_before(m) || m.owner_before(m_mesh_ptr)){
+        //   throw std::runtime_error("Linear Operator L and discretization d point to different Mesh1D!");
+        // }
         Eigen::VectorXd v = GetMat() * d.values();  // calculate A*b
-        Discretization1D result(std::move(v), std::move(m)); // move A*b into result's values 
+        Discretization1D result(std::move(v), this->m_mesh_ptr); // move A*b into result's values
         return result;
       }
     };

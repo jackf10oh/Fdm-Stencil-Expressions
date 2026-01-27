@@ -34,7 +34,7 @@ class LinOpExprXD : public LinOpBaseXD<LinOpExprXD<Lhs_t, Rhs_t, BinaryOp_t>>
   public:
     // Constructors / Destructors =============================================================
     // from Lhs, Rhs, BinOp, + Mesh 
-    LinOpExprXD(LStorage_t A, RStorage_t B, BinaryOp_t bin_op, MeshXDPtr_t m)
+    LinOpExprXD(LStorage_t A, RStorage_t B, BinaryOp_t bin_op, MeshXD_WPtr_t m)
       : m_Lhs(A), m_Rhs(B), m_BinOp(bin_op), LinOpBaseXD<LinOpExprXD<Lhs_t, Rhs_t, BinaryOp_t>>(m) 
     {};
     // destructor
@@ -62,7 +62,7 @@ class LinOpExprXD : public LinOpBaseXD<LinOpExprXD<Lhs_t, Rhs_t, BinaryOp_t>>
     };
 
     // sets both stored diffops to work on a mesh ------------------
-    void set_mesh(MeshXDPtr_t m)
+    void set_mesh(const MeshXD_SPtr_t& m)
     {
       this->m_mesh_ptr=m; 
       if constexpr(traits::is_linopxd_crtp<Lhs_t>::value) m_Lhs.set_mesh(m);
@@ -88,7 +88,7 @@ class LinOpExprXD<Lhs_t, void, UnaryOp_t> : public LinOpBaseXD<LinOpExprXD<Lhs_t
   public:
     // Constructors / Destructors ===============================================
     // from lhs, unar_op, + mesh
-    LinOpExprXD(LStorage_t A, UnaryOp_t unar_op, MeshXDPtr_t m)
+    LinOpExprXD(LStorage_t A, UnaryOp_t unar_op, MeshXD_WPtr_t m)
       : m_Lhs(A), m_UnarOp(unar_op), LinOpBaseXD<LinOpExprXD<Lhs_t, void, UnaryOp_t>>(m)
     {};
 
@@ -117,7 +117,7 @@ class LinOpExprXD<Lhs_t, void, UnaryOp_t> : public LinOpBaseXD<LinOpExprXD<Lhs_t
     };
 
     // sets both stored diffops to work on a mesh ------------------------------------
-    void set_mesh(MeshXDPtr_t m)
+    void set_mesh(const MeshXD_SPtr_t& m)
     {
       // store mesh into expression 
       this->m_mesh_ptr=m; 
