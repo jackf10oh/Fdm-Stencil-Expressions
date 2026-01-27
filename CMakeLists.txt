@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(FdmStencilExprs LANGUAGES CXX)
+add_library(FdmStencilExprs INTERFACE)
 
 # set cxx standard
 set(CMAKE_CXX_STANDARD 17)
@@ -14,7 +15,7 @@ if(USE_OPENMP)
   find_package(OpenMP)
   if(OpenMP_FOUND)
     message(STATUS "OpenMP found successfully!")
-    target_link_libraries(TExprs INTERFACE OpenMP::OpenMP_CXX)
+    target_link_libraries(FdmStencilExprs INTERFACE OpenMP::OpenMP_CXX)
   endif()
 else()
   message(STATUS "Cmake args disabling OpenMP...")
@@ -22,8 +23,6 @@ endif()
 
 # adding Eigenlib to compiler
 find_package(Eigen3 REQUIRED)
-
-
 
 # header only libraries ===============================
 # Utilities ------------- 
@@ -86,6 +85,16 @@ target_link_libraries(TExprs
   INTERFACE LinOpsXD
   INTERFACE FDStencils 
   INTERFACE FDStencilsXD
+  INTERFACE Utilities
+)
+
+# Tie all sub directories into main library ============================================== 
+target_link_libraries(FdmStencilExprs
+  INTERFACE LinOps 
+  INTERFACE LinOpsXD
+  INTERFACE FDStencils 
+  INTERFACE FDStencilsXD
+  INTERFACE TExprs 
   INTERFACE Utilities
 )
 
