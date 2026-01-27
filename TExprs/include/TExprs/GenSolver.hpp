@@ -134,7 +134,7 @@ class GenSolver
         for(; it!= end; it++)
         {
           m_rhs.SetTime(*std::prev(it));
-          exec.SetTime(*it); 
+          exec.SetTime(*std::prev(it)); 
           args.bcs->SetTime(*it); 
 
           Eigen::VectorXd rhs = exec.BuildRhs(*it); 
