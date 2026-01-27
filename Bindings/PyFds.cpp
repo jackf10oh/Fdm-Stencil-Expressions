@@ -62,30 +62,35 @@ PYBIND11_MODULE(PyFds, m)
            py::arg("arr")
     )
     .def("values",
-     (const Eigen::VectorXd& (LinOps::Discretization1D::*)() const)
-         &LinOps::Discretization1D::values,
-     py::return_value_policy::reference_internal)
-    .def("size", &LinOps::Discretization1D::size, "size of current discretization")
-    .def("resize",&LinOps::Discretization1D::resize, py::arg("mesh"),"resize Discretization1D to fit on a Mesh1D"); 
-//     .def("set_init",
-//       (void (LinOps::Discretization1D::*)(double))
-//       &LinOps::Discretization1D::set_init,
-//       py::arg("val"),
-//       "writes val at each entry in Discretization1D")
-//     .def("set_init",
-//       (void (LinOps::Discretization1D::*)(LinOps::MeshPtr_t, double))
-//       &LinOps::Discretization1D::set_init,
-//       py::arg("mesh"), py::arg("val"), 
-//       "writes val at each entry in Discretization1D")
-//     .def("set_init",
-//       (void (LinOps::Discretization1D::*)(std::function<double(double)>))
-//       &LinOps::Discretization1D::set_init,
-//       py::arg("func"),
-//       "writes func(x) at each entry in Discretization1D for x in Mesh1D")
-//     .def("set_init",
-//       (void (LinOps::Discretization1D::*)(LinOps::MeshPtr_t, std::function<double(double)>))
-//       &LinOps::Discretization1D::set_init,
-//       py::arg("mesh"), py::arg("func"), 
-//       "writes func(x) at each entry in Discretization1D for x in Mesh1D"); 
+            [](const LinOps::Discretization1D& self){return self.values();}, 
+            py::return_value_policy::reference_internal
+    )
+    .def("size", 
+            &LinOps::Discretization1D::size, 
+            "size of current discretization"
+    )
+    .def("resize",
+            &LinOps::Discretization1D::resize, 
+            py::arg("mesh"),"resize Discretization1D to fit on a Mesh1D"
+    )
+    .def("set_init",
+            [](LinOps::Discretization1D& self, double c){self.set_init(c);}, 
+            py::arg("constant")
+    )
+    .def("set_init",
+            [](LinOps::Discretization1D& self, const LinOps::Mesh1D_SPtr_t& m, double c){self.set_init(m,c);}, 
+            py::arg("mesh"),
+            py::arg("constant")
+    )
+    .def("set_init",
+      [](LinOps::Discretization1D& self, std::function<double(double)> f){self.set_init(f); },
+      py::arg("func")
+    )
+    .def("set_init",
+      [](LinOps::Discretization1D& self, const LinOps::Mesh1D_SPtr_t& m, std::function<double(double)> f){self.set_init(m,f); },
+      py::arg("mesh"),
+      py::arg("func")
+    ); 
+
 }
 

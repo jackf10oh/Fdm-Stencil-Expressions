@@ -20,72 +20,28 @@
 #include "Utilities/PrintVec.hpp"
 #include "Utilities/BumpFunc.hpp"
 
-
 using std::cout, std::endl;
 
-template<typename Cont>
-auto get_interval(const Cont& v, double c)
-{
-// runtime checks 
-if(v.size() < 2) throw std::runtime_error("size of v < 2"); 
-if(c < v.cbegin()[0]) throw std::runtime_error("c < v[0]"); 
 
-// right side a(i+1) 
-auto after = std::lower_bound(v.cbegin(), v.cend(), c);
-if(after == v.cend()) throw std::runtime_error("right bound == v.cend()"); 
 
-// if a(i+1) == v[0] bump it by 1. 
-auto before = (after==v.cbegin()) ? after++ : std::prev(after); 
-return std::pair(before, after); 
-}; 
-
-double LinearInterp_recursive_impl(
-  const std::vector<double>& coords, 
-  const Eigen::VectorXd& v, 
-  const std::shared_ptr<const LinOps::MeshXD>& m,
-  std::size_t ith_dim,
-  std::size_t cumulative_offset = 0
-)
-{
-  auto sub_dim_m = m->GetMeshAt(ith_dim); 
-  auto bounding_interval = get_interval(*sub_dim_m, coords[ith_dim]);  
-
-  if(ith_dim == 0)
-  {
-    std::size_t final_offset_01 = cumulative_offset + std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
-    std::size_t final_offset_02 = final_offset_01 + 1; 
-    // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
-    double result = v[final_offset_01] + (coords[ith_dim] - *bounding_interval.first) * (v[final_offset_02]-v[final_offset_01]) / (*bounding_interval.second - *bounding_interval.first);  
-    return result; 
-  }
-  else
-  {
-    std::size_t stride_size = m->sizes_middle_product(0,ith_dim); 
-    std::size_t interval_start_idx = std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
-    std::size_t offset_01 = cumulative_offset + stride_size * (interval_start_idx); 
-    std::size_t offset_02 = cumulative_offset + stride_size * (interval_start_idx+1); 
-
-    double endpoint_01 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_01); 
-    double endpoint_02 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_02);
-    
-    // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
-    double result = endpoint_01 + (coords[ith_dim] - *bounding_interval.first) * (endpoint_02 - endpoint_01) / (*bounding_interval.second - *bounding_interval.first); 
-    return result; 
-  }
-}; 
-
-double LinearInterp(const std::vector<double>& coords, const Eigen::VectorXd& v, const std::shared_ptr<const LinOps::MeshXD>& m)
-{
-  return LinearInterp_recursive_impl(coords, v, m, coords.size()-1);
-}; 
+// using interp_t = ; 
+// struct bar : private foo, public interp_t
+// {
+//   bar(double a1, double b1, double c1) 
+//     : foo{.a=a1, .b=b1, .c=c1},
+//     interp_t(foo::GetLhsExpr(), foo::GetRhsExpr()) 
+//   {};
+// };
 
 int main()
 {
   // iomanip 
   // std::cout << std::setprecision(4); 
-  
+  foo my_foo(1.0 ,0.0, 0.0); 
+};
+
   // Domain MeshXD ----------------------------------------
-  auto my_mesh = LinOps::make_mesh(0.0,4.0,5); 
+  // auto my_mesh = LinOps::make_mesh(0.0,4.0,5); 
 
   // double r = 4.0;
   // std::size_t N = 5;
@@ -95,16 +51,13 @@ int main()
   // std::vector<std::size_t> n_steps = {4,9}; 
   // auto my_mesh = LinOps::make_meshXD(end_points, n_steps);
 
-  std::cout << "my_mesh type: " << typeid(decltype(my_mesh)).name() << std::endl; 
+  // std::cout << "my_mesh type: " << typeid(decltype(my_mesh)).name() << std::endl; 
   
+  // std::shared_ptr<const LinOps::MeshXD> copied = make_meshXD(my_mesh); 
 
-  std::shared_ptr<const LinOps::MeshXD> copied = make_meshXD(my_mesh); 
-
-  std::cout << "# Dims: " << copied->dims() << std::endl; 
-  std::cout << "dim(0) size: " << copied->dim_size(0) << std::endl; 
-  std::cout << "sizes prod: " << copied->sizes_product() << std::endl; 
-
-};
+  // std::cout << "# Dims: " << copied->dims() << std::endl; 
+  // std::cout << "dim(0) size: " << copied->dim_size(0) << std::endl; 
+  // std::cout << "sizes prod: " << copied->sizes_product() << std::endl; 
 
 
   // ICs --------------
