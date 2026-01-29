@@ -154,9 +154,10 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
     }; // end .compose_impl(other) 
     
     // Left multiply by a scalar: i.e. c*L (lval)------------------------------------------------------------------------- 
-    auto left_scalar_mult_impl(double c) & {
-      return LinOpExpr<double, Derived&, internal::scalar_left_mult_op>(
-        c, // lhs scalar
+    template<typename SCALAR_T>
+    auto left_scalar_mult_impl(SCALAR_T&& c) & {
+      return LinOpExpr<SCALAR_T, Derived&, internal::scalar_left_mult_op>(
+        std::forward<SCALAR_T>(c), // lhs scalar
         static_cast<Derived&>(*this), // rhs 
         internal::scalar_left_mult_op{}, // unary_op
         m_mesh_ptr // rhs's mesh 
@@ -164,9 +165,10 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
     }
     
     // Left multiply by a scalar: i.e. c*L (rval)
-    auto left_scalar_mult_impl(double c) && {
-      return LinOpExpr<double, Derived&&, internal::scalar_left_mult_op>(
-        c, // lhs scalar
+    template<typename SCALAR_T>
+    auto left_scalar_mult_impl(SCALAR_T&& c) && {
+      return LinOpExpr<SCALAR_T, Derived&&, internal::scalar_left_mult_op>(
+        std::forward<SCALAR_T>(c), // lhs scalar
         static_cast<Derived&&>(*this), // rhs 
         internal::scalar_left_mult_op{}, // unary_op,
         m_mesh_ptr // rhs's mesh
@@ -220,8 +222,8 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
     }
     
     // riend declare c * L (lval + rval) -------------------------------------------
-    template<typename LINOP_T, typename>
-    friend auto operator*(double scalar, LINOP_T&& rhs); 
+    template<typename SCALAR_T, typename LINOP_T, typename>
+    friend auto operator*(SCALAR_T&& scalar, LINOP_T&& rhs); 
     template<typename T>
     friend struct traits::supports_left_scalar_mult;
     // unary operator-() (lval) ---------------------------------------------- 
@@ -243,13 +245,18 @@ class LinOpBase : public internal::LinOpMixIn<LinOpBase<Derived>>
 }; // end LinOpBase
 
 // operator*(c,L) outside of class .... 
-template<typename LINOP_T, 
+template<
+  typename SCALAR_T, 
+  typename LINOP_T, 
   typename = std::enable_if_t<
-    traits::supports_left_scalar_mult<LINOP_T>::value
-  >
+    std::conjunction_v<
+    traits::supports_left_scalar_mult<LINOP_T>, 
+    std::is_arithmetic<std::remove_cv_t<std::remove_reference_t<SCALAR_T>>>
+    > // end conjuntion 
+  > // end enable_if
 >
-auto operator*(double c, LINOP_T&& rhs){
-  return std::forward<LINOP_T>(rhs).left_scalar_mult_impl(c); 
+auto operator*(SCALAR_T&& c, LINOP_T&& rhs){
+  return std::forward<LINOP_T>(rhs).left_scalar_mult_impl( std::forward<SCALAR_T>(c) ); 
 }
 
 } // end namespace LinOps 
