@@ -131,29 +131,20 @@ find_package(GTest REQUIRED) #find the gtest library  # will fail if not found
 
 if(NOT GTest_FOUND)
   message(WARNING "GTest not found. Skipping targets.")
-
 else()
   message(STATUS "GTest found.") # building tests 
-
   add_subdirectory(tests)
-  # add_executable(tests 
-  #   tests/tests.cpp
-  # )
-
-  # target_link_libraries(tests  
-  #   PRIVATE LinOps 
-  #   PRIVATE LinOpsXD 
-  #   PRIVATE FDStencils 
-  #   PRIVATE FDStencilsXD 
-    # PRIVATE GTest::gtest 
-    # PRIVATE GTest::gtest_main 
-    # PRIVATE pthread # required by GTest
-  # )
-
-  # include(GoogleTest)
-  # gtest_discover_tests(tests)
-  
 endif()
+
+add_subdirectory(Bindings)
+
+add_executable(main 
+  main.cpp
+)
+
+target_link_libraries(main
+  PRIVATE FdmStencilExprs
+)
 
 # on windows with mingw 
 # cmake .. `
@@ -161,4 +152,5 @@ endif()
 #   -DCMAKE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe `
 #   -DCMAKE_CXX_COMPILER=C:/msys64/mingw64/bin/g++.exe `
 #   -DEigen3_DIR=C:/eigen-install/share/eigen3/cmake `
-#   -DGTest_DIR=C:\gtest-mingw\lib\cmake\GTest
+#   -DGTest_DIR=C:\gtest-mingw\lib\cmake\GTest `
+#   -Dpybind11_DIR=C:/Users/jackf/anaconda3/Lib/site-packages/pybind11/share/cmake/pybind11

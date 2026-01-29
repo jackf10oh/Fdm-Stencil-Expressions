@@ -239,12 +239,110 @@ TEST(GenSolverSuite, SolveXDimPDE)
 
 }
 
-TEST(GenInterpSuite, XDimInterpFormula)
-{
+*/ 
 
+TEST(GenInterpSuite, XDimInterpComplete)
+{
+  // defining Domain Mesh --------------------------------------
+  auto r = 3.14159; // pi  
+  int n_gridpoints = 21;
+  // mesh in space 
+  auto my_mesh = LinOps::make_meshXD(0.0,r,n_gridpoints,2); 
+  // mesh in time 
+  auto time_mesh = LinOps::make_mesh(0.0, 3.0, 101); 
+
+  // Initializing IC discretizations -------------------------------------------------------
+  LinOps::DiscretizationXD my_vals;
+
+  auto sin_lambda = [](double x, double y){ return 3.0 * std::sin(x) * std::sin(y); }; 
+  my_vals.set_init(my_mesh, sin_lambda); 
+
+  // LHS time derivs ----------------------------------------------------------------
+  auto time_expr = TExprs::NthTimeDeriv(2); 
+
+  // building RHS expression -----------------------------------------------------
+  using D = Fds::DirectionalNthDerivOp;
+  auto space_expr = 0.2 * D(2,0) + 0.2 * D(2,1); 
+
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  std::shared_ptr<Fds::IBCLeft> left = Fds::make_neumann(0.0); 
+  std::shared_ptr<Fds::IBCRight> right = Fds::make_neumann(0.0); 
+
+  auto bcs = std::make_shared<Fds::BCListXD>();
+  bcs->list.emplace_back(left,right); 
+  bcs->list.emplace_back(left,right); 
+
+  // Solving --------------------------------------------------------------------- 
+  TExprs::GenSolverArgs args{
+    .domain_mesh_ptr = my_mesh,
+    .time_mesh_ptr = time_mesh,
+    .bcs = bcs, 
+    .ICs = std::vector<Eigen::VectorXd>(2, my_vals.values()), 
+    .time_dep_flag = false 
+  }; 
+
+  TExprs::GenInterp interp(time_expr, space_expr, args); 
+
+  // t=0, x=1, y=1
+  double val_01 = interp.SolAt(0.0,1.0,1.0); 
+
+  // t=1, x=1, y=1
+  double val_02 = interp.SolAt(1.0,1.0,1.0); 
+
+  // t=2, x=1, y=1
+  double val_03 = interp.SolAt(2.0,1.0,1.0); 
 }
 
-*/ 
+TEST(GenInterpSuite, 1DimInterpComplete)
+{
+  // defining Domain Mesh --------------------------------------
+  auto r = 3.14159; // pi  
+  int n_gridpoints = 21;
+  // mesh in space 
+  auto my_mesh = LinOps::make_mesh(0.0,r,n_gridpoints); 
+  // mesh in time 
+  auto time_mesh = LinOps::make_mesh(0.0, 3.0, 101); 
+
+  // Initializing IC discretizations -------------------------------------------------------
+  LinOps::Discretization1D my_vals;
+
+  auto sin_lambda = [](double x){ return 3.0 * std::sin(x); }; 
+  my_vals.set_init(my_mesh, sin_lambda); 
+
+  // LHS time derivs ----------------------------------------------------------------
+  auto time_expr = TExprs::NthTimeDeriv(1); 
+
+  // building RHS expression -----------------------------------------------------
+  using D = Fds::NthDerivOp;
+  auto space_expr = 0.5 * D(2) + 0.2 * D(1); 
+
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  std::shared_ptr<Fds::IBCLeft> left = Fds::make_neumann(0.0); 
+  std::shared_ptr<Fds::IBCRight> right = Fds::make_neumann(0.0); 
+
+  auto bcs = std::make_shared<Fds::BCPair>(left,right);
+
+  // Solving --------------------------------------------------------------------- 
+  TExprs::GenSolverArgs args{
+    .domain_mesh_ptr = my_mesh,
+    .time_mesh_ptr = time_mesh,
+    .bcs = bcs, 
+    .ICs = std::vector<Eigen::VectorXd>{my_vals.values()}, 
+    .time_dep_flag = false 
+  }; 
+
+  TExprs::GenInterp interp(time_expr, space_expr, args); 
+
+  // t=0, x=1
+  double val_01 = interp.SolAt(0.0,1.0); 
+
+  // t=1, x=1
+  double val_02 = interp.SolAt(1.0,1.0); 
+
+  // t=2, x=1
+  double val_03 = interp.SolAt(2.0,1.0); 
+}
+
 
 
 
