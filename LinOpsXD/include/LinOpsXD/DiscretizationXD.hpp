@@ -86,17 +86,17 @@ struct DiscretizationXD
     }
 
     // store a new MeshXD_WPtr_t
-    void set_mesh(MeshXD_WPtr_t m){ m_mesh_ptr = m; }; 
+    auto& set_mesh(MeshXD_WPtr_t m){ m_mesh_ptr = m; return *this; } 
     // set discretization to same size as meshxd's sizes_product
-    void resize(const MeshXD_SPtr_t& m) { 
+    DiscretizationXD& resize(const MeshXD_SPtr_t& m) { 
       m_mesh_ptr=m; 
       m_vals.conservativeResize(m->sizes_product()); 
-      return; 
+      return *this; 
     }
     // set discretization to a constant
-    void set_init(double val){ m_vals.setConstant(val);}
+    auto& set_init(double val){ m_vals.setConstant(val); return *this; }
     // set vector to match a mesh size and set it constant 
-    void set_init(const MeshXD_SPtr_t& m, double val){ resize(m), m_vals.setConstant(val); } 
+    auto& set_init(const MeshXD_SPtr_t& m, double val){ resize(m), m_vals.setConstant(val); return *this;} 
 
     // set discretizations values according to callable type F
     template<
@@ -105,7 +105,7 @@ struct DiscretizationXD
       std::is_same_v<double, typename traits::callable_traits<F>::result_type>
       >
     >
-    void set_init(const MeshXD_SPtr_t& m, F func)
+    auto& set_init(const MeshXD_SPtr_t& m, F func)
     {
       // stores mesh, resizes dims + vals 
       resize(m); 
@@ -156,7 +156,9 @@ struct DiscretizationXD
           } // end for loop through values of ith layer 
         } // end for loop through layers  
       } // end if 
-      // void return type. m_vals now has output of func for each entry. 
+
+      // end of function
+      return *this;
     }
 
     // set discretization based on current stored mesh + callable F 
@@ -166,10 +168,12 @@ struct DiscretizationXD
       std::is_same_v<double, typename traits::callable_traits<F>::result_type>
       >
     >
-    void set_init(F func)
+    auto& set_init(F func)
     {
       auto locked = m_mesh_ptr.lock(); 
-      set_init(locked, std::move(func));       
+      set_init(locked, std::move(func));    
+      // end of function
+      return *this;   
     }
        
     // Operators ----------------------------------------------------

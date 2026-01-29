@@ -74,20 +74,22 @@ class Discretization1D
     Mesh1D_SPtr_t mesh() const{return m_mesh_ptr.lock(); }
 
     // set the mesh the discretization is on -----------
-    void set_mesh(Mesh1D_WPtr_t m){ 
+    auto& set_mesh(Mesh1D_WPtr_t m){ 
       m_mesh_ptr=m;
+      return *this; 
     }
     // set vector to same size as mesh -----------------
-    void resize(const Mesh1D_SPtr_t& m){
+    Discretization1D& resize(const Mesh1D_SPtr_t& m){
       m_mesh_ptr=m;
       m_vals.conservativeResize(m->size()); 
+      return *this; 
     }
 
     // set vector to a constant -------------------------------------------------------------
-    void set_init(double val){ m_vals.setConstant(val);}
+    auto& set_init(double val){ m_vals.setConstant(val); return *this; }
     
     // resize + set constant 
-    void set_init(const Mesh1D_SPtr_t& m, double val){ resize(m), set_init(val); }
+    auto& set_init(const Mesh1D_SPtr_t& m, double val){ resize(m); set_init(val); return *this; }
 
     // set_init() TEMPLATE ----------------------------------------------------------------- 
     // set vector F(x0),...,F(xN) for x0,...,xN in stored mesh 
@@ -98,10 +100,11 @@ class Discretization1D
       std::bool_constant<traits::callable_traits<F>::num_args == 1>::value
       >
     >
-    void set_init(F func)
+    auto& set_init(F func)
     {
       auto locked = m_mesh_ptr.lock(); 
       set_init(locked, std::move(func));
+      return *this; 
     }
     // resize + set vector F(x0),...,F(xN) for x0,...,xN in stored mesh 
     template<
@@ -114,7 +117,7 @@ class Discretization1D
       std::bool_constant<traits::callable_traits<F>::num_args == 1>::value
       >
     >
-    void set_init(const Mesh1D_SPtr_t& m, F func)
+    auto& set_init(const Mesh1D_SPtr_t& m, F func)
     {
       m_mesh_ptr = m; 
 
@@ -123,6 +126,7 @@ class Discretization1D
 
       m_vals.resize(s1); 
       for(auto i=0; i<s1; i++) m_vals[i] = func(data[i]); 
+      return *this; 
     }
     
     // forward iterators -------------------------------------------------------
