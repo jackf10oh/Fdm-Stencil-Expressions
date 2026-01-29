@@ -41,7 +41,9 @@ class GenInterp
 
   public: 
     // Constructors + Destructor ===================================
+    // default 
     GenInterp()=delete; 
+    // from args 
     GenInterp(LHS_EXPR& lhs, RHS_EXPR& rhs, const GenSolverArgs<M,B,C>& args_init = GenSolverArgs<M,B,C>{})
       : m_data(0), 
       m_sol_writer(m_data), 
@@ -49,24 +51,25 @@ class GenInterp
       m_high_dim_mesh(LinOps::make_meshXD(args_init.domain_mesh_ptr)), 
       m_solver(lhs,rhs,m_sol_writer), 
       m_calculated(false) 
-    {
-      if(m_args.time_mesh_ptr) m_data.reserve(m_args.time_mesh_ptr->size());     
-    }
+    {}
+    // copy 
     GenInterp(const GenInterp& other)=delete; 
     // destructor 
     ~GenInterp()=default; 
 
     // Member Funcs ====================================================
-    // Getters to m_data 
-    auto& StoredData(){ return m_data; }; 
-    const auto& StoredData() const { return m_data; }; 
-
     // get value of Solution at any point t,x1,x2,...xn in time/space 
     template<typename... Scalars>
     double SolAt(double t, Scalars... coords)
     {
       std::array<double, sizeof...(coords)> c{coords...};
       return SolAt(t, c); 
+    }
+    // specialization for 1D case 
+    double SolAt(double t, double x)
+    {
+      std::array<double,1> c{x}; 
+      return SolAt(t,c); 
     }
     // ... with container of spatial coords
     template<typename Cont_C>
@@ -86,96 +89,107 @@ class GenInterp
       return val_01 + (t - *time_interval_pair.first) * (val_02 - val_01) / (*time_interval_pair.second - *time_interval_pair.first); 
     }
 
-    // set m_args to a new input
+    // resets m_calculated to false. resize m_data
     void Reset()
     {      
       m_data.resize(0); 
-      m_data.reserve(m_args.time_mesh_ptr->size()); 
+      m_high_dim_mesh = LinOps::make_meshXD(m_args.domain_mesh_ptr); 
       m_calculated=false; 
     }
+    
+    // getters to m_args
     auto& Args(){ return m_args; }; 
     const auto& Args() const { return m_args; }; 
+    
+    // set m_args to a new input
     void SetArgs(const GenSolverArgs<M,B,C>& args_switch)
     {
       m_args = args_switch; 
-      m_high_dim_mesh = LinOps::make_meshXD(args_switch.domain_mesh_ptr); 
-      m_data.resize(0); 
-      m_data.reserve(m_args.time_mesh_ptr->size()); 
-      m_calculated=false; 
+      Reset(); 
     }
+
+    // Getters to m_data 
+    const auto& StoredData() const { return m_data; }; 
 
     // Populate m_data with solutions at each step in time 
     void FillVals(std::size_t num_iters=20)
     {
       if(!m_calculated)
       {
+        // resize + reserve data 
+        m_data.resize(0); 
+        m_data.reserve(m_args.time_mesh_ptr->size());
+
+        // copy ICs into first entries of m_data
         std::for_each(m_args.ICs.cbegin(), m_args.ICs.cend(), [&](const auto& ic){m_data.push_back(ic);});  
+
         // WritePolicy moves all solutions at each time step to m_data
-        // m_solver.CalculateImp(m_args, num_iters); 
-        m_solver.Calculate(m_args); 
+        m_solver.CalculateImp(m_args, num_iters); 
+
+        // update status of interp 
         m_calculated = true; 
       }
     }
 
-  public:
+  private:
     // Unreachable ----------------------------------------------------
-template<typename Cont_C, typename Cont_V>
-double LinearInterp(const Cont_C& coords, const Cont_V& v)
-{
-  return LinearInterp_recursive_impl(coords, v, m_high_dim_mesh, coords.size()-1);
-}; 
+    template<typename Cont_C, typename Cont_V>
+    double LinearInterp(const Cont_C& coords, const Cont_V& v)
+    {
+      return LinearInterp_recursive_impl(coords, v, m_high_dim_mesh, coords.size()-1);
+    }; 
 
-template<typename Cont_C, typename Cont_V>
-double LinearInterp_recursive_impl(
-  const Cont_C& coords, 
-  const Cont_V& v, 
-  const std::shared_ptr<const LinOps::MeshXD>& m,
-  std::size_t ith_dim,
-  std::size_t cumulative_offset = 0
-)
-{
-  auto sub_dim_m = m->GetMeshAt(ith_dim); 
-  auto bounding_interval = get_interval(*sub_dim_m, coords[ith_dim]);  
+    template<typename Cont_C, typename Cont_V>
+    double LinearInterp_recursive_impl(
+      const Cont_C& coords, 
+      const Cont_V& v, 
+      const std::shared_ptr<const LinOps::MeshXD>& m,
+      std::size_t ith_dim,
+      std::size_t cumulative_offset = 0
+    )
+    {
+      auto sub_dim_m = m->GetMeshAt(ith_dim); 
+      auto bounding_interval = get_interval(*sub_dim_m, coords[ith_dim]);  
 
-  if(ith_dim == 0)
-  {
-    std::size_t final_offset_01 = cumulative_offset + std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
-    std::size_t final_offset_02 = final_offset_01 + 1; 
-    // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
-    double result = v[final_offset_01] + (coords[ith_dim] - *bounding_interval.first) * (v[final_offset_02]-v[final_offset_01]) / (*bounding_interval.second - *bounding_interval.first);  
-    return result; 
-  }
-  else
-  {
-    std::size_t stride_size = m->sizes_middle_product(0,ith_dim); 
-    std::size_t interval_start_idx = std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
-    std::size_t offset_01 = cumulative_offset + stride_size * (interval_start_idx); 
-    std::size_t offset_02 = cumulative_offset + stride_size * (interval_start_idx+1); 
+      if(ith_dim == 0)
+      {
+        std::size_t final_offset_01 = cumulative_offset + std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
+        std::size_t final_offset_02 = final_offset_01 + 1; 
+        // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
+        double result = v[final_offset_01] + (coords[ith_dim] - *bounding_interval.first) * (v[final_offset_02]-v[final_offset_01]) / (*bounding_interval.second - *bounding_interval.first);  
+        return result; 
+      }
+      else
+      {
+        std::size_t stride_size = m->sizes_middle_product(0,ith_dim); 
+        std::size_t interval_start_idx = std::distance(sub_dim_m->cbegin(), bounding_interval.first); 
+        std::size_t offset_01 = cumulative_offset + stride_size * (interval_start_idx); 
+        std::size_t offset_02 = cumulative_offset + stride_size * (interval_start_idx+1); 
 
-    double endpoint_01 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_01); 
-    double endpoint_02 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_02);
-    
-    // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
-    double result = endpoint_01 + (coords[ith_dim] - *bounding_interval.first) * (endpoint_02 - endpoint_01) / (*bounding_interval.second - *bounding_interval.first); 
-    return result; 
-  }
-}; 
+        double endpoint_01 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_01); 
+        double endpoint_02 = LinearInterp_recursive_impl(coords, v, m, ith_dim-1, offset_02);
+        
+        // result = y1 + (c-x1) * (y2-y1) / (x2-x1)
+        double result = endpoint_01 + (coords[ith_dim] - *bounding_interval.first) * (endpoint_02 - endpoint_01) / (*bounding_interval.second - *bounding_interval.first); 
+        return result; 
+      }
+    }; 
 
-template<typename Cont>
-auto get_interval(const Cont& v, double c)
-{
-// runtime checks 
-if(v.size() < 2) throw std::runtime_error("size of v < 2"); 
-if(c < v.cbegin()[0]) throw std::runtime_error("c < v[0]"); 
+    template<typename Cont>
+    auto get_interval(const Cont& v, double c)
+    {
+    // runtime checks 
+    if(v.size() < 2) throw std::runtime_error("size of v < 2"); 
+    if(c < v.cbegin()[0]) throw std::runtime_error("c < v[0]"); 
 
-// right side a(i+1) 
-auto after = std::lower_bound(v.cbegin(), v.cend(), c);
-if(after == v.cend()) throw std::runtime_error("right bound == v.cend()"); 
+    // right side a(i+1) 
+    auto after = std::lower_bound(v.cbegin(), v.cend(), c);
+    if(after == v.cend()) throw std::runtime_error("right bound == v.cend()"); 
 
-// if a(i+1) == v[0] bump it by 1. 
-auto before = (after==v.cbegin()) ? after++ : std::prev(after); 
-return std::pair(before, after); 
-}; 
+    // if a(i+1) == v[0] bump it by 1. 
+    auto before = (after==v.cbegin()) ? after++ : std::prev(after); 
+    return std::pair(before, after); 
+    }; 
 
 }; 
 

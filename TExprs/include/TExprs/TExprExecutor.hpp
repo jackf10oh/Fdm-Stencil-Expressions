@@ -11,6 +11,8 @@
 // #include<LinOps/Mesh.hpp> // MeshPtr_t
 // #include<LinOpsXD/MeshXD.hpp> // MeshPtr_t
 #include<Utilities/SparseDiagExpr.hpp>
+#include<Utilities/FornbergCalc.hpp> 
+#include "TimeDerivBase.hpp" // MatrixStorage_t
 
 namespace TExprs{
 

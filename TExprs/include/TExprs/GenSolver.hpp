@@ -301,3 +301,20 @@ class GenSolver
 // I * U(t+1) - dt * D * U(n+1) = U(t) 
 // ( I - dt * D) * U(t+1) = U(t) 
 // U(t+1) = (I - dt * D).inv(U(t)) 
+
+
+// With Forcing Terms f(t,u,x,...) 
+// explicit step 
+// [U(t+1) - U(t)] / dt = D * U(t) + f(t,u,x,...)
+// U(t+1) = U(t) + dt * D * U(t) + dt*f(t,u,x,...) 
+
+// IMEX step (implicit step in D(U), explicit in f(t,u,x...))   
+// [U(t+1) - U(t)] / dt = D * U(t+1) + f(t,u,x,...)
+// U(t+1) - U(t) = dt * D * U(t+1) + dt*f(t,u,x,...)
+// I * U(t+1) - dt * D * U(n+1) = U(t) + dt*f(t,u,x,...)
+// ( I - dt * D) * U(t+1) = U(t) + dt*f(t,u,x,...)
+// U(t+1) = (I - dt * D).inv(   U(t)+dt*f(t,u,x,...)   ) 
+
+// proper signature on forcing term f? 
+// in 1D f(double t, const Eigen::VectorXd& U, const Mesh1D_SPtr_t& m)
+// in XD f(double t, const Eigen::VectorXd& U, const MeshXD_SPtr_t& m)
