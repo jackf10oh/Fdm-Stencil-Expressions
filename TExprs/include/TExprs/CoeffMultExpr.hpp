@@ -104,34 +104,38 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
 
 template<
   typename Lhs, 
-  typename Rhs,  
-  typename = std::enable_if_t<
-    std::conjunction_v<
-      std::disjunction<
-        Fds::traits::is_coeffop_crtp<Lhs>,
-        Fds::traits::is_coeffopxd_crtp<Lhs>
-      >,
-      TExprs::traits::is_timederiv_crtp<Rhs>
-    >
-  >
+  typename Rhs
 >
-auto operator*(Lhs&& c, Rhs&& rhs)
+std::enable_if_t<
+  std::conjunction_v<
+    std::disjunction<
+      Fds::traits::is_coeffop_crtp<Lhs>,
+      Fds::traits::is_coeffopxd_crtp<Lhs>
+    >,
+    TExprs::traits::is_timederiv_crtp<Rhs>
+  >, 
+  TExprs::internal::CoeffMultExpr<Lhs,Rhs>
+> operator*(Lhs&& c, Rhs&& rhs)
 {
   // false if Rhs is any form of SumExpr. We don't want to mess with expressions like c*(A+B)
   static_assert(std::tuple_size<decltype(rhs.toTuple())>::value == 1, "operator*(c,TimeDeriv) only meant for single TimeDeriv"); 
   return TExprs::internal::CoeffMultExpr<Lhs,Rhs>(std::forward<Lhs>(c), std::forward<Rhs>(rhs)); 
 } 
 
-// Operator for double c, TimeDeriv Ut making expression c*Ut 
+// Operator for scalar c, TimeDeriv Ut making expression c*Ut 
 template<
-  typename Rhs, 
-  typename = std::enable_if_t<
-    TExprs::traits::is_timederiv_crtp<Rhs>::value
-  >
+  typename SCALAR_T, 
+  typename TDERIV_RHS
 >
-auto operator*(double c, Rhs&& rhs)
+std::enable_if_t<
+  std::conjunction_v<
+    TExprs::traits::is_timederiv_crtp<TDERIV_RHS>,
+    std::is_arithmetic<std::remove_reference_t<std::remove_cv_t<SCALAR_T>>>
+  >, 
+  TExprs::internal::CoeffMultExpr<SCALAR_T,TDERIV_RHS>
+> operator*(SCALAR_T&& c, TDERIV_RHS&& rhs)
 {
-  return TExprs::internal::CoeffMultExpr<double,Rhs>(c, std::forward<Rhs>(rhs)); 
+  return TExprs::internal::CoeffMultExpr<SCALAR_T,TDERIV_RHS>(std::forward<SCALAR_T>(c), std::forward<TDERIV_RHS>(rhs)); 
 }
 
 #endif // LhsCoeffMultExpr.hpp 

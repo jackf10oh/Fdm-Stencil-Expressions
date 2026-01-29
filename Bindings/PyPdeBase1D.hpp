@@ -29,7 +29,7 @@ it Binds the GenInterpolators lhs and rhs pointers
 to PDE_Base_Impl's lhs and rhs  
 */
 template<typename PDE_IMPL>
-class Concrete_PDE : public PDE_IMPL, public TExprs::GenInterp
+class Concrete_PDE_1D : public PDE_IMPL, public TExprs::GenInterp
 <
   typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetLhs())>::type, 
   typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetRhs())>::type, 
@@ -43,15 +43,35 @@ class Concrete_PDE : public PDE_IMPL, public TExprs::GenInterp
     using interp_base_t = typename TExprs::GenInterp<typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetLhs())>::type, typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetRhs())>::type, LinOps::Mesh1D_SPtr_t, Fds::BcPtr_t, std::vector<Eigen::VectorXd>>; 
     // Member Data ------------
   public:
-    Concrete_PDE()
+    Concrete_PDE_1D()
+      : PDE_IMPL(), interp_base_t(PDE_IMPL::GetLhs(), PDE_IMPL::GetRhs())
+    {}
+}; 
+
+/* same ideas. just changes Mesh1D to XD, Bc to BcXD*/
+template<typename PDE_IMPL>
+class Concrete_PDE_XD : public PDE_IMPL, public TExprs::GenInterp
+<
+  typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetLhs())>::type, 
+  typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetRhs())>::type, 
+  LinOps::MeshXD_SPtr_t, 
+  Fds::BcXDPtr_t, 
+  std::vector<Eigen::VectorXd>
+>
+{
+  private:
+    // Type Defs -----------
+    using interp_base_t = typename TExprs::GenInterp<typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetLhs())>::type, typename std::remove_reference<decltype(std::declval<PDE_IMPL>().GetRhs())>::type, LinOps::MeshXD_SPtr_t, Fds::BcXDPtr_t, std::vector<Eigen::VectorXd>>; 
+    // Member Data ------------
+  public:
+    Concrete_PDE_XD()
       : PDE_IMPL(), interp_base_t(PDE_IMPL::GetLhs(), PDE_IMPL::GetRhs())
     {}
 }; 
 
 /* example of how to use bases. 
-As it is currently, doubles like diffusion,convection,etc are captured by value.
-Altering them does not have any influence on the stored equations
-TODO make operator*() capture double by reference or value  
+doubles like diffusion,convection,etc are captured by reference.
+Altering them influences the stored equations. 
 
 struct HeatPDE_impl : public PDE_Base_Impl<HeatPDE_impl>
 { 
@@ -73,7 +93,7 @@ struct HeatPDE_impl : public PDE_Base_Impl<HeatPDE_impl>
   auto& GetRhs(){ return rhs_expr; } 
 }; 
 
-using HeatPDE = Concrete_PDE<HeatPDE_impl>; 
+using HeatPDE = Concrete_PDE_1D<HeatPDE_impl>; 
 
   HeatPDE pde; 
   
