@@ -15,7 +15,7 @@ namespace LinOps{
 class Discretization1D;
 
 template<typename Derived>
-class LinOpBase;
+class LinOpMixIn;
 
 template<typename Derived>
 class LinOpBase1D;
@@ -79,7 +79,7 @@ struct linopXlinop_mult_op : public internal::OperatorComposition_t
 } // end namespace internal 
 
 // Traits =====================================================================
-// given a type, detect if it is derived from linopbase<> - - - - - - - - - - - - 
+// given a type, detect if it is derived from LinOpMixIn<> - - - - - - - - - - - - 
 namespace internal{
 template<typename T, typename = void>
 struct is_linop_crtp_impl : std::false_type {};
@@ -92,6 +92,36 @@ struct is_linop_crtp_impl<T, std::void_t<typename T::is_linop_tag>> : std::true_
 namespace traits{
 template<typename T>
 using is_linop_crtp = internal::is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
+} // end namespace traits 
+
+// given a type, detect if it is derived from LinOpBase1D<> - - - - - - - - - - - - 
+namespace internal{
+template<typename T, typename = void>
+struct is_1dim_linop_crtp_impl : std::false_type {};
+
+template<typename T>
+struct is_1dim_linop_crtp_impl<T, std::void_t<typename T::is_1dim_linop_tag>> : std::true_type {};
+
+} // end namespace internal 
+
+namespace traits{
+template<typename T>
+using is_1dim_linop_crtp = internal::is_1dim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
+} // end namespace traits 
+
+// ... from LinOpBaseXD<> - - - - - - - - - - - - 
+namespace internal{
+template<typename T, typename = void>
+struct is_xdim_linop_crtp_impl : std::false_type {};
+
+template<typename T>
+struct is_xdim_linop_crtp_impl<T, std::void_t<typename T::is_xdim_linop_tag>> : std::true_type {};
+
+} // end namespace internal 
+
+namespace traits{
+template<typename T>
+using is_xdim_linop_crtp = internal::is_xdim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
 } // end namespace traits 
 
 // given a type T see if it is an expression - - - - - - - - - - - - - - - - - - - - - - - - 

@@ -21,11 +21,11 @@ namespace LinOps{
 using MatrixStorage_t = Eigen::SparseMatrix<double,Eigen::RowMajor>; 
 
 template<typename DERIVED>
-class LinOpBase1D : public internal::LinOpMixIn<LinOpBase1D<DERIVED>> 
+class LinOpBase1D 
 {
   public:
     // Type Defs -----------------------------------------------------
-    using DERIVED_T = DERIVED; // so LinOpMixIn can access grand child class
+    typedef struct{} is_1dim_linop_tag; // to tell if a class derived from LinOpBase1D<>
 
     // Member Funcs  ======================================================
 
@@ -34,7 +34,7 @@ class LinOpBase1D : public internal::LinOpMixIn<LinOpBase1D<DERIVED>>
     // multiply the underlying expression with Discretization's underlying vecXd
     Discretization1D apply(const Discretization1D& d) const 
     {
-      Eigen::VectorXd v = internal::LinOpMixIn<LinOpBase1D<DERIVED_T>>::GetMat() * d.values();  // calculate A*b
+      Eigen::VectorXd v = static_cast<const DERIVED*>(this)->GetMat() * d.values();  // calculate A*b
       Discretization1D result(std::move(v), get_weak_mesh1d()); // move A*b into result's values
       return result;
     };
@@ -42,75 +42,165 @@ class LinOpBase1D : public internal::LinOpMixIn<LinOpBase1D<DERIVED>>
     // return weak_ptr of Mesh1D pointed to. default: just convert the shared_ptr 
     Mesh1D_WPtr_t get_weak_mesh1d() const
     {
-      return static_cast<const DERIVED_T*>(this)->get_mesh1d();
+      // if DERIVED is an expression 
+      if constexpr(traits::is_expr_crtp<DERIVED>::value){
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Lhs().get_weak_mesh1d(); 
+        }
+        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Rhs().get_weak_mesh1d(); 
+        }
+        else{
+          static_assert(false, "cannot call get_weak_mesh1d() on expr with no LinOpBase1D's in it!"); 
+        }
+      }
+      // Non Expression case ... 
+      else{
+        return static_cast<const DERIVED*>(this)->get_mesh1d();
+      }
     }
 
     // Must implement! -------------------------
     // fit operator to a mesh of rectangular domain 
     void set_mesh(const Mesh1D_SPtr_t& m) 
     {
-      // // ensure we aren't resetting the mesh again
-      // if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
-      // // on nullptr throw an error  
-      // if(!m) throw std::runtime_error("set_mesh error: std::shared_ptr<const Mesh1D> is expried"); 
-      // m_mesh_ptr = m; // store the mesh  
-      // // perform work on m 
-      static_cast<DERIVED_T*>(this)->set_mesh(m);
+      // if DERIVED is an expression 
+      if constexpr(traits::is_expr_crtp<DERIVED>::value){
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
+          static_cast<const DERIVED*>(this)->Lhs().set_mesh(m); 
+        }
+        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Rhs().set_mesh(m); 
+        }
+        else{
+          static_assert(false, "cannot call set_mesh(Mesh1D_SPtr_t) on expr with no LinOpBase1D's in it!"); 
+        }
+      }
+      // Non Expression case ... 
+      else{
+        // // ensure we aren't resetting the mesh again
+        // if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+        // // on nullptr throw an error  
+        // if(!m) throw std::runtime_error("set_mesh error: std::shared_ptr<const Mesh1D> is expried"); 
+        // m_mesh_ptr = m; // store the mesh  
+        // // perform work on m 
+        static_cast<DERIVED*>(this)->set_mesh(m);
+      }
     };
     
-    // return Mesh1D pointed to 
+    // return Mesh1D pointed to
     Mesh1D_SPtr_t get_mesh1d() const 
     {
-      return static_cast<const DERIVED_T*>(this)->get_mesh1d();
+      // if DERIVED is an expression 
+      if constexpr(traits::is_expr_crtp<DERIVED>::value){
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Lhs().get_mesh1d(); 
+        }
+        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Rhs().get_mesh1d(); 
+        }
+        else{
+          static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
+        }
+      }
+      // Non Expression case ... 
+      else{
+        return static_cast<const DERIVED*>(this)->get_mesh1d();
+      }
     } 
 
 }; // end LinOpBase1D<>  
 
-// template<typename DERIVED>
-// class LinOpBaseXD : public internal::LinOpMixIn<LinOpBaseXD<DERIVED>> 
-// {
-//   public:
-//     // Type Defs -----------------------------------------------------
-//     using DERIVED_T = DERIVED; // so LinOpMixIn can access grand child class
+template<typename DERIVED>
+class LinOpBaseXD 
+{
+  public:
+    // Type Defs -----------------------------------------------------
+    typedef struct{} is_xdim_linop_tag; // to tell if a class derived from LinOpBase1D<>
 
-//     // Member Funcs  ======================================================
+    // Member Funcs  ======================================================
 
-//     // defaults given. can be overriden -------------------------------------
+    // defaults given. can be overriden -------------------------------------
 
-//     // multiply the underlying expression with Discretization's underlying vecXd
-//     DiscretizationXD apply(const DiscretizationXD& d) const 
-//     {
-//       Eigen::VectorXd v = internal::LinOpMixIn<LinOpBaseXD<DERIVED_T>>::GetMat() * d.values();  // calculate A*b
-//       DiscretizationXD result(std::move(v), get_weak_meshxd()); // move A*b into result's values
-//       return result;
-//     };
+    // multiply the underlying expression with Discretization's underlying vecXd
+    DiscretizationXD apply(const DiscretizationXD& d) const 
+    {
+      Eigen::VectorXd v = static_cast<const DERIVED*>(this)->GetMat() * d.values();  // calculate A*b
+      DiscretizationXD result(std::move(v), get_weak_meshxd()); // move A*b into result's values
+      return result;
+    };
 
-//     // return weak_ptr of Mesh1D pointed to. default: just convert the shared_ptr 
-//     MeshXD_WPtr_t get_weak_meshxd() const
-//     {
-//       return static_cast<const DERIVED_T*>(this)->get_mesh1d();
-//     }
+    // return weak_ptr of Mesh1D pointed to. default: just convert the shared_ptr 
+    MeshXD_WPtr_t get_weak_meshxd() const
+    {
+      // if DERIVED is an expression 
+      if constexpr(traits::is_expr_crtp<DERIVED>::value){
+        if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::LStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Lhs().get_weak_mesh1d(); 
+        }
+        else if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::RStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Rhs().get_weak_mesh1d(); 
+        }
+        else{
+          static_assert(false, "cannot call get_weak_mesh1d() on expr with no LinOpBase1D's in it!"); 
+        }
+      }
+      // Non Expression case ... 
+      else{
+        return static_cast<const DERIVED*>(this)->get_meshxd();
+      }
+    }
 
-//     // Must implement! -------------------------
-//     // fit operator to a mesh of rectangular domain 
-//     void set_mesh(const MeshXD_SPtr_t& m) 
-//     {
-//       // // ensure we aren't resetting the mesh again
-//       // if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
-//       // // on nullptr throw an error  
-//       // if(!m) throw std::runtime_error("set_mesh error: std::shared_ptr<const Mesh1D> is expried"); 
-//       // m_mesh_ptr = m; // store the mesh  
-//       // // perform work on m 
-//       static_cast<DERIVED_T*>(this)->set_mesh(m);
-//     };
+    // Must implement! -------------------------
+    // fit operator to a mesh of rectangular domain 
+    void set_mesh(const MeshXD_SPtr_t& m) 
+    {
+      // if DERIVED is an expression 
+      if constexpr(traits::is_expr_crtp<DERIVED>::value){
+        if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::LStorage_t>::value){
+          static_cast<const DERIVED*>(this)->Lhs().set_mesh(m); 
+        }
+        else if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::RStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Rhs().set_mesh(m); 
+        }
+        else{
+          static_assert(false, "cannot call set_mesh(MeshXD_SPtr_t) on expr with no LinOpBaseXD's in it!"); 
+        }
+      }
+      // Non Expression case ... 
+      else{
+        // // ensure we aren't resetting the mesh again
+        // if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+        // // on nullptr throw an error  
+        // if(!m) throw std::runtime_error("set_mesh error: std::shared_ptr<const Mesh1D> is expried"); 
+        // m_mesh_ptr = m; // store the mesh  
+        // // perform work on m 
+        static_cast<DERIVED*>(this)->set_mesh(m);
+      }
+    };
     
-//     // return Mesh1D pointed to 
-//     MeshXD_SPtr_t get_meshxd() const 
-//     {
-//       return static_cast<const DERIVED_T*>(this)->get_mesh1d();
-//     } 
+    // return Mesh1D pointed to
+    MeshXD_SPtr_t get_meshxd() const 
+    {
+      // if DERIVED is an expression 
+      if constexpr(traits::is_expr_crtp<DERIVED>::value){
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Lhs().get_meshxd(); 
+        }
+        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
+          return static_cast<const DERIVED*>(this)->Rhs().get_meshxd(); 
+        }
+        else{
+          static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
+        }
+      }
+      // Non Expression case ... 
+      else{
+        return static_cast<const DERIVED*>(this)->get_meshxd();
+      }
+    } 
 
-// }; // end LinOpBaseXD<>  
+}; // end LinOpBaseXD<>  
 
 } // end namespace LinOps 
 

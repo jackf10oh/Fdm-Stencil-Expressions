@@ -15,7 +15,7 @@
 
 namespace LinOps{
 
-class IOp : public LinOpBase1D<IOp>
+class IOp : public LinOpMixIn<IOp>, public LinOpBase1D<IOp>
 {
   private:
     Mesh1D_WPtr_t m_mesh_ptr; 

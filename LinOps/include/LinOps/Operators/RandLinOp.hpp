@@ -13,7 +13,7 @@
 
 namespace LinOps{
 
-class RandLinOp : public LinOpBase1D<RandLinOp>
+class RandLinOp : public LinOpMixIn<RandLinOp>, public LinOpBase1D<RandLinOp>
 {
   private:
     Eigen::MatrixXd m_Mat; 

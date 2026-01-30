@@ -7,7 +7,6 @@
 #ifndef LINOPEXPR_H
 #define LINOPEXPR_H
 
-#include<cstdint>
 #include<type_traits>
 #include "Mesh.hpp"
 #include "Discretization.hpp" 
@@ -18,14 +17,9 @@ namespace LinOps{
 
 // Expression of L,R, BinOp, + Mesh =====================================================
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
-class LinOpExpr : public LinOpBase1D< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >
+class LinOpExpr : public LinOpMixIn< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >, public LinOpBase1D< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >
 {
   public:
-    // // clarify ambiguous operators from LinOpMixin; 
-    // using LinOpBase1D< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >::operator+; 
-    // using LinOpBase1D< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >::operator-; 
-    // using LinOpBase1D< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >::left_scalar_mult_impl; 
-    // using LinOpBase1D< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >::compose; 
     // Type Defs --------------------------------------
     using LStorage_t = typename traits::Storage_t<Lhs_t>::type;
     using RStorage_t = typename traits::Storage_t<Rhs_t>::type;
@@ -136,7 +130,7 @@ class LinOpExpr : public LinOpBase1D< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >
 
 // Specialization for Unary operators --------------------------------------------
 template<typename Lhs_t, typename UnaryOp_t>
-class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpBase1D<LinOpExpr<Lhs_t, void, UnaryOp_t>>
+class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpMixIn< LinOpExpr<Lhs_t, void, UnaryOp_t> >, public LinOpBase1D< LinOpExpr<Lhs_t, void, UnaryOp_t> >
 {
   public:
     // Type Defs ------------------------------------------------------------------
