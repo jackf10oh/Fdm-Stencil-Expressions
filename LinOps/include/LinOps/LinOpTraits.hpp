@@ -12,10 +12,16 @@
 namespace LinOps{
 
 // Forward Declarations - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-class Discretization1D; 
+class Discretization1D;
 
 template<typename Derived>
 class LinOpBase;
+
+template<typename Derived>
+class LinOpBase1D;
+
+template<typename Derived>
+class LinOpBaseXD;
 
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
 class LinOpExpr; 

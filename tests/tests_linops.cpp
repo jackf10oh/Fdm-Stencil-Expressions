@@ -86,19 +86,19 @@ TEST(DiscretizationSuite1d, Disc1DMovable)
   auto my_mesh = make_mesh(0.0,10.0,n_steps); 
   Discretization1D moved_from(my_mesh);
   Discretization1D moved_to(std::move(moved_from));  
-  // ASSERT_TRUE(moved_from.mesh().expired()); // no longer altering mesh in moved_from 
+  // ASSERT_TRUE(moved_from.get_mesh1d().expired()); // no longer altering mesh in moved_from 
   ASSERT_EQ(moved_from.values().data(),nullptr); // moved from now has invalid eigen::vectorxd 
   ASSERT_EQ(moved_to.size(), n_steps); 
-  ASSERT_EQ(moved_to.mesh(), my_mesh); 
+  ASSERT_EQ(moved_to.get_mesh1d(), my_mesh); 
 }
 
 TEST(DiscretizationSuite1d, Disc1DSetMesh)
 {
   auto my_mesh = make_mesh(); 
   Discretization1D my_vals; 
-  ASSERT_FALSE(my_vals.mesh()); 
+  ASSERT_FALSE(my_vals.get_mesh1d()); 
   Discretization1D discretization_w_stored_mesh(my_mesh); 
-  ASSERT_TRUE(discretization_w_stored_mesh.mesh());
+  ASSERT_TRUE(discretization_w_stored_mesh.get_mesh1d());
 }
 
 TEST(DiscretizationSuite1d, Disc1DSetCosntant)
@@ -175,12 +175,12 @@ TEST(LinearOperatorSuite, IdentityConstructible)
 {
   // default construct uses nullptr
   IOp Identity01;
-  ASSERT_EQ(Identity01.mesh(),nullptr);
+  ASSERT_EQ(Identity01.get_mesh1d(),nullptr);
 
   // construct with ptr arg
   auto my_mesh = make_mesh(); 
   IOp Identity02(my_mesh);
-  ASSERT_EQ(Identity02.mesh(), my_mesh);   
+  ASSERT_EQ(Identity02.get_mesh1d(), my_mesh);   
 
   // Check that entries on diag are 1
   int s = my_mesh->size()-1; 
@@ -197,12 +197,12 @@ TEST(LinearOperatorSuite, RandLinOpConstructible)
 {
   // default construct uses nullptr
   RandLinOp Rand01;
-  ASSERT_EQ(Rand01.mesh(),nullptr);
+  ASSERT_EQ(Rand01.get_mesh1d(),nullptr);
 
   // construct with ptr arg
   auto my_mesh = make_mesh(); 
   RandLinOp Rand02(my_mesh);
-  ASSERT_EQ(Rand02.mesh(), my_mesh);   
+  ASSERT_EQ(Rand02.get_mesh1d(), my_mesh);   
 };
 
 TEST(LinearOperatorSuite, RandLinOpGetMat)
@@ -211,7 +211,7 @@ TEST(LinearOperatorSuite, RandLinOpGetMat)
   auto my_mesh = make_mesh(); 
   RandLinOp Rand01(my_mesh);
 
-  ASSERT_EQ(Rand01.mesh(), my_mesh);   
+  ASSERT_EQ(Rand01.get_mesh1d(), my_mesh);   
 
   Eigen::MatrixXd result = Rand01.GetMat(); 
 };
@@ -254,7 +254,7 @@ TEST(LinearOperatorSuite, BasicAddition)
   // lambda to check 4 corners + middle of a matrix expr
   auto check_lambda = [s = my_mesh->size()-1](const auto& expr) -> void
   {
-    CustomStorage_t Mat = expr.GetMat(); 
+    LinOps::MatrixStorage_t Mat = expr.GetMat(); 
     // Check that entries on diag are 2
     ASSERT_EQ(Mat.coeff(0,0),2); 
     ASSERT_EQ(Mat.coeff(s,s),2); 
@@ -387,8 +387,8 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   Expr.set_mesh(my_mesh); 
 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I_lval.mesh(), my_mesh);
-  ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I_lval.get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr.Rhs().get_mesh1d(), my_mesh);
 
   // test again for scalar multiply  // construct without mesh ptrs 
   IOp I2_lval;
@@ -398,9 +398,9 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   Expr2.set_mesh(my_mesh); 
   Expr3.set_mesh(my_mesh); 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I2_lval.mesh(), my_mesh);
-  ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
-  ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I2_lval.get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr2.Rhs().get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr3.Rhs().get_mesh1d(), my_mesh);
 
   // test again for composition 
   RandLinOp I3_lval; 
@@ -410,9 +410,9 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   // Expr4.set_mesh(my_mesh); 
   Expr5.set_mesh(my_mesh); 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I3_lval.mesh(), my_mesh);
-  // ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
-  ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I3_lval.get_mesh1d(), my_mesh);
+  // ASSERT_EQ(Expr4.Rhs().get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr5.Rhs().get_mesh1d(), my_mesh);
 }
 
 TEST(LinearOperatorSuite, LinOpTraits)

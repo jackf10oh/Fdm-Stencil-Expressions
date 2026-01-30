@@ -71,7 +71,7 @@ class Discretization1D
 
     // get underlying mesh ------------------------------
     // const auto mesh(){return m_mesh_ptr.lock(); }; 
-    Mesh1D_SPtr_t mesh() const{return m_mesh_ptr.lock(); }
+    Mesh1D_SPtr_t get_mesh1d() const{return m_mesh_ptr.lock(); }
 
     // set the mesh the discretization is on -----------
     auto& set_mesh(Mesh1D_WPtr_t m){ 

@@ -15,16 +15,11 @@
 
 namespace LinOps{
 
-#ifndef CUSTOM_IDENTITY_MATRIX_STORAGE
-using CustomStorage_t = Eigen::MatrixXd;
-#else
-using CustomStorage_t = typename CUSTOM_IDENTITY_MATRIX_STORAGE;
-#endif
-
-class IOp : public LinOpBase<IOp>
+class IOp : public LinOpBase1D<IOp>
 {
   private:
-    CustomStorage_t m_Mat; 
+    Mesh1D_WPtr_t m_mesh_ptr; 
+    MatrixStorage_t m_Mat; 
   public: 
     // Constructors --------------------------
     IOp(std::size_t s_init=0)
@@ -37,33 +32,45 @@ class IOp : public LinOpBase<IOp>
     } 
     // Destructors ----------------------------
     ~IOp()=default;
-    // member funcs
-    CustomStorage_t& GetMat() { return m_Mat; };
-    const CustomStorage_t& GetMat() const { return m_Mat; };
-    Discretization1D apply(const Discretization1D& d_arr) const 
-    { 
-      return d_arr;
-    }; 
-    void set_mesh(const Mesh1D_SPtr_t& m)
+
+    // Member Funcs  ======================================================
+
+    // matrix getters 
+    MatrixStorage_t& GetMat() { return m_Mat; };
+    const MatrixStorage_t& GetMat() const { return m_Mat; };
+
+    // Identity just returns inputs as outputs
+    Discretization1D apply(const Discretization1D& d_arr) const { return d_arr; } 
+
+    // return weak_ptr of Mesh1D pointed to. default: just convert the shared_ptr 
+    Mesh1D_WPtr_t get_weak_mesh1d() const{ return m_mesh_ptr; }
+
+    // return Mesh1D pointed to 
+    Mesh1D_SPtr_t get_mesh1d() const { return m_mesh_ptr.lock(); } 
+
+    // fit operator to a domain mesh 
+    void set_mesh(const Mesh1D_SPtr_t& m) 
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
+      // on nullptr throw an error  
+      if(!m) throw std::runtime_error("IOp.set_mesh(m) error: std::shared_ptr<const Mesh1D> is expried"); 
       m_mesh_ptr = m; // store the mesh  
+      // perform work on m 
       // set m_Mat to I(s,s) 
-      m_Mat.resize(m->size(), m->size()); 
+      std::size_t s = m->size(); 
+      m_Mat.resize(s, s); 
       m_Mat.setIdentity(); 
     };
+    
+    // resize Identity to s; 
     void resize(std::size_t s=0)
     {
       m_Mat.resize(s, s); 
       m_Mat.setIdentity(); 
     };
-    void resize(std::size_t s1,std::size_t s2) 
-    {
-      m_Mat.resize(s1,s2); 
-      m_Mat.setIdentity(); 
-    };
-};
+
+}; // End IOp 
 
 } // end namespace LinOps 
 
