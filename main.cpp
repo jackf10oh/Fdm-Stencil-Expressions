@@ -22,52 +22,36 @@
 
 using std::cout, std::endl;
 
+void foobar(const std::shared_ptr<const LinOps::Mesh1D>& m){
+  cout << "use count: " << m.use_count() << endl; 
+}
+
 int main()
 {
   // iomanip 
   std::cout << std::setprecision(2); 
 
-  auto m1 = LinOps::make_mesh(0.0,5.0, 6); 
-  auto m2 = LinOps::make_meshXD(0.0,3.0,3,2); 
+  auto m = LinOps::make_mesh(0.0,4.0,5); 
 
-  cout << LinOps::IOp(m1).GetMat() << endl; 
+  LinOps::TimeDepCoeff c = [](double t, double x){return t + x; }; 
+  // LinOps::TimeDepCoeff c = [](double t, double x, double y){return t + x; }; // 2 dims fails on set_mesh(1D)
+  LinOps::TimeDepCoeff c02 = [](double t){return t*t; }; 
 
-  cout << LinOps::IOp(m2).GetMat() << endl; 
+  cout << c.Time() << endl; 
+  c.set_mesh(m); 
+  c.SetTime(1.0); 
+  cout << c.Time() << endl; 
+  cout << c.GetMat() << endl; 
 
-  cout << LinOps::DirectionalRandOp(m2,0).GetMat() << endl; 
-  cout << LinOps::DirectionalRandOp(m2,1).GetMat() << endl; 
+  cout << c02.Time() << endl; 
+  c02.SetTime(2.0); 
+  cout << c02.Time() << endl; 
+  cout << c02.GetMat() << endl; // SCALAR! 
 
-  auto expr_xd = 20.0 * LinOps::DirectionalRandOp(); // should not be 1D
-  auto expr_1d = 20.0 * LinOps::RandLinOp(); // should not be XD 
-  cout << "expr_xd is 1D? " << LinOps::traits::is_1dim_linop_crtp<decltype(expr_xd)>::value << endl; 
-  cout << "expr_xd is XD? " << LinOps::traits::is_xdim_linop_crtp<decltype(expr_xd)>::value << endl; 
-  cout << "expr_1d is XD? " << LinOps::traits::is_xdim_linop_crtp<decltype(expr_1d)>::value << endl; 
-
-  auto expr = LinOps::DirectionalRandOp(0) + 20.0 * LinOps::IOp(); // works .... 
-  // auto expr = LinOps::RandLinOp() + 20.0 * LinOps::DirectionalRandOp(); // will not compile: static_assert() fails .... 
-  expr.set_mesh(m2); 
-  cout << expr.GetMat() << endl; 
-
-  auto m3 = LinOps::make_mesh(0.0,10.0,11); 
-  std::cout << LinOps::NthDerivOp(m3,2).GetMat() << std::endl; 
-
-  auto m4 = LinOps::make_meshXD(0.0,3.0,4, 3); 
-  auto D = LinOps::DirectionalNthDerivOp(m4,1,0); 
-  cout << D.GetMat() << endl; 
-
-
-  cout << "------------" << endl; 
-  LinOps::IOp I; 
-  I.set_mesh(m1); 
-  cout << "I.get_mesh1d == nullptr" << (I.get_mesh1d() == m1) << endl; 
-
-  auto sum_i = I + LinOps::IOp(); 
-  std::cout << "rhs mesh == nullptr " << (sum_i.Rhs().get_mesh1d()==nullptr) << std::endl; 
-
-  sum_i.set_mesh(m1); 
-  std::cout << "post set_mesh. rhs mesh == nullptr " << (sum_i.Rhs().get_mesh1d()==nullptr) << std::endl; 
-  cout << sum_i.Lhs().GetMat() << endl; 
-  cout << sum_i.Rhs().GetMat() << endl; 
+  auto m2d = LinOps::make_meshXD(0.0,3.0,4,2); 
+  c.set_mesh(m2d); 
+  c.SetTime(4.0); 
+  cout << c.GetMat() << endl; 
 };
 
 // #include "Bindings/PyPdeBase1D.hpp"

@@ -29,7 +29,7 @@ class MeshXD
     using Stride_t = typename Eigen::Stride<0,Eigen::Dynamic>; 
     using StrideView_t = typename Eigen::Map<Eigen::VectorXd, Eigen::Unaligned, Stride_t>; 
     // member data --------------------------------------------------------------------------
-    std::vector<std::shared_ptr<Mesh1D>> m_mesh_vec; // dynamic array of meshes. 
+    std::vector<Mesh1D_SPtr_t> m_mesh_vec; // dynamic array of meshes. 
 
   public:
     // Constructors + Destructor =============================================================== 
@@ -38,7 +38,7 @@ class MeshXD
       : m_mesh_vec(n_dims_init)
     {
       for(std::size_t dim_i=0; dim_i<n_dims_init; dim_i++){
-        m_mesh_vec[dim_i] = std::make_shared<Mesh1D>(0.0, 1.0, 5); 
+        m_mesh_vec[dim_i] = LinOps::make_mesh(0.0, 1.0, 5); 
       }; 
     };
     
@@ -46,7 +46,7 @@ class MeshXD
     MeshXD(double left=0.0, double right=1.0, std::size_t n_steps=11,std::size_t n_dims=1)
       : m_mesh_vec(n_dims)
     {
-      auto original_ptr = std::make_shared<Mesh1D>(left,right,n_steps); 
+      auto original_ptr = LinOps::make_mesh(left,right,n_steps); 
       for(auto& ptr : m_mesh_vec) ptr=original_ptr;  
     }
     
@@ -58,19 +58,19 @@ class MeshXD
       auto nstep_it = nsteps_vec.begin();
       auto axes_it=axes_vec.begin();
       for(auto write=m_mesh_vec.begin(); write!=m_mesh_vec.end(); write++){
-        *write = std::make_shared<Mesh1D>(axes_it->first, axes_it->second, *nstep_it); 
+        *write = LinOps::make_mesh(axes_it->first, axes_it->second, *nstep_it); 
         axes_it++; 
         nstep_it++; 
       }
     }
     
     // from std::vector<> of shared_ptr<const Mesh1D>
-    MeshXD(const std::vector<std::shared_ptr<Mesh1D>>& init_vec) : m_mesh_vec(init_vec){}; 
+    MeshXD(const std::vector<Mesh1D_SPtr_t>& init_vec) : m_mesh_vec(init_vec){}; 
     // from std::vector<> (RVAL) of shared_ptr<const Mesh1D>
-    MeshXD(std::vector<std::shared_ptr<Mesh1D>>&& init_vec) : m_mesh_vec(std::move(init_vec)){}; 
+    MeshXD(std::vector<Mesh1D_SPtr_t>&& init_vec) : m_mesh_vec(std::move(init_vec)){}; 
     
     // from shared_ptr const Mesh1D
-    MeshXD(const std::shared_ptr<Mesh1D>& m1d_init) : m_mesh_vec{m1d_init}{};  
+    MeshXD(const Mesh1D_SPtr_t& m1d_init) : m_mesh_vec{m1d_init}{};  
 
     // Copy 
     MeshXD(const MeshXD& other)=default; 
@@ -104,12 +104,12 @@ class MeshXD
     std::size_t dims() const {return m_mesh_vec.size(); } 
 
     // get a specific mesh 
-    const std::shared_ptr<Mesh1D>& GetMesh(std::size_t i){return m_mesh_vec[i];} 
-    std::shared_ptr<const Mesh1D> GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
+    Mesh1D_SPtr_t& GetMesh(std::size_t i){return m_mesh_vec[i];} 
+    const Mesh1D_SPtr_t& GetMesh(std::size_t i) const {return m_mesh_vec[i];} 
 
     // Get a specific mesh (check index < size)
-    const std::shared_ptr<Mesh1D>& GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
-    std::shared_ptr<const Mesh1D> GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
+    Mesh1D_SPtr_t& GetMeshAt(std::size_t i){return m_mesh_vec.at(i);}
+    const Mesh1D_SPtr_t& GetMeshAt(std::size_t i) const {return m_mesh_vec.at(i);}
 
     // From a VectorXd representing flattened DiscretizationXD produce list of views that "look" like 1 dimensional slices 
     std::vector<StrideView_t> OneDim_views(StridedRef vec, std::size_t ith_dim=0) const 
@@ -147,11 +147,11 @@ class MeshXD
 template<typename... Args> 
 auto make_meshXD(Args... args)
 {
-  return std::make_shared<MeshXD>(args...); 
+  return std::make_shared<const MeshXD>(args...); 
 }
 
 // just return the input args if called on a shared_ptr<MeshXD>
-const auto& make_meshXD(const std::shared_ptr<MeshXD>& other)
+auto make_meshXD(const std::shared_ptr<const MeshXD>& other)
 {
   return other; 
 }

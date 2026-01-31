@@ -19,11 +19,9 @@ namespace LinOps{
 template<typename FUNC_STORAGE_T>
 class AutonomousCoeff : public CoeffOpMixIn<AutonomousCoeff<FUNC_STORAGE_T>>, public LinOpBase1D<AutonomousCoeff<FUNC_STORAGE_T>>, public LinOpBaseXD<AutonomousCoeff<FUNC_STORAGE_T>>
 {
-  public: 
-    // Type Def -----------------------------
-    FUNC_STORAGE_T m_function;  
-    
+  private: 
     // Member Data ----------------------------------- 
+    FUNC_STORAGE_T m_function; 
     std::variant<Mesh1D_WPtr_t, MeshXD_WPtr_t> m_mesh_ptr; 
     Eigen::VectorXd m_diag_vals;
     std::size_t m_prod_after; 

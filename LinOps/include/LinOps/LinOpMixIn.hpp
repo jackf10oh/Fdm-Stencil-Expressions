@@ -25,12 +25,60 @@ class LinOpMixIn
     // Type Defs -------------------------------------
     // to tell if a class derived from LinOpMixIn<> 
     typedef struct{} is_linop_tag; 
+    // to tell if a class is time dependent. false by default 
+    constexpr static bool is_time_dep_flag = false; 
     // so LinOpMixIn can access most derived class 
     using DERIVED_T = DERIVED;
 
+  private:
+    // Member Data -------------------
+    double m_current_time; 
+
+  
+
+  public:
+    // Constructors + Destructor ======================================================== 
+    // default 
+    LinOpMixIn() : m_current_time(0.0){}; 
+    // copy 
+    LinOpMixIn(const LinOpMixIn& other): m_current_time(other.m_current_time){}; 
+    // destructor 
+    ~LinOpMixIn()=default; 
+
     // Member Funcs ==========================================================
 
-    // SetTime() + SetTime_impl() ... 
+    // Get Current Time 
+    double Time() const {return m_current_time; } 
+
+    // set the current time of the Linear Operator.
+    void SetTime_impl(double t){ /* do nothing by default ...*/}; 
+    void SetTime(double t)
+    {
+      // if we are an expression 
+      if constexpr (traits::is_expr_crtp<typename DERIVED::DERIVED_T>::value)
+      {
+        auto& expr = static_cast<typename DERIVED::DERIVED_T&>(*this);
+        // if LHS of expr is LinOp
+        if constexpr(LinOps::traits::is_linop_crtp<typename DERIVED::DERIVED_T::LStorage_t>::value) 
+        {
+          // LHS sets time 
+          expr.Lhs().SetTime(t);
+        }
+        // if RHS of expr is LinOp
+        if constexpr(LinOps::traits::is_linop_crtp<typename DERIVED::DERIVED_T::RStorage_t>::value)
+        {
+          // RHS sets time 
+          expr.Rhs().SetTime(t);
+        } 
+      }
+      // we aren't an expression call the actual implementor 
+      else  
+      {
+        static_cast<typename DERIVED::DERIVED_T*>(this)->SetTime_impl(t);
+      }
+      // store new time.   
+      m_current_time = t; 
+    }
 
     // Getters to convert a Linear Operator to it Matrix form -----------------------
     decltype(auto) GetMat()

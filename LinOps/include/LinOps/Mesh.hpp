@@ -78,7 +78,7 @@ class Mesh1D
 template<typename... Args> 
 auto make_mesh(Args... args)
 {
-  return std::make_shared<Mesh1D>(args...); 
+  return std::make_shared<const Mesh1D>(args...); 
 }
 
 } // end namespace LinOps 
