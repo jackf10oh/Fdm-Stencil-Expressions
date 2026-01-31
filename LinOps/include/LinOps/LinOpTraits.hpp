@@ -137,6 +137,21 @@ template<typename T>
 using is_xdim_linop_crtp = internal::is_xdim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
 } // end namespace traits 
 
+// Given a type, see if it is derived from CoeffOpMixIn - - - - - - - 
+namespace internal{
+template<typename T, typename = void> 
+struct is_coeffop_crtp_impl : std::false_type{}; 
+
+template<typename T>
+struct is_coeffop_crtp_impl<T, std::void_t<typename T::is_coeff_flag>>: std::true_type{}; 
+}
+
+namespace traits{
+template<typename T>
+using is_coeffop_crtp = LinOps::internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
+} // end namespace Fds::traits
+
+
 // given a type T see if it is an expression - - - - - - - - - - - - - - - - - - - - - - - - 
 namespace internal{
 template<typename T>

@@ -13,12 +13,12 @@
 namespace LinOps{
 
 template<typename DERIVED>
-class CoeffOpMixIn : public LinOps::LinOpMixIn<CoeffOpMixIn<DERIVED>>
+class CoeffOpMixIn : public LinOpMixIn<CoeffOpMixIn<DERIVED>>
 {
 
   public:
     // Type Defs --------------------------------
-    // So LinOpMixIn case access DERIVED type 
+    // So LinOpMixIn case access DERIVED type of grandchild classes
     using DERIVED_T = DERIVED; 
     // flag type for any derived class to be picked up by is_coeffop_crtp<>::value trait 
     struct is_coeff_flag{}; 
@@ -28,8 +28,8 @@ class CoeffOpMixIn : public LinOps::LinOpMixIn<CoeffOpMixIn<DERIVED>>
     template<typename LINOP_T>
     auto operator*(LINOP_T&& rhs)
     {
-      static_assert(!LinOps::traits::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
-      return LinOps::LinOpMixIn<CoeffOpMixIn<DERIVED>>::compose(std::forward<LINOP_T>(rhs));
+      static_assert(!traits::is_coeffop_crtp<LINOP_T>::value,"Coefficients are meant to multiply c*L for L linear operator. not another Coefficient. a*b*L should be written as 1 functions");
+      return LinOpMixIn<CoeffOpMixIn<DERIVED>>::compose(std::forward<LINOP_T>(rhs));
     };
     
     // delting a ton of operators out of LinOpMixIn =====================================

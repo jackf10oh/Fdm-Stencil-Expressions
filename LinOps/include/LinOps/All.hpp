@@ -19,5 +19,6 @@
 #include "Operators/DirectionalRandOp.hpp"
 #include "Operators/DiffOps/NthDerivOp.hpp"
 #include "Operators/DiffOps/DirectionalNthDerivOp.hpp" 
+#include "Operators/CoeffOps/AutonomousCoeff.hpp"
 
 #endif // All.hpp

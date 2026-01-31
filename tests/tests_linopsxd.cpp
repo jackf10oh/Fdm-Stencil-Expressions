@@ -34,10 +34,10 @@ TEST(MeshXDSuite, MeshXDConstructible){
 
   // from std::vector<> of std::shared_ptr<Mesh1D> 
   // const!  
-  auto mesh_1d_01 = std::make_shared<const Mesh1D>(); 
-  auto mesh_1d_02 = std::make_shared<const Mesh1D>(-10.0,0.0,21); 
-  auto mesh_1d_03 = std::make_shared<const Mesh1D>(0.0,10.0,101);
-  auto v = std::vector<std::shared_ptr<const Mesh1D>>({mesh_1d_01,mesh_1d_02,mesh_1d_03}); 
+  auto mesh_1d_01 = std::make_shared<Mesh1D>(); 
+  auto mesh_1d_02 = std::make_shared<Mesh1D>(-10.0,0.0,21); 
+  auto mesh_1d_03 = std::make_shared<Mesh1D>(0.0,10.0,101);
+  auto v = std::vector<std::shared_ptr<Mesh1D>>({mesh_1d_01,mesh_1d_02,mesh_1d_03}); 
   MeshXD from_vec(v); 
 
   // copy 
@@ -293,3 +293,51 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
 
 // Linear Operators XD Suite ====================================================
 
+// testing AutonomousCoeff class
+TEST(XDOperatorsTestSuite, AutonomousCoeffTest)
+{
+  // make a mesh 
+  auto my_mesh = LinOps::make_mesh(0.0,4.0,5); 
+
+  // some lambdas to test out 
+  auto lam01 = [](double x){return x*x;}; // x^2
+  auto lam02 = [](double x){return std::sin(x);}; // sin(x)
+  auto lam03 = [](double x){return 2*x*x*x-5*x*x+3*x-1;}; // some polynomial in x 
+  
+  
+  // take 1 coeff_op and 1 lambda. 
+  auto check_lam = [&](const auto& coeff_op, auto func){
+    MatrixStorage_t A = coeff_op.GetMat(); 
+    // check each value of diag = func(t,x) or func(t) 
+    for(std::size_t i=0; i<A.rows(); i++){
+      ASSERT_EQ(    
+        A.coeff(i,i), 
+        func(my_mesh->at(i))    
+      ); 
+    }
+    // A is NxN where n = mesh size
+    ASSERT_EQ(A.rows(),my_mesh->size()); 
+    ASSERT_EQ(A.cols(),my_mesh->size());
+    
+    // of diag is zero 
+    ASSERT_EQ(A.coeff(0, A.cols()-1), 0.0); 
+    ASSERT_EQ(A.coeff(A.rows()-1, 0), 0.0); 
+  }; 
+
+  // create AutonomoousCoeff
+  AutonomousCoeff coeff01(lam01,my_mesh); 
+  // // check they have the same values
+  check_lam(coeff01, lam01);
+  
+
+  // create AutonomoousCoeff
+  AutonomousCoeff coeff02(lam02,my_mesh); 
+  // // check they have the same values
+  check_lam(coeff02, lam02);
+  
+  // create AutonomoousCoeff
+  AutonomousCoeff coeff03(lam03,my_mesh); 
+  // // check they have the same values
+  check_lam(coeff03, lam03);
+  
+}
