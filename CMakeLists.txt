@@ -91,10 +91,10 @@ target_link_libraries(TExprs
 # Tie all sub directories into main library ============================================== 
 target_link_libraries(FdmStencilExprs
   INTERFACE LinOps 
-  INTERFACE LinOpsXD
-  INTERFACE FDStencils 
-  INTERFACE FDStencilsXD
-  INTERFACE TExprs 
+  # INTERFACE LinOpsXD
+  # INTERFACE FDStencils 
+  # INTERFACE FDStencilsXD
+  # INTERFACE TExprs 
   INTERFACE Utilities
 )
 

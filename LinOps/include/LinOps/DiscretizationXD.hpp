@@ -184,28 +184,6 @@ struct DiscretizationXD
       m_vals = std::move(other.m_vals); 
       return *this;
     }; 
-    DiscretizationXD& operator=(const Eigen::VectorXd& other){
-      // only care about the size of the VectorXd if we already have a MeshXD_SPtr_t 
-      // auto locked = m_mesh_ptr.lock(); 
-      // if(locked)
-      // {
-      //   if(other.size() != locked->sizes_product()) throw std::invalid_argument("size of VectorXd must be == to m_mesh_ptr->sizes_product()"); 
-      // } 
-      m_vals=other;
-      return *this;
-    }
-    DiscretizationXD& operator=(Eigen::VectorXd&& other){ 
-      // only care about the size of the VectorXd if we already have a MeshXD_SPtr_t 
-      // auto locked = m_mesh_ptr.lock(); 
-      // if(locked)
-      // {
-      //   if(other.size() != locked->sizes_product()) throw std::invalid_argument("size of VectorXd must be == to m_mesh_ptr->sizes_product()"); 
-      // } 
-
-      m_vals=std::move(other);       
-      return *this;
-    }
-
 }; 
 
 } // end namespace LinOps 

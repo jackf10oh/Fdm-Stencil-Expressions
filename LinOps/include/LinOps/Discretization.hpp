@@ -147,19 +147,6 @@ class Discretization1D
       m_vals=std::move(other.m_vals); 
       return *this;
     }; 
-    // Assignment from Eigen::VectorXd --------------------------------
-    Discretization1D& operator=(const Eigen::VectorXd& other){ 
-      m_vals=other;
-      auto locked = m_mesh_ptr.lock(); 
-      if(locked) m_vals.resize(locked ->size());  
-      return *this;
-    }
-    Discretization1D& operator=(Eigen::VectorXd&& other){ 
-      m_vals = std::move(other);
-      auto locked = m_mesh_ptr.lock(); 
-      if(locked) m_vals.resize(locked ->size());  
-      return *this;
-    }
 }; // end Discretization1D 
 
 } // end namespace LinOps 

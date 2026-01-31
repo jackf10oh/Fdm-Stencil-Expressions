@@ -11,7 +11,7 @@
 #include<gtest/gtest.h>
 #include<gmock/gmock.h>
 
-#include<LinOpsXD/All.hpp>
+#include<LinOps/All.hpp>
 
 using namespace LinOps; 
 

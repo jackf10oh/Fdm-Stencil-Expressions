@@ -4,6 +4,7 @@ add_executable(tests_linops
 
 target_link_libraries(tests_linops
   PRIVATE LinOps
+  PRIVATE Utilities
   PRIVATE GTest::gtest 
   PRIVATE GTest::gtest_main 
   PRIVATE pthread # required by GTest
@@ -14,7 +15,8 @@ add_executable(tests_linopsxd
 )
 
 target_link_libraries(tests_linopsxd 
-  PRIVATE LinOpsXD
+  PRIVATE LinOps
+  PRIVATE Utilities
   PRIVATE GTest::gtest 
   PRIVATE GTest::gtest_main 
   PRIVATE pthread # required by GTest

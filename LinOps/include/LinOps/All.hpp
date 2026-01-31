@@ -14,7 +14,10 @@
 #include "LinearOpBase.hpp"
 #include "LinOpExpr.hpp"
 
-#include "Operators/RandLinOp.hpp"
 #include "Operators/IOp.hpp"
+#include "Operators/RandLinOp.hpp"
+#include "Operators/DirectionalRandOp.hpp"
+#include "Operators/DiffOps/NthDerivOp.hpp"
+#include "Operators/DiffOps/DirectionalNthDerivOp.hpp" 
 
 #endif // All.hpp

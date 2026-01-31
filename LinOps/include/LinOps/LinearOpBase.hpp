@@ -10,6 +10,8 @@
 
 #include<cstdint>
 #include<Eigen/Core>
+#include<Eigen/SparseCore>
+#include<Eigen/Sparse>
 #include "Mesh.hpp"
 #include "MeshXD.hpp"
 #include "Discretization.hpp" 
@@ -44,15 +46,10 @@ class LinOpBase1D
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Lhs().get_weak_mesh1d(); 
-        }
-        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Rhs().get_weak_mesh1d(); 
-        }
-        else{
-          static_assert(false, "cannot call get_weak_mesh1d() on expr with no LinOpBase1D's in it!"); 
-        }
+        auto& expr = static_cast<const DERIVED&>(*this);  
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_weak_mesh1d(); 
+        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_weak_mesh1d(); 
+        else static_assert(false, "cannot call get_weak_mesh1d() on expr with no LinOpBase1D's in it!"); 
       }
       // Non Expression case ... 
       else{
@@ -66,15 +63,9 @@ class LinOpBase1D
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
-          static_cast<const DERIVED*>(this)->Lhs().set_mesh(m); 
-        }
-        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Rhs().set_mesh(m); 
-        }
-        else{
-          static_assert(false, "cannot call set_mesh(Mesh1D_SPtr_t) on expr with no LinOpBase1D's in it!"); 
-        }
+        auto& expr = static_cast<DERIVED&>(*this);  
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value) expr.Lhs().set_mesh(m); 
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value) expr.Rhs().set_mesh(m); 
       }
       // Non Expression case ... 
       else{
@@ -93,15 +84,10 @@ class LinOpBase1D
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Lhs().get_mesh1d(); 
-        }
-        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Rhs().get_mesh1d(); 
-        }
-        else{
-          static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
-        }
+        auto& expr = static_cast<const DERIVED&>(*this);  
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_mesh1d(); 
+        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_mesh1d(); 
+        else static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
       }
       // Non Expression case ... 
       else{
@@ -135,15 +121,10 @@ class LinOpBaseXD
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::LStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Lhs().get_weak_mesh1d(); 
-        }
-        else if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::RStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Rhs().get_weak_mesh1d(); 
-        }
-        else{
-          static_assert(false, "cannot call get_weak_mesh1d() on expr with no LinOpBase1D's in it!"); 
-        }
+        auto& expr = static_cast<const DERIVED&>(*this);  
+        if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_weak_mesh1d(); 
+        else if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_weak_mesh1d(); 
+        else static_assert(false, "cannot call get_weak_meshxd() on expr with no LinOpBase1D's in it!"); 
       }
       // Non Expression case ... 
       else{
@@ -157,15 +138,9 @@ class LinOpBaseXD
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::LStorage_t>::value){
-          static_cast<const DERIVED*>(this)->Lhs().set_mesh(m); 
-        }
-        else if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::RStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Rhs().set_mesh(m); 
-        }
-        else{
-          static_assert(false, "cannot call set_mesh(MeshXD_SPtr_t) on expr with no LinOpBaseXD's in it!"); 
-        }
+        auto& expr = static_cast<DERIVED&>(*this);  
+        if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::LStorage_t>::value) expr.Lhs().set_mesh(m); 
+        if constexpr(traits::is_xdim_linop_crtp<typename DERIVED::RStorage_t>::value) expr.Rhs().set_mesh(m); 
       }
       // Non Expression case ... 
       else{
@@ -184,15 +159,10 @@ class LinOpBaseXD
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Lhs().get_meshxd(); 
-        }
-        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value){
-          return static_cast<const DERIVED*>(this)->Rhs().get_meshxd(); 
-        }
-        else{
-          static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
-        }
+        auto& expr = static_cast<const DERIVED&>(*this);  
+        if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_meshxd(); 
+        else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_meshxd(); 
+        else static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
       }
       // Non Expression case ... 
       else{
