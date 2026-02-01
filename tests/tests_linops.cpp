@@ -431,4 +431,104 @@ TEST(LinearOperatorSuite, LinOpTraits)
   ASSERT_FALSE(traits::is_linop_crtp<int>::value); 
 }
 
+// testing out SetTime() hooking
+TEST(FdmPluginSuite, Method_SetTime_Hooking)
+{
+  // make a LinOP
+  LinOps::IOp I; 
+
+  auto expr01 = I+I;
+  auto expr02 = I.compose(I); 
+  auto expr03 = 3.0*I; 
+  auto expr04 = I.compose(LinOps::IOp()); 
+
+  // set time, make sure it is equal 
+  I.SetTime(1.0);
+  ASSERT_EQ(1.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr01.SetTime(2.0);
+  ASSERT_EQ(2.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr02.SetTime(3.0);
+  ASSERT_EQ(3.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr03.SetTime(4.0);
+  ASSERT_EQ(4.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr04.SetTime(5.0);
+  ASSERT_EQ(5.0,I.Time()); 
+
+
+  // make sure LHS is given priority 
+  LinOps::IOp I1, I2; 
+  I1.SetTime(1.0); 
+  I2.SetTime(2.0); 
+  auto expr = I1+I2; 
+
+  ASSERT_EQ(I1.Time(), expr.Time()); 
+  ASSERT_TRUE(I2.Time() != expr.Time()); 
+}; 
+
+// testing NthDerivOp is constructible 
+TEST(NthDerivOpSuite, NthDerivOpConstructible)
+{
+  NthDerivOp my_deriv; 
+  NthDerivOp order_2(2); 
+  NthDerivOp from_mesh(nullptr, 2); 
+}
+
+// testing set_mesh() completes with no errors. 
+TEST(NthDerivOpSuite, Method_set_mesh_completing)
+{
+  auto my_mesh_01 = LinOps::make_mesh(0.0,10.0,11);
+  auto my_mesh_02 = LinOps::make_mesh(0.0,10.0,101);
+  auto my_mesh_03 = LinOps::make_mesh(0.0,10.0,1001);
+  auto my_mesh_04 = LinOps::make_mesh(0.0,10.0,10001);
+
+  using LinOps::NthDerivOp; 
+  auto D1 = NthDerivOp(1); 
+  auto D2 = NthDerivOp(2); 
+  auto D3 = NthDerivOp(3); 
+  auto D4 = NthDerivOp(4); 
+
+  auto test_mesh_lam = [&](auto mesh_ptr){
+    D1.set_mesh(mesh_ptr); 
+    D1.GetMat(); 
+    D2.set_mesh(mesh_ptr); 
+    D2.GetMat(); 
+    D3.set_mesh(mesh_ptr); 
+    D3.GetMat(); 
+    D4.set_mesh(mesh_ptr);
+    D1.GetMat(); 
+  };
+
+  test_mesh_lam(my_mesh_01);
+  test_mesh_lam(my_mesh_02);
+  test_mesh_lam(my_mesh_03);
+  test_mesh_lam(my_mesh_04);
+}
+
+// testing NthDerivOp custom .compose() method  
+TEST(NthDerivOpSuite, NthDerivOpCompose)
+{
+  using D = LinOps::NthDerivOp; 
+  // constructible with a certain order 
+  ASSERT_EQ(D(3).Order(), 3); 
+
+  // orders for derivative 
+  std::size_t n=4, m=7; 
+
+  // testing composition splits sums ((f+g)' = f' + g')
+  auto add_expr = D(n) + D(m); 
+  ASSERT_EQ(D(n).compose(add_expr).Lhs().Order(), n+n); 
+  ASSERT_EQ(D(n).compose(add_expr).Rhs().Order(), n+m);
+  
+  // testing composition parses scalar multiply ((c*f)' = c*f')
+  auto mult_expr = 4.0 * D(n); 
+  // ASSERT_EQ(D(n).compose(mult_expr).Rhs().Order(), n+n);
+}
 

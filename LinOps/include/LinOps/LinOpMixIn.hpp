@@ -12,8 +12,20 @@
 
 namespace LinOps{
 
+namespace internal{
+template<typename T, typename = void>
+struct LinOpMixInData{};
+
+template<typename T>
+struct LinOpMixInData<T, std::enable_if_t< !LinOps::traits::is_expr_crtp<T>::value >>
+{
+  double m_current_time=0.0; 
+};
+
+} // end namespace internal 
+
 template<typename DERIVED>
-class LinOpMixIn
+class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
 {
   // optional macro to add features into both LinOpBase1D<> + XD<>
   #ifndef LINOP_PLUGIN
@@ -32,23 +44,30 @@ class LinOpMixIn
 
   private:
     // Member Data -------------------
-    double m_current_time; 
-
-  
+    // double m_current_time; 
 
   public:
-    // Constructors + Destructor ======================================================== 
-    // default 
-    LinOpMixIn() : m_current_time(0.0){}; 
-    // copy 
-    LinOpMixIn(const LinOpMixIn& other): m_current_time(other.m_current_time){}; 
-    // destructor 
-    ~LinOpMixIn()=default; 
 
     // Member Funcs ==========================================================
 
     // Get Current Time 
-    double Time() const {return m_current_time; } 
+    double Time() const 
+    {
+      // if we are an expression 
+      if constexpr(traits::is_expr_crtp<typename DERIVED::DERIVED_T>::value){
+        auto& expr = static_cast<const typename DERIVED::DERIVED_T&>(*this);
+        if constexpr(LinOps::traits::is_linop_crtp<typename DERIVED::DERIVED_T::LStorage_t>::value){
+          return expr.Lhs().Time();
+        }
+        else if constexpr(LinOps::traits::is_linop_crtp<typename DERIVED::DERIVED_T::RStorage_t>::value){
+          return expr.Rhs().Time();
+        }
+      }
+      // otherwise 
+      else{
+        return this->m_current_time; 
+      }
+    } 
 
     // set the current time of the Linear Operator.
     void SetTime_impl(double t){ /* do nothing by default ...*/}; 
@@ -74,10 +93,10 @@ class LinOpMixIn
       // we aren't an expression call the actual implementor 
       else  
       {
+        // store new time.   
+        this->m_current_time = t;
         static_cast<typename DERIVED::DERIVED_T*>(this)->SetTime_impl(t);
-      }
-      // store new time.   
-      m_current_time = t; 
+      } 
     }
 
     // Getters to convert a Linear Operator to it Matrix form -----------------------

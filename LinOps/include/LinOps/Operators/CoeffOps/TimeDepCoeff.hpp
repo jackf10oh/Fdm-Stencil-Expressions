@@ -42,7 +42,7 @@ class TimeDepCoeff :
   public LinOpBaseXD<TimeDepCoeff<FUNC_STORAGE_T>>, 
   private internal::TimeDepMemberData<traits::callable_traits<FUNC_STORAGE_T>::num_args>
 {
-  private:
+  public:
     // flags as time dependent. 
     constexpr static bool is_time_dep_flag = true; 
 
