@@ -44,15 +44,6 @@ target_link_libraries(LinOps
   INTERFACE Eigen3::Eigen
 )
 
-# LinOpsXD ------------- 
-add_library(LinOpsXD INTERFACE)
-target_include_directories(LinOpsXD
-  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/LinOpsXD/include
-)
-target_link_libraries(LinOpsXD
-  INTERFACE LinOps
-)
-
 # FDStencils ------------- 
 add_library(FDStencils INTERFACE)
 target_include_directories(FDStencils
@@ -70,7 +61,6 @@ target_include_directories(FDStencilsXD
 )
 target_link_libraries(FDStencilsXD
   INTERFACE LinOps
-  INTERFACE LinOpsXD
   INTERFACE FDStencils
   INTERFACE Utilities
 )
