@@ -72,7 +72,6 @@ target_include_directories(TExprs
 )
 target_link_libraries(TExprs
   INTERFACE LinOps 
-  INTERFACE LinOpsXD
   INTERFACE FDStencils 
   INTERFACE FDStencilsXD
   INTERFACE Utilities
