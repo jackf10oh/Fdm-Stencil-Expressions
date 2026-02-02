@@ -14,48 +14,61 @@
 #include<LinOps/All.hpp> 
 #include<OutsideSteps/All.hpp> 
 #include<OutsideSteps/BoundaryCondsXD/BCList.hpp> 
-
-// #include<FDStencilsXD/All.hpp> // likewise ...
-// #include<LinOpsXD/All.hpp>
-// #include<TExprs/All.hpp> 
+#include<TExprs/All.hpp> 
 
 #include<Utilities/PrintVec.hpp>
 #include<Utilities/BumpFunc.hpp>
 
 using std::cout, std::endl;
 
-template<typename L, typename R>
-using p = OSteps::BCPair<L,R>; 
-
 int main()
 {
   // iomanip 
-  std::cout << std::setprecision(2); 
+  std::cout << std::setprecision(7); 
 
-  double t = 0.0; 
-  std::vector<std::pair<double,double>> ends = {{0.0,1.0},{0.0,1.0},{0.0,1.0}}; 
-  std::vector<std::size_t> steps = {6,6,4};  
-  auto mesh = LinOps::make_meshXD(ends, steps); 
+  // defining Domain Mesh --------------------------------------
+  auto r = 3.14159; // pi 
+  int n_gridpoints = 21;
+  // mesh in space 
+  auto my_mesh = LinOps::make_mesh(0.0,r,n_gridpoints); 
+  // mesh in time 
+  auto time_mesh = LinOps::make_mesh(0.0, 2.0, 51); 
 
-  // auto v = LinOps::DiscretizationXD().set_init(mesh, [](double x, double y){ return x + y*y; }).values(); 
+  // Initializing IC discretizations -------------------------------------------------------
+  LinOps::Discretization1D my_vals;
+  auto sin_lam = [](double x){return 2.0 * std::sin(x); }; 
+  my_vals.set_init(my_mesh, sin_lam); 
+  print_vec(my_vals.values(), "ICs"); 
 
-  // print_mat(mesh->OneDim_views(v), "OneDim Views(0)"); 
+  // LHS time derivs ----------------------------------------------------------------
+  auto time_expr = TExprs::NthTimeDeriv(1); 
 
-  auto bc1 = OSteps::DirichletBC(1.0); 
-  auto bc2 = OSteps::NeumannBC(2.0); 
-  auto bc3 = OSteps::DirichletBC(3.0); 
-  // auto bcs_list = OSteps::BCList( p(bc1,bc1), p(bc2,bc2) ); 
-  auto bcs_list = OSteps::BCList( p(bc1,bc1), p(bc2,bc2), p(bc3,bc3) ); 
+  // building RHS expression -----------------------------------------------------
+  using D = LinOps::NthDerivOp;
+  auto space_expr = 0.2 * D(2) - 0.5 * D(1); 
 
-  // bcs_list.SolAfterStep<OSteps::FDStep_Type::EXPLICIT>(t,mesh,v); 
-  // bcs_list.SolBeforeStep<OSteps::FDStep_Type::IMPLICIT>(t,mesh,v); 
-  // print_mat(mesh->OneDim_views(v), "OneDim Views(0)"); 
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  auto left = OSteps::DirichletBC(0.0); 
+  auto right = OSteps::NeumannBC(0.0); 
+
+  auto bcs = OSteps::BCPair(left,right); 
+
+  // Solving --------------------------------------------------------------------- 
+  TExprs::GenSolverArgs args{
+    .domain_mesh_ptr = my_mesh,
+    .time_mesh_ptr = time_mesh,
+    .bcs = std::tie(bcs), 
+    .ICs = std::vector<Eigen::VectorXd>(1, my_vals.values()), 
+  }; 
+
+  // TExprs::GenSolver s(time_expr, space_expr, TExprs::PrintWrite{}); 
+  // auto v = s.Calculate(args); 
+
+  TExprs::GenInterp interp(time_expr, space_expr, args); 
+  interp.FillVals(); 
+  print_mat(interp.StoredData(), "Solutions through time");
 
 
-  LinOps::MatrixStorage_t R = (22 * LinOps::IOp(mesh)).GetMat(); 
-  // cout << "R" << endl << R << endl; 
-
-  bcs_list.MatBeforeStep(t,mesh,R); 
-  cout << "R" << endl << R << endl; 
-
+  std::cout << time_mesh->size() << std::endl; 
+  std::cout << interp.StoredData().size() << std::endl; 
 };

@@ -213,7 +213,7 @@ class BCList // : public OStepBaseXD<BCList<BCPairs_Ts...>>
     } // end SolAfterStep<>(t,m,sol) 
 
 
-  public:
+  private:
     // Unreachable =========================================================== 
     template<typename PAIR_T>
     MatrixStorage_t flat_stencil(double t, const Mesh1D_SPtr_t& mesh, const PAIR_T& bc_pair) const 

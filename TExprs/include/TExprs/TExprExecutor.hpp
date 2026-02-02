@@ -129,18 +129,13 @@ struct TExprExecutor
   void ConsumeTime(double t)
   {
     // iterate from m_stored_times[0] ... [n-2]
-    auto end = std::prev(m_stored_times.end(),2); 
-    auto it=m_stored_times.begin();  
-    for(; it!=end; it++){
-      // updated according to m_stored_times[i] = [i+1]
-      *it = *std::next(it); 
-    }
-    *it = t; // m_stored_times[n-1] = t; 
+    std::move(std::next(m_stored_times.begin()), m_stored_times.end(), m_stored_times.begin()); 
+    m_stored_times[m_stored_times.size()-1] = t; 
     // all values in m_stored_time have been left shifted by 1
     // first value dropped.
     // second from right most value == t 
     // right most value unassigned 
-  } // end ConsumeTime 
+  }
 
   // ConsumeTime but copies full list into m_stored_times
   template<typename INPUT_IT>
@@ -158,15 +153,9 @@ struct TExprExecutor
   void ConsumeSolution(Eigen::VectorXd sol)
   { 
     /* same idea as ConsumeTime(). with move semantics*/
-    // iterate from 1st to 2nd to last of m_stored_sols
-    auto it=m_stored_sols.begin();  
-    auto end = std::prev(m_stored_sols.end(),1); 
-    for(; it!=end; it++){
-      *it = std::move( *std::next(it) ); 
-    }
-    // last m_stored_sol get sol input
-    *it = std::move(sol);   
-  } // end ConsumeSolution 
+    std::move(std::next(m_stored_sols.begin()), m_stored_sols.end(), m_stored_sols.begin()); 
+    m_stored_sols[m_stored_sols.size()-1] = std::move(sol); 
+  }
 
   // ConsumeSolution but copies full list into m_stored_sols
   template<typename INPUT_IT>
@@ -243,7 +232,7 @@ struct TExprExecutor
     }
     else if constexpr(std::tuple_size<SCALAR_TUP_T>::value == 0){ 
       // all COeffAt's evaluate to matrix -> return (sum(coeffs)).cwiseInverse 
-      TExprs::internal::MatrixStorage_t A = std::apply(
+      MatrixStorage_t A = std::apply(
             [&](auto&&... coeffs){
               return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
             }, 

@@ -10,9 +10,6 @@
 #include "TimeDerivBase.hpp"
 #include "NthTimeDeriv.hpp" 
 #include<LinOps/LinOpTraits.hpp> // LinOps::traits::Storage_t<> 
-#include<LinOpsXD/LinOpTraitsXD.hpp> // LinOps::traits::Storage_t<> ( for CoeffOpXD )
-#include<FDStencils/CoeffOpBase.hpp> // Fds::traits::is_coeffop_crtp<>
-#include<FDStencilsXD/CoeffOpBaseXD.hpp> // Fds::traits::is_coeffopxd_crtp<>
 
 namespace TExprs{
 namespace internal{
@@ -62,7 +59,7 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     template<typename Cont>
     auto CoeffAt(const Cont& v, std::size_t n_nodes_per_row, std::size_t ith_node) const 
     {
-      if constexpr(Fds::traits::is_coeffop_crtp<Lhs_t>::value || Fds::traits::is_coeffopxd_crtp<Lhs_t>::value){
+      if constexpr(LinOps::traits::is_coeffop_crtp<Lhs_t>::value){
         return m_coeff.GetMat() * m_rhs.CoeffAt(v,n_nodes_per_row,ith_node);  
       }
       else if constexpr(std::is_same<double, std::remove_cv_t<std::remove_reference_t<Lhs_t>>>::value){
@@ -78,7 +75,7 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     void set_mesh(ANYMESHPTR_T m)
     {
       // is m_coeff is a LinOp and not a double call its set_mesh(); 
-      if constexpr(Fds::traits::is_coeffop_crtp<Lhs_t>::value || Fds::traits::is_coeffopxd_crtp<Lhs_t>::value){
+      if constexpr(LinOps::traits::is_coeffop_crtp<Lhs_t>::value){
         m_coeff.set_mesh(m); 
       }
       // m_rhs is either a CoeffMultExpr of NthTimeDeriv... 
@@ -88,7 +85,7 @@ class CoeffMultExpr : public TimeDerivBase<CoeffMultExpr<COEFF_T,RHS_T>>
     // set_time(t) overrides TimeDerivBase
     void SetTime(double t)
     {
-      if constexpr(Fds::traits::is_coeffop_crtp<Lhs_t>::value || Fds::traits::is_coeffopxd_crtp<Lhs_t>::value)
+      if constexpr(LinOps::traits::is_coeffop_crtp<Lhs_t>::value)
       {
         m_coeff.SetTime(t); 
       }
@@ -108,10 +105,7 @@ template<
 >
 std::enable_if_t<
   std::conjunction_v<
-    std::disjunction<
-      Fds::traits::is_coeffop_crtp<Lhs>,
-      Fds::traits::is_coeffopxd_crtp<Lhs>
-    >,
+    LinOps::traits::is_coeffop_crtp<Lhs>,
     TExprs::traits::is_timederiv_crtp<Rhs>
   >, 
   TExprs::internal::CoeffMultExpr<Lhs,Rhs>

@@ -7,9 +7,11 @@
 #ifndef TIMEDERIVBASE_H
 #define TIMEDERIVBASE_H 
 
-#include<FDStencils/FdmPlugin.hpp> // MatrixStorage_t 
+#include<LinOps/LinearOpBase.hpp> // MatrixStorage_t
 
 namespace TExprs{
+
+using MatrixStorage_t = LinOps::MatrixStorage_t; 
 
 // traits =====================================================
 namespace internal{
@@ -27,8 +29,6 @@ using is_timederiv_crtp = TExprs::internal::is_timederiv_crtp_impl<std::remove_c
 
 namespace internal{
   
-using MatrixStorage_t = Fds::MatrixStorage_t; 
-
 // Base Definition =====================================================
 template<typename Derived>
 class TimeDerivBase
@@ -69,12 +69,12 @@ class TimeDerivBase
     auto toTuple() &
     {
       // std::cout << "Lvalue Base .toTuple()" << std::endl; 
-      return std::forward_as_tuple(static_cast<Derived&>(*this)); // lvalue -> reference
+      return std::tie(static_cast<Derived&>(*this)); // lvalue -> reference
     }
     auto toTuple() &&
     {
       // std::cout << "Rvalue Base .toTuple()" << std::endl; 
-      return std::make_tuple(static_cast<Derived&>(*this)); // rvalue -> rvalue ref
+      return std::make_tuple(static_cast<Derived&&>(*this)); // rvalue -> rvalue ref
     }
 
     std::string toString() const {return "hi from base"; }; 

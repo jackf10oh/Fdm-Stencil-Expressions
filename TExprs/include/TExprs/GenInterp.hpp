@@ -44,11 +44,11 @@ class GenInterp
     // default 
     GenInterp()=delete; 
     // from args 
-    GenInterp(LHS_EXPR& lhs, RHS_EXPR& rhs, const GenSolverArgs<M,B,C>& args_init = GenSolverArgs<M,B,C>{})
+    GenInterp(LHS_EXPR& lhs, RHS_EXPR& rhs, GenSolverArgs<M,B,C> args_init = GenSolverArgs<M,B,C>{})
       : m_data(0), 
       m_sol_writer(m_data), 
-      m_args(args_init), 
-      m_high_dim_mesh(LinOps::make_meshXD(args_init.domain_mesh_ptr)), 
+      m_args(std::move(args_init)), 
+      m_high_dim_mesh(LinOps::make_meshXD(m_args.domain_mesh_ptr)), 
       m_solver(lhs,rhs,m_sol_writer), 
       m_calculated(false) 
     {}
@@ -102,9 +102,9 @@ class GenInterp
     const auto& Args() const { return m_args; }; 
     
     // set m_args to a new input
-    void SetArgs(const GenSolverArgs<M,B,C>& args_switch)
+    void SetArgs(GenSolverArgs<M,B,C> args_switch)
     {
-      m_args = args_switch; 
+      m_args = std::move(args_switch); 
       Reset(); 
     }
 
@@ -119,9 +119,6 @@ class GenInterp
         // resize + reserve data 
         m_data.resize(0); 
         m_data.reserve(m_args.time_mesh_ptr->size());
-
-        // copy ICs into first entries of m_data
-        std::for_each(m_args.ICs.cbegin(), m_args.ICs.cend(), [&](const auto& ic){m_data.push_back(ic);});  
 
         // WritePolicy moves all solutions at each time step to m_data
         m_solver.CalculateImp(m_args, num_iters); 
@@ -148,7 +145,7 @@ class GenInterp
       std::size_t cumulative_offset = 0
     )
     {
-      auto sub_dim_m = m->GetMeshAt(ith_dim); 
+      const auto& sub_dim_m = m->GetMeshAt(ith_dim); 
       auto bounding_interval = get_interval(*sub_dim_m, coords[ith_dim]);  
 
       if(ith_dim == 0)

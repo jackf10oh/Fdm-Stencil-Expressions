@@ -44,7 +44,7 @@ target_link_libraries(LinOps
   INTERFACE Eigen3::Eigen
 )
 
-# FDStencils ------------- 
+# OutsideSteps ------------- 
 add_library(OutsideSteps INTERFACE)
 target_include_directories(OutsideSteps
   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/OutsideSteps/include
@@ -54,35 +54,22 @@ target_link_libraries(OutsideSteps
   INTERFACE Utilities
 )
 
-# # FDStencilsXD ------------- 
-# add_library(FDStencilsXD INTERFACE)
-# target_include_directories(FDStencilsXD 
-#   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/FDStencilsXD/include
-# )
-# target_link_libraries(FDStencilsXD
-#   INTERFACE LinOps
-#   INTERFACE FDStencils
-#   INTERFACE Utilities
-# )
-
-# # TExprs --------------------------
-# add_library(TExprs INTERFACE)
-# target_include_directories(TExprs
-#   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/TExprs/include
-# )
-# target_link_libraries(TExprs
-#   INTERFACE LinOps 
-#   INTERFACE FDStencils 
-#   INTERFACE FDStencilsXD
-#   INTERFACE Utilities
-# )
+# TExprs --------------------------
+add_library(TExprs INTERFACE)
+target_include_directories(TExprs
+  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/TExprs/include
+)
+target_link_libraries(TExprs
+  INTERFACE LinOps 
+  INTERFACE OutsideSteps
+  INTERFACE Utilities
+)
 
 # Tie all sub directories into main library ============================================== 
 target_link_libraries(FdmStencilExprs
   INTERFACE LinOps 
   INTERFACE OutsideSteps
-  # INTERFACE FDStencilsXD
-  # INTERFACE TExprs 
+  INTERFACE TExprs 
   INTERFACE Utilities
 )
 
