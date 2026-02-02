@@ -12,10 +12,17 @@
 namespace LinOps{
 
 // Forward Declarations - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-class Discretization1D; 
+
+class Discretization1D;
 
 template<typename Derived>
-class LinOpBase;
+class LinOpMixIn;
+
+template<typename Derived>
+class LinOpBase1D;
+
+template<typename Derived>
+class LinOpBaseXD;
 
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
 class LinOpExpr; 
@@ -73,7 +80,7 @@ struct linopXlinop_mult_op : public internal::OperatorComposition_t
 } // end namespace internal 
 
 // Traits =====================================================================
-// given a type, detect if it is derived from linopbase<> - - - - - - - - - - - - 
+// given a type, detect if it is derived from LinOpMixIn<> - - - - - - - - - - - - 
 namespace internal{
 template<typename T, typename = void>
 struct is_linop_crtp_impl : std::false_type {};
@@ -86,6 +93,89 @@ struct is_linop_crtp_impl<T, std::void_t<typename T::is_linop_tag>> : std::true_
 namespace traits{
 template<typename T>
 using is_linop_crtp = internal::is_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
+} // end namespace traits 
+
+// given a type, detect if it is derived from LinOpBase1D<> - - - - - - - - - - - - 
+namespace internal{
+template<typename T, typename = void>
+struct is_1dim_linop_crtp_impl : std::false_type {};
+
+template<typename T>
+struct is_1dim_linop_crtp_impl<T, std::void_t<typename T::is_1dim_linop_tag>> : std::true_type {};
+
+template<typename L, typename R, typename OP>
+struct is_1dim_linop_crtp_impl<LinOpExpr<L,R,OP>> : std::disjunction<
+  is_1dim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<L>>>,
+  is_1dim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<R>>>
+> {};
+
+} // end namespace internal 
+
+namespace traits{
+template<typename T>
+using is_1dim_linop_crtp = internal::is_1dim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
+} // end namespace traits 
+
+// ... from LinOpBaseXD<> - - - - - - - - - - - - 
+namespace internal{
+template<typename T, typename = void>
+struct is_xdim_linop_crtp_impl : std::false_type {};
+
+template<typename T>
+struct is_xdim_linop_crtp_impl<T, std::void_t<typename T::is_xdim_linop_tag>> : std::true_type {};
+
+template<typename L, typename R, typename OP>
+struct is_xdim_linop_crtp_impl<LinOpExpr<L,R,OP>> : std::disjunction<
+  is_xdim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<L>>>,
+  is_xdim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<R>>>
+> {};
+
+} // end namespace internal 
+
+namespace traits{
+template<typename T>
+using is_xdim_linop_crtp = internal::is_xdim_linop_crtp_impl<std::remove_reference_t<std::remove_cv_t<T>>>; 
+} // end namespace traits 
+
+// Given a type, see if it is derived from CoeffOpMixIn - - - - - - - 
+namespace internal{
+template<typename T, typename = void> 
+struct is_coeffop_crtp_impl : std::false_type{}; 
+
+template<typename T>
+struct is_coeffop_crtp_impl<T, std::void_t<typename T::is_coeff_flag>>: std::true_type{}; 
+}
+
+namespace traits{
+template<typename T>
+using is_coeffop_crtp = LinOps::internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
+} // end namespace Fds::traits
+
+// Given a type T, see if it is a time dependent operator - - - - - - - - - 
+namespace internal{
+template<typename T, typename = void>
+struct is_time_dep_impl : public std::false_type {}; 
+
+template<typename T>
+struct is_time_dep_impl<T,std::void_t<typename T::is_linop_tag>> : public std::conditional_t<
+    T::is_time_dep_flag, 
+    std::true_type,
+    std::false_type
+> {}; 
+
+template<typename L, typename R, typename OP>
+struct is_time_dep_impl<LinOpExpr<L,R,OP>> : public std::disjunction<
+  is_time_dep_impl<std::remove_reference_t<std::remove_cv_t<L>>>,
+  is_time_dep_impl<std::remove_reference_t<std::remove_cv_t<R>>>
+> {};
+
+} // end namespace internal 
+
+namespace traits{
+  
+template<typename T>
+using is_time_dep = LinOps::internal::is_time_dep_impl<T>; 
+
 } // end namespace traits 
 
 // given a type T see if it is an expression - - - - - - - - - - - - - - - - - - - - - - - - 

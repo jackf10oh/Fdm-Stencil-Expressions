@@ -86,19 +86,19 @@ TEST(DiscretizationSuite1d, Disc1DMovable)
   auto my_mesh = make_mesh(0.0,10.0,n_steps); 
   Discretization1D moved_from(my_mesh);
   Discretization1D moved_to(std::move(moved_from));  
-  // ASSERT_TRUE(moved_from.mesh().expired()); // no longer altering mesh in moved_from 
+  // ASSERT_TRUE(moved_from.get_mesh1d().expired()); // no longer altering mesh in moved_from 
   ASSERT_EQ(moved_from.values().data(),nullptr); // moved from now has invalid eigen::vectorxd 
   ASSERT_EQ(moved_to.size(), n_steps); 
-  ASSERT_EQ(moved_to.mesh(), my_mesh); 
+  ASSERT_EQ(moved_to.get_mesh1d(), my_mesh); 
 }
 
 TEST(DiscretizationSuite1d, Disc1DSetMesh)
 {
   auto my_mesh = make_mesh(); 
   Discretization1D my_vals; 
-  ASSERT_FALSE(my_vals.mesh()); 
+  ASSERT_FALSE(my_vals.get_mesh1d()); 
   Discretization1D discretization_w_stored_mesh(my_mesh); 
-  ASSERT_TRUE(discretization_w_stored_mesh.mesh());
+  ASSERT_TRUE(discretization_w_stored_mesh.get_mesh1d());
 }
 
 TEST(DiscretizationSuite1d, Disc1DSetCosntant)
@@ -175,12 +175,12 @@ TEST(LinearOperatorSuite, IdentityConstructible)
 {
   // default construct uses nullptr
   IOp Identity01;
-  ASSERT_EQ(Identity01.mesh(),nullptr);
+  ASSERT_EQ(Identity01.get_mesh1d(),nullptr);
 
   // construct with ptr arg
   auto my_mesh = make_mesh(); 
   IOp Identity02(my_mesh);
-  ASSERT_EQ(Identity02.mesh(), my_mesh);   
+  ASSERT_EQ(Identity02.get_mesh1d(), my_mesh);   
 
   // Check that entries on diag are 1
   int s = my_mesh->size()-1; 
@@ -197,12 +197,12 @@ TEST(LinearOperatorSuite, RandLinOpConstructible)
 {
   // default construct uses nullptr
   RandLinOp Rand01;
-  ASSERT_EQ(Rand01.mesh(),nullptr);
+  ASSERT_EQ(Rand01.get_mesh1d(),nullptr);
 
   // construct with ptr arg
   auto my_mesh = make_mesh(); 
   RandLinOp Rand02(my_mesh);
-  ASSERT_EQ(Rand02.mesh(), my_mesh);   
+  ASSERT_EQ(Rand02.get_mesh1d(), my_mesh);   
 };
 
 TEST(LinearOperatorSuite, RandLinOpGetMat)
@@ -211,7 +211,7 @@ TEST(LinearOperatorSuite, RandLinOpGetMat)
   auto my_mesh = make_mesh(); 
   RandLinOp Rand01(my_mesh);
 
-  ASSERT_EQ(Rand01.mesh(), my_mesh);   
+  ASSERT_EQ(Rand01.get_mesh1d(), my_mesh);   
 
   Eigen::MatrixXd result = Rand01.GetMat(); 
 };
@@ -254,7 +254,7 @@ TEST(LinearOperatorSuite, BasicAddition)
   // lambda to check 4 corners + middle of a matrix expr
   auto check_lambda = [s = my_mesh->size()-1](const auto& expr) -> void
   {
-    CustomStorage_t Mat = expr.GetMat(); 
+    LinOps::MatrixStorage_t Mat = expr.GetMat(); 
     // Check that entries on diag are 2
     ASSERT_EQ(Mat.coeff(0,0),2); 
     ASSERT_EQ(Mat.coeff(s,s),2); 
@@ -387,8 +387,8 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   Expr.set_mesh(my_mesh); 
 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I_lval.mesh(), my_mesh);
-  ASSERT_EQ(Expr.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I_lval.get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr.Rhs().get_mesh1d(), my_mesh);
 
   // test again for scalar multiply  // construct without mesh ptrs 
   IOp I2_lval;
@@ -398,9 +398,9 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   Expr2.set_mesh(my_mesh); 
   Expr3.set_mesh(my_mesh); 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I2_lval.mesh(), my_mesh);
-  ASSERT_EQ(Expr2.Rhs().mesh(), my_mesh);
-  ASSERT_EQ(Expr3.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I2_lval.get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr2.Rhs().get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr3.Rhs().get_mesh1d(), my_mesh);
 
   // test again for composition 
   RandLinOp I3_lval; 
@@ -410,9 +410,9 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   // Expr4.set_mesh(my_mesh); 
   Expr5.set_mesh(my_mesh); 
   // both Lhs and Rhs should now have m_mesh_ptr == my_mesh
-  ASSERT_EQ(I3_lval.mesh(), my_mesh);
-  // ASSERT_EQ(Expr4.Rhs().mesh(), my_mesh);
-  ASSERT_EQ(Expr5.Rhs().mesh(), my_mesh);
+  ASSERT_EQ(I3_lval.get_mesh1d(), my_mesh);
+  // ASSERT_EQ(Expr4.Rhs().get_mesh1d(), my_mesh);
+  ASSERT_EQ(Expr5.Rhs().get_mesh1d(), my_mesh);
 }
 
 TEST(LinearOperatorSuite, LinOpTraits)
@@ -431,4 +431,104 @@ TEST(LinearOperatorSuite, LinOpTraits)
   ASSERT_FALSE(traits::is_linop_crtp<int>::value); 
 }
 
+// testing out SetTime() hooking
+TEST(FdmPluginSuite, Method_SetTime_Hooking)
+{
+  // make a LinOP
+  LinOps::IOp I; 
+
+  auto expr01 = I+I;
+  auto expr02 = I.compose(I); 
+  auto expr03 = 3.0*I; 
+  auto expr04 = I.compose(LinOps::IOp()); 
+
+  // set time, make sure it is equal 
+  I.SetTime(1.0);
+  ASSERT_EQ(1.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr01.SetTime(2.0);
+  ASSERT_EQ(2.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr02.SetTime(3.0);
+  ASSERT_EQ(3.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr03.SetTime(4.0);
+  ASSERT_EQ(4.0,I.Time()); 
+
+  // set time of expression, make sure it propagates to t 
+  expr04.SetTime(5.0);
+  ASSERT_EQ(5.0,I.Time()); 
+
+
+  // make sure LHS is given priority 
+  LinOps::IOp I1, I2; 
+  I1.SetTime(1.0); 
+  I2.SetTime(2.0); 
+  auto expr = I1+I2; 
+
+  ASSERT_EQ(I1.Time(), expr.Time()); 
+  ASSERT_TRUE(I2.Time() != expr.Time()); 
+}; 
+
+// testing NthDerivOp is constructible 
+TEST(NthDerivOpSuite, NthDerivOpConstructible)
+{
+  NthDerivOp my_deriv; 
+  NthDerivOp order_2(2); 
+  NthDerivOp from_mesh(nullptr, 2); 
+}
+
+// testing set_mesh() completes with no errors. 
+TEST(NthDerivOpSuite, Method_set_mesh_completing)
+{
+  auto my_mesh_01 = LinOps::make_mesh(0.0,10.0,11);
+  auto my_mesh_02 = LinOps::make_mesh(0.0,10.0,101);
+  auto my_mesh_03 = LinOps::make_mesh(0.0,10.0,1001);
+  auto my_mesh_04 = LinOps::make_mesh(0.0,10.0,10001);
+
+  using LinOps::NthDerivOp; 
+  auto D1 = NthDerivOp(1); 
+  auto D2 = NthDerivOp(2); 
+  auto D3 = NthDerivOp(3); 
+  auto D4 = NthDerivOp(4); 
+
+  auto test_mesh_lam = [&](auto mesh_ptr){
+    D1.set_mesh(mesh_ptr); 
+    D1.GetMat(); 
+    D2.set_mesh(mesh_ptr); 
+    D2.GetMat(); 
+    D3.set_mesh(mesh_ptr); 
+    D3.GetMat(); 
+    D4.set_mesh(mesh_ptr);
+    D1.GetMat(); 
+  };
+
+  test_mesh_lam(my_mesh_01);
+  test_mesh_lam(my_mesh_02);
+  test_mesh_lam(my_mesh_03);
+  test_mesh_lam(my_mesh_04);
+}
+
+// testing NthDerivOp custom .compose() method  
+TEST(NthDerivOpSuite, NthDerivOpCompose)
+{
+  using D = LinOps::NthDerivOp; 
+  // constructible with a certain order 
+  ASSERT_EQ(D(3).Order(), 3); 
+
+  // orders for derivative 
+  std::size_t n=4, m=7; 
+
+  // testing composition splits sums ((f+g)' = f' + g')
+  auto add_expr = D(n) + D(m); 
+  ASSERT_EQ(D(n).compose(add_expr).Lhs().Order(), n+n); 
+  ASSERT_EQ(D(n).compose(add_expr).Rhs().Order(), n+m);
+  
+  // testing composition parses scalar multiply ((c*f)' = c*f')
+  auto mult_expr = 4.0 * D(n); 
+  // ASSERT_EQ(D(n).compose(mult_expr).Rhs().Order(), n+n);
+}
 

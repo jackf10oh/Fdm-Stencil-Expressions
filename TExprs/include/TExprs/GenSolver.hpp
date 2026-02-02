@@ -7,41 +7,34 @@
 #ifndef GENERALSOLVER_H
 #define GENERALSOLVER_H 
 
-#include "TExprExecutor.hpp" // TExprExecutor 
+#include<iostream>
+#include<Eigen/Core> // VectorXd
 #include<LinOps/Mesh.hpp> // Mesh1D
-#include<LinOpsXD/MeshXD.hpp> // MeshXD 
-#include<LinOps/Discretization.hpp> // Discretization1D ( unnecessary? )
-#include<LinOpsXD/DiscretizationXD.hpp> // DiscretizationXD ( unnecessary? ) 
+#include<LinOps/MeshXD.hpp> // MeshXD 
 #include<LinOps/Operators/IOp.hpp> // IOp
-#include<LinOpsXD/OperatorsXD/IOpXD.hpp> // IOpXD
-#include<Utilities/FillStencil.hpp> // overwrite_stencil 
+// #include<Utilities/FillStencil.hpp> // overwrite_stencil 
+#include "TExprExecutor.hpp" // TExprExecutor 
 
 namespace TExprs{
 
 // Generalized Args for PDEs in 1D or XD
-template<typename ANYMESH_SHAREDPTR_T, typename ANYBC_SHAREDPTR_T, typename CONTAINER_T>
+template<typename ANYMESH_SHAREDPTR_T = LinOps::Mesh1D_SPtr_t>
 struct GenSolverArgs
 {
   // shared_ptr to const Mesh1D or const MeshXD 
   ANYMESH_SHAREDPTR_T domain_mesh_ptr; 
 
   // shared_ptr to const Mesh1D 
-  std::shared_ptr<const LinOps::Mesh1D> time_mesh_ptr; 
-
-  // shared_ptr to BcPtr_t or BCXDPtr_t
-  ANYBC_SHAREDPTR_T bcs;
+  LinOps::Mesh1D_SPtr_t time_mesh_ptr; 
   
   // List of underlying Eigen::VectorXd from Discretization1D (XD)  
-  CONTAINER_T ICs;
-
-  // boolean flag. 
-  bool time_dep_flag=true; 
+  std::vector<Eigen::VectorXd> ICs;
 }; 
 
 // CTAD Guide 
-template<typename M, typename B, typename C>
-GenSolverArgs(M, std::shared_ptr<const LinOps::Mesh1D>, B, C, bool)
--> GenSolverArgs<M, B, C>;
+template<typename M>
+GenSolverArgs(M, std::shared_ptr<const LinOps::Mesh1D>, std::vector<Eigen::VectorXd>)
+-> GenSolverArgs<M>;
 
 // Write Policies. i.e. write previous solution to cout, write to std::vector, write to CSV 
 struct EmptyWrite
@@ -91,21 +84,21 @@ struct PrintWrite
 };
 
 // Generalized Solver for PDEs in 1D or XD
-template<typename LHS_EXPR, typename RHS_EXPR, typename WRITE_POLICY_T=FinalWrite, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
+template<typename LHS_EXPR, typename RHS_EXPR, typename OSTEP_TUP, typename WRITE_POLICY_T=FinalWrite, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
 class GenSolver
 {
   private:
     // Member Data -------------------------------------
     LHS_EXPR& m_lhs; // expression of time derivatives 
     RHS_EXPR& m_rhs; // expression of spatial derivatives 
-    EIGENSOLVER_T<TExprs::internal::MatrixStorage_t> m_solver; // Eigen sparse iterative solver
+    typename std::remove_reference<OSTEP_TUP>::type m_ostep_tup; 
     WRITE_POLICY_T m_write_p; 
 
   public:
     // Constructors + Destructor ===========================
     GenSolver()=delete; 
-    GenSolver(LHS_EXPR& l_init, RHS_EXPR& r_init, WRITE_POLICY_T wp_init=WRITE_POLICY_T{})
-      : m_lhs(l_init), m_rhs(r_init), m_write_p(wp_init), m_solver() 
+    GenSolver(LHS_EXPR& l_init, RHS_EXPR& r_init, OSTEP_TUP ostep_init, WRITE_POLICY_T wp_init=WRITE_POLICY_T{})
+      : m_lhs(l_init), m_rhs(r_init), m_ostep_tup(ostep_init),m_write_p(wp_init)
     {}
     GenSolver(const GenSolver& other)=delete;
     // destructor 
@@ -113,176 +106,138 @@ class GenSolver
 
     // Member Funcs =================================================
     // Takes GenSolverArgs and find solution U(t=T) with explicit steps 
-    template<typename M, typename B, typename C>
-    auto Calculate(const GenSolverArgs<M,B,C>& args)
+    template<typename M>
+    auto Calculate(GenSolverArgs<M> args)
     {
 
       TExprs::internal::TExprExecutor exec(m_lhs); 
+      MatrixStorage_t Mat; 
 
       exec.set_mesh(args.domain_mesh_ptr);
       m_rhs.set_mesh(args.domain_mesh_ptr); 
 
-      auto it = args.time_mesh_ptr->cbegin() + args.ICs.size(); 
-      auto end = args.time_mesh_ptr->cend(); 
+      auto it = args.time_mesh_ptr->cbegin() + args.ICs.size() - 1; 
+      auto end = args.time_mesh_ptr->cend() - 1;
 
       exec.ConsumeSolutionList(args.ICs.cbegin(), args.ICs.cend()); 
-      exec.ConsumeTimeList(args.time_mesh_ptr->cbegin(), it); 
+      exec.ConsumeTimeList(args.time_mesh_ptr->cbegin(), std::next(it)); 
 
-      switch (args.time_dep_flag)
+      double t = *it; 
+      while(it!= end)
       {
-      case true:
-        for(; it!= end; it++)
-        {
-          m_rhs.SetTime(*std::prev(it));
-          exec.SetTime(*std::prev(it)); 
-          args.bcs->SetTime(*it); 
+        m_rhs.SetTime(t);
+        exec.SetTime(t); 
 
-          Eigen::VectorXd rhs = exec.BuildRhs(*it); 
-          
-          // Explicit Step 
-          Eigen::VectorXd next_sol = exec.inv_coeff_util()*m_rhs.GetMat()*exec.MostRecentSol() + rhs; 
-          
-          // Apply BCs 
-          args.bcs->SetSol(next_sol, args.domain_mesh_ptr); 
+        Mat = m_rhs.GetMat(); 
+        // outside steps matrix before step(Mat) 
+        std::apply(
+          [&](const auto&... lam_args){ ((lam_args.template MatBeforeStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, Mat)), ...); }, 
+          m_ostep_tup
+        ); 
 
-          // give expiring solution to WRITE_POLICY_T
-          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
+        // working on right end of [t(n-1), t(n)]
+        ++it;
+        t = *it;  
 
-          // push Solution, time to executor 
-          exec.ConsumeSolution(next_sol);
-          exec.ConsumeTime(*it); 
-        }
-        break;
-      
-      default: // false 
-        for(; it!= end; it++)
-        {
-          Eigen::VectorXd rhs = exec.BuildRhs(*it); 
-          
-          // Explicit Step 
-          Eigen::VectorXd next_sol = exec.inv_coeff_util()*m_rhs.GetMat()*exec.MostRecentSol() + rhs; 
-          
-          // Apply BCs 
-          args.bcs->SetSol(next_sol, args.domain_mesh_ptr); 
+        Eigen::VectorXd rhs = exec.BuildRhs(t); 
+        // outside steps solution before step (rhs) 
+        std::apply(
+          [&](const auto&... lam_args){ ((lam_args.template SolBeforeStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, rhs)), ...); }, 
+          m_ostep_tup
+        ); 
 
-          // give expiring solution to WRITE_POLICY_T
-          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
+        // Explicit Step 
+        Eigen::VectorXd next_sol = exec.inv_coeff_util() * Mat * exec.MostRecentSol() + rhs; 
+        
+        // ourside steps solution after step(next_sol) 
+        std::apply(
+          [&](const auto&... lam_args){ ((lam_args.template SolAfterStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, next_sol)), ...); }, 
+          m_ostep_tup
+        ); 
 
-          // push Solution, time to executor 
-          exec.ConsumeSolution(next_sol);
-          exec.ConsumeTime(*it); 
-        }
-        break;
-      } // end switch(args.time_dep_flag)
+        // give expiring solution to WRITE_POLICY_T
+        m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
+
+        // push Solution, time to executor 
+        exec.ConsumeSolution(next_sol);
+        exec.ConsumeTime(t); 
+      }    
 
       // Write remaining solutions to m_write_p 
-      for(auto i=1; i<exec.StoredSols().size()-1; i++){
-        m_write_p.SaveSolution( std::move(exec.StoredSols()[i]) );  
-      }
+      for(auto i=0; i<exec.StoredSols().size()-1; i++) m_write_p.SaveSolution( std::move(exec.StoredSols()[i])); 
 
-      // write policy also determines return type 
+      // write policy also determines return type / how to handle last solution
       return m_write_p.ConsumeLastSolution(std::move( exec.MostRecentSol() )); 
-    }
+    } // end .Calculate(args) 
 
-    // Takes GenSolverArgs and find solution U(t=T) with explicit steps 
-    template<typename M, typename B, typename C>
-    auto CalculateImp(const GenSolverArgs<M,B,C>& args, std::size_t max_iters = 10)
+    // Takes GenSolverArgs and find solution U(t=T) with implicit steps 
+    template<typename M>
+    auto CalculateImp(GenSolverArgs<M> args, std::size_t max_iters = 20)
     {
-      m_solver.setMaxIterations(max_iters); 
-
       TExprs::internal::TExprExecutor exec(m_lhs); 
+      EIGENSOLVER_T<MatrixStorage_t> iterative_solver; // Eigen sparse iterative solver
+      iterative_solver.setMaxIterations(max_iters); 
+      MatrixStorage_t Mat; 
+      MatrixStorage_t I = LinOps::IOp(args.domain_mesh_ptr).GetMat(); 
 
       exec.set_mesh(args.domain_mesh_ptr);
       m_rhs.set_mesh(args.domain_mesh_ptr); 
 
-      auto it = args.time_mesh_ptr->cbegin() + args.ICs.size(); 
-      auto end = args.time_mesh_ptr->cend(); 
+      auto it = args.time_mesh_ptr->cbegin() + args.ICs.size() - 1; 
+      auto end = args.time_mesh_ptr->cend() - 1;
 
       exec.ConsumeSolutionList(args.ICs.cbegin(), args.ICs.cend()); 
-      exec.ConsumeTimeList(args.time_mesh_ptr->cbegin(), it); 
+      exec.ConsumeTimeList(args.time_mesh_ptr->cbegin(), std::next(it)); 
 
-      TExprs::internal::MatrixStorage_t I; 
-      if constexpr(std::is_same<std::shared_ptr<const LinOps::Mesh1D>, M>::value){
-        I = LinOps::IOp(args.domain_mesh_ptr).GetMat();  
-      }
-      if constexpr(std::is_same<std::shared_ptr<const LinOps::MeshXD>, M>::value){
-        I = LinOps::IOpXD(args.domain_mesh_ptr).GetMat();  
-      }
-
-      switch (args.time_dep_flag)
+      double t = *it; 
+      while(it!= end)
       {
-      case true:
-        for(; it!= end; it++)
-        {
-          m_rhs.SetTime(*it);
-          exec.SetTime(*it); 
-          args.bcs->SetTime(*it); 
+        // working on right end of [t(n-1), t(n)]
+        ++it;
+        t = *it; 
+        
+        m_rhs.SetTime(t);
+        exec.SetTime(t); 
 
-          Eigen::VectorXd rhs = exec.BuildRhs(*it); 
+        Mat = I - exec.inv_coeff_util() * m_rhs.GetMat(); 
+        // outside steps matrix before step(Mat) 
+        std::apply(
+          [&](const auto&... lam_args){ ((lam_args.template MatBeforeStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, Mat)), ...); }, 
+          m_ostep_tup
+        ); 
 
-          // Apply BCs 
-          args.bcs->SetImpSol(rhs, args.domain_mesh_ptr); 
+        Eigen::VectorXd rhs = exec.BuildRhs(t); 
+        // outside steps solution before step (rhs) 
+        std::apply(
+          [&](const auto&... lam_args){ ((lam_args.template SolBeforeStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, rhs)), ...); }, 
+          m_ostep_tup
+        ); 
 
-          // build implicit stencil 
-          TExprs::internal::MatrixStorage_t A = I - exec.inv_coeff_util()*m_rhs.GetMat(); 
-          args.bcs->SetStencil(A, args.domain_mesh_ptr); 
+        // Explicit Step ( U(n+1) = D*U(n) + U(n) )
+        // Implicit Step (I - D(t+1))*U(n+1) = rhs 
+        iterative_solver.compute(Mat); 
+        Eigen::VectorXd next_sol = iterative_solver.solveWithGuess(rhs,rhs); 
+        
+        // ourside steps solution after step(next_sol) 
+        std::apply(
+          [&](const auto&... lam_args){ ((lam_args.template SolAfterStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, next_sol)), ...); }, 
+          m_ostep_tup
+        ); 
 
-          // Implicit Step 
-          m_solver.compute(A); 
-          Eigen::VectorXd next_sol = m_solver.solveWithGuess(rhs,rhs); 
+        // give expiring solution to WRITE_POLICY_T
+        m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
 
-          // give expiring solution to WRITE_POLICY_T
-          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
-
-          // push Solution, time to executor 
-          exec.ConsumeSolution(next_sol);
-          exec.ConsumeTime(*it); 
-        }
-        break;
-      
-      default: // false 
-        std::size_t s1; 
-        if constexpr(std::is_same<M,std::shared_ptr<const LinOps::MeshXD>>::value){
-          s1 = args.domain_mesh_ptr->sizes_product(); 
-        }
-        else{
-          s1 = args.domain_mesh_ptr->size(); 
-        }
-        TExprs::internal::MatrixStorage_t bcs_mask(s1, s1); 
-        args.bcs->SetStencil(bcs_mask, args.domain_mesh_ptr);
-        for(; it!= end; it++)
-        {
-          Eigen::VectorXd rhs = exec.BuildRhs(*it); 
-
-          // Apply BCs 
-          args.bcs->SetImpSol(rhs, args.domain_mesh_ptr); 
-
-          // build implicit stencil 
-          TExprs::internal::MatrixStorage_t A = I - exec.inv_coeff_util()*m_rhs.GetMat(); 
-          overwrite_stencil(A, bcs_mask); // applies BCs. since the rows don't change through time.
-
-          // Implicit Step 
-          m_solver.compute(A); 
-          Eigen::VectorXd next_sol = m_solver.solveWithGuess(rhs,rhs); 
-
-          // give expiring solution to WRITE_POLICY_T
-          m_write_p.SaveSolution(std::move(exec.ExpiringSol())); 
-
-          // push Solution, time to executor 
-          exec.ConsumeSolution(next_sol);
-          exec.ConsumeTime(*it); 
-        }
-        break;
-      } // end switch(args.time_dep_flag)
+        // push Solution, time to executor 
+        exec.ConsumeSolution(next_sol);
+        exec.ConsumeTime(t); 
+      }    
 
       // Write remaining solutions to m_write_p 
-      for(auto i=1; i<exec.StoredSols().size()-1; i++){
-        m_write_p.SaveSolution( std::move(exec.StoredSols()[i]) );  
-      }
+      for(auto i=0; i<exec.StoredSols().size()-1; i++) m_write_p.SaveSolution( std::move(exec.StoredSols()[i])); 
 
-      // write policy also determines return type 
+      // write policy also determines return type / how to handle last solution
       return m_write_p.ConsumeLastSolution(std::move( exec.MostRecentSol() )); 
-    }
+    } // end .CalculateImp(args) 
 
 }; 
 

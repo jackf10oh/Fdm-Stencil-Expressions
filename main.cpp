@@ -11,74 +11,62 @@
 #include<tuple>
 #include<Eigen/Dense>
 
-#include<FDStencils/All.hpp> // must be first for plugin macro.
 #include<LinOps/All.hpp> 
-#include<FDStencilsXD/All.hpp> // likewise ...
-#include<LinOpsXD/All.hpp>
+#include<OutsideSteps/All.hpp> 
+#include<OutsideSteps/BoundaryCondsXD/BCList.hpp> 
 #include<TExprs/All.hpp> 
 
 #include<Utilities/PrintVec.hpp>
 #include<Utilities/BumpFunc.hpp>
 
-#include "Bindings/PyPdeBase1D.hpp"
-
 using std::cout, std::endl;
-
-struct HeatPDE_impl : public PDE_Base_Impl<HeatPDE_impl>
-{ 
-  double diffusion = 1.0; 
-  double convection = 0.0; 
-  double reaction = 0.0; 
-
-  LinOps::IOp U = LinOps::IOp(); 
-  Fds::NthDerivOp Ux = Fds::NthDerivOp(1); 
-  Fds::NthDerivOp Uxx = Fds::NthDerivOp(2); 
-
-  // rhs expr in space 
-  decltype(diffusion*Uxx + convection*Ux + reaction*U) rhs_expr = diffusion*Uxx + convection*Ux + reaction*U;  
-  
-  // lhs expr in time 
-  TExprs::NthTimeDeriv Ut = TExprs::NthTimeDeriv(1); 
-
-  auto& GetLhs(){ return Ut; } 
-  auto& GetRhs(){ return rhs_expr; } 
-}; 
-
-using HeatPDE = Concrete_PDE_1D<HeatPDE_impl>; 
 
 int main()
 {
   // iomanip 
-  std::cout << std::setprecision(2); 
+  std::cout << std::setprecision(4); 
 
-  HeatPDE pde; 
+  // defining Domain Mesh --------------------------------------
+  auto r = 3.14159; // pi 
+  int n_gridpoints = 21;
+  // mesh in space 
+  auto my_mesh = LinOps::make_mesh(0.0,r,n_gridpoints); 
+  // mesh in time 
+  auto time_mesh = LinOps::make_mesh(0.0, 2.0, 51); 
 
-  std::cout << "Enter Diffusion:"; 
-  std::cin >> pde.diffusion; 
-  std::cout << "Enter Convection:"; 
-  std::cin >> pde.convection; 
-  std::cout << "Enter Reaction:"; 
-  std::cin >> pde.reaction; 
+  // Initializing IC discretizations -------------------------------------------------------
+  LinOps::Discretization1D my_vals;
+  auto sin_lam = [](double x){return 2.0 * std::sin(x); }; 
+  my_vals.set_init(my_mesh, sin_lam); 
+  print_vec(my_vals.values(), "ICs"); 
 
-  auto my_mesh = LinOps::make_mesh(0.0, 10.0, 17);
-  
-  // domain 
-  pde.Args().domain_mesh_ptr = my_mesh; 
-  // time steps 
-  pde.Args().time_mesh_ptr = LinOps::make_mesh(0.0,5.0,21); 
-  // boundary conditions 
-  pde.Args().bcs = std::make_shared<Fds::BCPair>(Fds::make_dirichlet(0.0), Fds::make_dirichlet(0.0)); 
-  // initial conditions 
-  BumpFunc f{.L=0.0, .R=10.0, .c = 5.0, .h = 3.0}; 
-  pde.Args().ICs = std::vector<Eigen::VectorXd>{ std::move(LinOps::Discretization1D().set_init(my_mesh,f).values()) };
-  // time dep flag 
-  pde.Args().time_dep_flag = false;
+  // LHS time derivs ----------------------------------------------------------------
+  auto time_expr = TExprs::NthTimeDeriv(1); 
 
-  // calculate 
-  pde.Reset(); 
-  pde.FillVals(); 
+  // building RHS expression -----------------------------------------------------
+  using D = LinOps::NthDerivOp;
+  auto space_expr = 0.2 * D(2) - 0.5 * D(1); 
 
-  // print 
-  print_mat(pde.StoredData(), "Solution"); 
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  auto left = OSteps::DirichletBC(0.0); 
+  auto right = OSteps::DirichletBC(0.0); 
 
+  auto bcs = OSteps::BCPair(left,right); 
+
+  // Solving --------------------------------------------------------------------- 
+  TExprs::GenSolverArgs args{
+    .domain_mesh_ptr = my_mesh,
+    .time_mesh_ptr = time_mesh,
+    .ICs = std::vector<Eigen::VectorXd>(1, my_vals.values()), 
+  }; 
+
+  // TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs), TExprs::PrintWrite{}); 
+  // s.Calculate(args); 
+
+  TExprs::GenInterp interp(time_expr, space_expr, std::tie(bcs), args); 
+  interp.FillVals(); 
+  print_mat(interp.StoredData(), "Solutions through time");
+
+  // std::cout << time_mesh->size() << std::endl; 
+  // std::cout << interp.StoredData().size() << std::endl; 
 };

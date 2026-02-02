@@ -75,11 +75,10 @@ class Mesh1D
 };
 
 // quick helper to wrap std::make_shared<Mesh1D> or other Mesh1D derived types  
-template<typename Mesh_t=Mesh1D, typename... Args> 
+template<typename... Args> 
 auto make_mesh(Args... args)
 {
-  static_assert(std::is_base_of<Mesh1D,Mesh_t>::value, "make_mesh() requires T in shared_ptr<T> to be derived from Mesh1D.");
-  return std::make_shared<const Mesh_t>(args...); 
+  return std::make_shared<const Mesh1D>(args...); 
 }
 
 } // end namespace LinOps 

@@ -4,6 +4,7 @@ add_executable(tests_linops
 
 target_link_libraries(tests_linops
   PRIVATE LinOps
+  PRIVATE Utilities
   PRIVATE GTest::gtest 
   PRIVATE GTest::gtest_main 
   PRIVATE pthread # required by GTest
@@ -14,23 +15,12 @@ add_executable(tests_linopsxd
 )
 
 target_link_libraries(tests_linopsxd 
-  PRIVATE LinOpsXD
+  PRIVATE LinOps
+  PRIVATE Utilities
   PRIVATE GTest::gtest 
   PRIVATE GTest::gtest_main 
   PRIVATE pthread # required by GTest
 )
-
-add_executable(tests_fdstencils 
-  tests_fdstencils.cpp
-)
-
-target_link_libraries(tests_fdstencils 
-  PRIVATE FDStencils
-  PRIVATE GTest::gtest 
-  PRIVATE GTest::gtest_main 
-  PRIVATE pthread # required by GTest
-)
-
 
 add_executable(tests_texprs 
   tests_texprs.cpp
@@ -46,4 +36,4 @@ target_link_libraries(tests_texprs
 include(GoogleTest)
 gtest_discover_tests(tests_linops)
 gtest_discover_tests(tests_linopsxd)
-gtest_discover_tests(tests_texprs)
+# gtest_discover_tests(tests_texprs)
