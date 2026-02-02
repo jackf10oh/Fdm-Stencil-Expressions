@@ -16,7 +16,7 @@
 
 namespace TExprs{
 
-template<typename LHS_EXPR, typename RHS_EXPR, typename M, typename B, typename C>
+template<typename LHS_EXPR, typename RHS_EXPR, typename OSTEP_TUP, typename M = LinOps::Mesh1D_SPtr_t>
 class GenInterp
 {
   public:
@@ -34,8 +34,8 @@ class GenInterp
     // Member Data ------------------------------
     std::vector<Eigen::VectorXd> m_data; 
     VecSaveWrite m_sol_writer; 
-    GenSolver<LHS_EXPR, RHS_EXPR, VecSaveWrite> m_solver; 
-    GenSolverArgs<M,B,C> m_args; 
+    GenSolver<LHS_EXPR, RHS_EXPR, OSTEP_TUP, VecSaveWrite> m_solver; 
+    GenSolverArgs<M> m_args; 
     std::shared_ptr<const LinOps::MeshXD> m_high_dim_mesh; 
     bool m_calculated; 
 
@@ -44,12 +44,12 @@ class GenInterp
     // default 
     GenInterp()=delete; 
     // from args 
-    GenInterp(LHS_EXPR& lhs, RHS_EXPR& rhs, GenSolverArgs<M,B,C> args_init = GenSolverArgs<M,B,C>{})
+    GenInterp(LHS_EXPR& lhs, RHS_EXPR& rhs, OSTEP_TUP ostep_init, GenSolverArgs<M> args_init = GenSolverArgs<M>{})
       : m_data(0), 
       m_sol_writer(m_data), 
       m_args(std::move(args_init)), 
       m_high_dim_mesh(LinOps::make_meshXD(m_args.domain_mesh_ptr)), 
-      m_solver(lhs,rhs,m_sol_writer), 
+      m_solver(lhs,rhs,ostep_init, m_sol_writer), 
       m_calculated(false) 
     {}
     // copy 
@@ -98,11 +98,10 @@ class GenInterp
     }
     
     // getters to m_args
-    auto& Args(){ return m_args; }; 
     const auto& Args() const { return m_args; }; 
     
     // set m_args to a new input
-    void SetArgs(GenSolverArgs<M,B,C> args_switch)
+    void SetArgs(GenSolverArgs<M> args_switch)
     {
       m_args = std::move(args_switch); 
       Reset(); 

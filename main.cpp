@@ -24,7 +24,7 @@ using std::cout, std::endl;
 int main()
 {
   // iomanip 
-  std::cout << std::setprecision(7); 
+  std::cout << std::setprecision(4); 
 
   // defining Domain Mesh --------------------------------------
   auto r = 3.14159; // pi 
@@ -49,7 +49,7 @@ int main()
 
   // Boundary Conditions + --------------------------------------------------------------------- 
   auto left = OSteps::DirichletBC(0.0); 
-  auto right = OSteps::NeumannBC(0.0); 
+  auto right = OSteps::DirichletBC(0.0); 
 
   auto bcs = OSteps::BCPair(left,right); 
 
@@ -57,18 +57,16 @@ int main()
   TExprs::GenSolverArgs args{
     .domain_mesh_ptr = my_mesh,
     .time_mesh_ptr = time_mesh,
-    .bcs = std::tie(bcs), 
     .ICs = std::vector<Eigen::VectorXd>(1, my_vals.values()), 
   }; 
 
-  // TExprs::GenSolver s(time_expr, space_expr, TExprs::PrintWrite{}); 
-  // auto v = s.Calculate(args); 
+  // TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs), TExprs::PrintWrite{}); 
+  // s.Calculate(args); 
 
-  TExprs::GenInterp interp(time_expr, space_expr, args); 
+  TExprs::GenInterp interp(time_expr, space_expr, std::tie(bcs), args); 
   interp.FillVals(); 
   print_mat(interp.StoredData(), "Solutions through time");
 
-
-  std::cout << time_mesh->size() << std::endl; 
-  std::cout << interp.StoredData().size() << std::endl; 
+  // std::cout << time_mesh->size() << std::endl; 
+  // std::cout << interp.StoredData().size() << std::endl; 
 };

@@ -8,6 +8,7 @@
 #define GENERALSOLVER_H 
 
 #include<iostream>
+#include<Eigen/Core> // VectorXd
 #include<LinOps/Mesh.hpp> // Mesh1D
 #include<LinOps/MeshXD.hpp> // MeshXD 
 #include<LinOps/Operators/IOp.hpp> // IOp
@@ -17,7 +18,7 @@
 namespace TExprs{
 
 // Generalized Args for PDEs in 1D or XD
-template<typename ANYMESH_SHAREDPTR_T, typename OSTEP_TUP_T, typename CONTAINER_T>
+template<typename ANYMESH_SHAREDPTR_T = LinOps::Mesh1D_SPtr_t>
 struct GenSolverArgs
 {
   // shared_ptr to const Mesh1D or const MeshXD 
@@ -25,18 +26,15 @@ struct GenSolverArgs
 
   // shared_ptr to const Mesh1D 
   LinOps::Mesh1D_SPtr_t time_mesh_ptr; 
-
-  // tuple of Boundary Conditions (OutsideSteps) 
-  OSTEP_TUP_T bcs;
   
   // List of underlying Eigen::VectorXd from Discretization1D (XD)  
-  CONTAINER_T ICs;
+  std::vector<Eigen::VectorXd> ICs;
 }; 
 
 // CTAD Guide 
-template<typename M, typename B, typename C>
-GenSolverArgs(M, std::shared_ptr<const LinOps::Mesh1D>, B, C)
--> GenSolverArgs<M, B, C>;
+template<typename M>
+GenSolverArgs(M, std::shared_ptr<const LinOps::Mesh1D>, std::vector<Eigen::VectorXd>)
+-> GenSolverArgs<M>;
 
 // Write Policies. i.e. write previous solution to cout, write to std::vector, write to CSV 
 struct EmptyWrite
@@ -86,20 +84,21 @@ struct PrintWrite
 };
 
 // Generalized Solver for PDEs in 1D or XD
-template<typename LHS_EXPR, typename RHS_EXPR, typename WRITE_POLICY_T=FinalWrite, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
+template<typename LHS_EXPR, typename RHS_EXPR, typename OSTEP_TUP, typename WRITE_POLICY_T=FinalWrite, template<typename MAT_T> class EIGENSOLVER_T=Eigen::BiCGSTAB>
 class GenSolver
 {
   private:
     // Member Data -------------------------------------
     LHS_EXPR& m_lhs; // expression of time derivatives 
     RHS_EXPR& m_rhs; // expression of spatial derivatives 
+    typename std::remove_reference<OSTEP_TUP>::type m_ostep_tup; 
     WRITE_POLICY_T m_write_p; 
 
   public:
     // Constructors + Destructor ===========================
     GenSolver()=delete; 
-    GenSolver(LHS_EXPR& l_init, RHS_EXPR& r_init, WRITE_POLICY_T wp_init=WRITE_POLICY_T{})
-      : m_lhs(l_init), m_rhs(r_init), m_write_p(wp_init)
+    GenSolver(LHS_EXPR& l_init, RHS_EXPR& r_init, OSTEP_TUP ostep_init, WRITE_POLICY_T wp_init=WRITE_POLICY_T{})
+      : m_lhs(l_init), m_rhs(r_init), m_ostep_tup(ostep_init),m_write_p(wp_init)
     {}
     GenSolver(const GenSolver& other)=delete;
     // destructor 
@@ -107,8 +106,8 @@ class GenSolver
 
     // Member Funcs =================================================
     // Takes GenSolverArgs and find solution U(t=T) with explicit steps 
-    template<typename M, typename B, typename C>
-    auto Calculate(GenSolverArgs<M,B,C> args)
+    template<typename M>
+    auto Calculate(GenSolverArgs<M> args)
     {
 
       TExprs::internal::TExprExecutor exec(m_lhs); 
@@ -133,7 +132,7 @@ class GenSolver
         // outside steps matrix before step(Mat) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template MatBeforeStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, Mat)), ...); }, 
-          args.bcs
+          m_ostep_tup
         ); 
 
         // working on right end of [t(n-1), t(n)]
@@ -144,7 +143,7 @@ class GenSolver
         // outside steps solution before step (rhs) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template SolBeforeStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, rhs)), ...); }, 
-          args.bcs
+          m_ostep_tup
         ); 
 
         // Explicit Step 
@@ -153,7 +152,7 @@ class GenSolver
         // ourside steps solution after step(next_sol) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template SolAfterStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, next_sol)), ...); }, 
-          args.bcs
+          m_ostep_tup
         ); 
 
         // give expiring solution to WRITE_POLICY_T
@@ -172,8 +171,8 @@ class GenSolver
     } // end .Calculate(args) 
 
     // Takes GenSolverArgs and find solution U(t=T) with implicit steps 
-    template<typename M, typename B, typename C>
-    auto CalculateImp(GenSolverArgs<M,B,C> args, std::size_t max_iters = 20)
+    template<typename M>
+    auto CalculateImp(GenSolverArgs<M> args, std::size_t max_iters = 20)
     {
       TExprs::internal::TExprExecutor exec(m_lhs); 
       EIGENSOLVER_T<MatrixStorage_t> iterative_solver; // Eigen sparse iterative solver
@@ -204,14 +203,14 @@ class GenSolver
         // outside steps matrix before step(Mat) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template MatBeforeStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, Mat)), ...); }, 
-          args.bcs
+          m_ostep_tup
         ); 
 
         Eigen::VectorXd rhs = exec.BuildRhs(t); 
         // outside steps solution before step (rhs) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template SolBeforeStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, rhs)), ...); }, 
-          args.bcs
+          m_ostep_tup
         ); 
 
         // Explicit Step ( U(n+1) = D*U(n) + U(n) )
@@ -222,7 +221,7 @@ class GenSolver
         // ourside steps solution after step(next_sol) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template SolAfterStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, next_sol)), ...); }, 
-          args.bcs
+          m_ostep_tup
         ); 
 
         // give expiring solution to WRITE_POLICY_T
