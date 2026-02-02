@@ -61,6 +61,10 @@ class BCList // : public OStepBaseXD<BCList<BCPairs_Ts...>>
       if constexpr(STEP == FDStep_Type::IMPLICIT)
       {
         // initializations ---------------------------------------------
+        // s1 = ith dims size, s2 = cumulative product of all dims < ith dim
+        std::size_t s1=mesh->dim_size(0); 
+        std::size_t s2 = 1; 
+
         // lambda to give an NxN identity matrix 
         MatrixStorage_t cap_mat; 
         auto I = [&cap_mat](std::size_t N) -> const MatrixStorage_t& {cap_mat.resize(N,N); cap_mat.setIdentity(); return cap_mat;}; 
@@ -70,27 +74,28 @@ class BCList // : public OStepBaseXD<BCList<BCPairs_Ts...>>
         // lambda to fill in rows of mask. leaving inner rows that aren't boundarys zero. 
         auto fill_mask_lambda = [&](const auto& bc_pair, std::size_t ith_dim)
         {
-          // s1 = ith dims size, s2 = cumulative product of all dims < ith dim
-          std::size_t s1=mesh->dim_size(ith_dim); 
           if(ith_dim == 0)
           {
             mask = MatrixStorage_t(s1,s1); 
             bc_pair.template MatBeforeStep<FDStep_Type::IMPLICIT>(t,mesh->GetMesh(ith_dim), mask); 
+            s2 *= s1; 
             return; 
           }
           else
           {
+            s1=mesh->dim_size(ith_dim); 
+
             // take previous mask to higher dimension 
             MatrixStorage_t mask_temp = Eigen::KroneckerProductSparse(I(s1), mask); 
             
             // fill new empty rows with ith bc_pair
-            std::size_t s2 = mesh->sizes_middle_product(0,ith_dim); 
             MatrixStorage_t sp_diag = make_SparseDiag( flat_stencil(t, mesh->GetMesh(ith_dim), bc_pair) , s2); 
             fill_stencil(mask_temp, sp_diag); 
 
             // take ownership of higher dim temp with mask 
             mask = std::move(mask_temp); 
 
+            s2 *= s1; 
           }
         }; // end fill_mask_lambda 
         
