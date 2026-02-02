@@ -17,8 +17,8 @@ class BCPair : public OStepBase1D<BCPair<LBC_T,RBC_T>>
 {
   public:
     // Member Data -----------------------------------------------------------
-    typename std::remove_reference<LBC_T>::type m_left; 
-    typename std::remove_reference<RBC_T>::type m_right; 
+    const typename std::remove_reference<LBC_T>::type m_left; 
+    const typename std::remove_reference<RBC_T>::type m_right; 
     
   public:
     // Constructors + Destructor =================================================
@@ -31,25 +31,31 @@ class BCPair : public OStepBase1D<BCPair<LBC_T,RBC_T>>
     virtual ~BCPair()=default; 
 
     // Member Functions ==================================================================
-
-    void BeforeExpStep(double t,  const Mesh1D_SPtr_t& mesh, LinOps::MatrixStorage_t& Mat, StridedRef_t Sol) const 
-    {/* boundary conditions only alter Solution on Explicit steps...*/}
-
-    void AfterExpStep(double t,  const Mesh1D_SPtr_t& mesh, LinOps::MatrixStorage_t& Mat, StridedRef_t Sol) const 
+    // Member Funcs ------------------------------------------------
+    template<FDStep_Type STEP = FDStep_Type::IMPLICIT>
+    void MatBeforeStep(double t, const Mesh1D_SPtr_t& mesh, LinOps::MatrixStorage_t& Mat) const 
     {
-      m_left.SetSolL(t, mesh, Sol); 
-      m_right.SetSolR(t, mesh, Sol); 
+      if constexpr(STEP == FDStep_Type::IMPLICIT){
+        m_left.SetStencilL(t, mesh, Mat); 
+        m_right.SetStencilR(t, mesh, Mat); 
+      }
     }
-
-    void BeforeImpStep(double t,  const Mesh1D_SPtr_t& mesh, LinOps::MatrixStorage_t& Mat, StridedRef_t Sol) const 
+    template<FDStep_Type STEP = FDStep_Type::IMPLICIT>
+    void SolBeforeStep(double t, const Mesh1D_SPtr_t& mesh, StridedRef_t Sol) const 
     {
-      m_left.SetStencilL(t, mesh, Mat); 
-      m_right.SetStencilR(t, mesh, Mat); 
-      m_left.SetImpSolL(t, mesh, Sol); 
-      m_right.SetImpSolR(t, mesh, Sol); 
+      if constexpr(STEP == FDStep_Type::IMPLICIT){
+        m_left.SetImpSolL(t, mesh, Sol); 
+        m_right.SetImpSolR(t, mesh, Sol); 
+      }
     }
-    void AfterImpStep(double t,  const Mesh1D_SPtr_t& mesh, LinOps::MatrixStorage_t& Mat, StridedRef_t Sol) const 
-    { /* boundary conditions only alter Ax=b before Implicit step...*/} 
+    template<FDStep_Type STEP = FDStep_Type::EXPLICIT>
+    void SolAfterStep(double t, const Mesh1D_SPtr_t& mesh, StridedRef_t Sol) const 
+    {
+      if constexpr(STEP == FDStep_Type::EXPLICIT){
+        m_left.SetSolL(t, mesh, Sol); 
+        m_right.SetSolR(t, mesh, Sol); 
+      }  
+    }
 };
 
 } // end namespace OSteps 
