@@ -16,9 +16,10 @@ struct BumpFunc
     double focus = 3.0; 
     
     // Member Funcs 
-    double operator()(double x)
+    double operator()(double x) const 
     {
-      if( c<L || x<L ||c>R || x>R) throw std::runtime_error("Error: Bad args to BumpFunc operator().");
+      // if( c<L || x<L ||c>R || x>R) throw std::runtime_error("Error: Bad args to BumpFunc operator().");
+      if( c<L || x<L ||c>R || x>R) return 0.0;
       // get a,b in Beta(a,b) distribution  
       double a = focus * ((c-L)/(R-L)); 
       double b = focus * ((R-c)/(R-L)); 

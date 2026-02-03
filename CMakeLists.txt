@@ -42,6 +42,7 @@ target_include_directories(LinOps
 )
 target_link_libraries(LinOps  
   INTERFACE Eigen3::Eigen
+  INTERFACE Utilities 
 )
 
 # OutsideSteps ------------- 
@@ -111,7 +112,7 @@ else()
   add_subdirectory(tests)
 endif()
 
-# add_subdirectory(Bindings)
+add_subdirectory(Bindings)
 
 add_executable(main 
   main.cpp

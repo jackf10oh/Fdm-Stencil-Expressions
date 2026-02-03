@@ -10,7 +10,7 @@
 #include<pybind11/eigen.h>
 
 #include<LinOps/All.hpp>
-#include<LinOpsXD/All.hpp>
+#include "Wave2D.hpp" 
 
 namespace py = pybind11; 
 
@@ -26,6 +26,7 @@ PYBIND11_MODULE(PyFds, m)
     .def(py::init<std::vector<double>>(), 
            py::arg("vals")
     )
+    .def("at",[](const LinOps::Mesh1D& self, std::size_t i){return self.at(i);}, py::arg("idx"), "values of mesh at an index")    
     .def("size",&LinOps::Mesh1D::size, "size of current mesh");    
 
   // MeshXD ================================================================================ 
@@ -47,7 +48,7 @@ PYBIND11_MODULE(PyFds, m)
            py::arg("mesh1d_list")
     )
     .def("GetMesh", 
-           &LinOps::MeshXD::GetMesh,
+           [](LinOps::MeshXD& self, std::size_t i){ return self.GetMeshAt(i); },
            py::arg("dim")=1)
     .def("dims", 
            &LinOps::MeshXD::dims)
@@ -192,5 +193,21 @@ PYBIND11_MODULE(PyFds, m)
       py::arg("mesh"),
       py::arg("func")
     ); 
+  // Mesh1D ================================================================================ 
+  py::class_<Wave2D>(m, "Wave2D")
+    .def(py::init<>())
+    .def("SetDomain", [](Wave2D& self, LinOps::MeshXD_SPtr_t m) -> Wave2D& 
+      {auto a = self.Args(); a.domain_mesh_ptr=m; self.SetArgs(std::move(a)); return self; }, py::arg("mesh"), "Sets a new domain mesh inside of solver") 
+    .def("SetTime", [](Wave2D& self, LinOps::Mesh1D_SPtr_t m) -> Wave2D& 
+      {auto a = self.Args(); a.time_mesh_ptr=m; self.SetArgs(std::move(a)); return self; }, py::arg("mesh"), "Sets a new time mesh inside of solver") 
+    .def("SetIC", [](Wave2D& self, std::vector<Eigen::VectorXd> v) -> Wave2D& 
+      {auto a = self.Args(); a.ICs=std::move(v); self.SetArgs(std::move(a)); return self; }, py::arg("mesh"), "Sets a new initial condition inside of solver") 
+    .def("SetHeight",[](Wave2D& self, double h) -> Wave2D& 
+      { self.set_bump_height(h); self.Reset(); return self;}, py::arg("h")=1.0, "Sets new height for oscilation force term at origin")
+    .def("SetDamping", [](Wave2D& self, double d) -> Wave2D& 
+      {self.set_damping(d); self.Reset(); return self;}, py::arg("d")=2.0, "Sets a new damping rate at boundaries of the domain")
+    .def("StoredData", &Wave2D::StoredData, "returns a vector of solutions. solutions are flattened in dimensional order")
+    .def("Compute", &Wave2D::FillVals, "Computes solution at each entry in time. available in StoredData")
+    .def("SolAt", [](Wave2D& self, double t, double x, double y){ return self.SolAt(t,x,y); }, py::arg("t"), py::arg("x"), py::arg("y"), "Returns value of solution at time t at coords (x,y)");    
 }
 

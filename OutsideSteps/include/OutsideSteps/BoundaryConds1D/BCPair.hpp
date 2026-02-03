@@ -17,8 +17,8 @@ class BCPair : public OStepBase1D<BCPair<LBC_T,RBC_T>>
 {
   public:
     // Member Data -----------------------------------------------------------
-    const typename std::remove_reference<LBC_T>::type m_left; 
-    const typename std::remove_reference<RBC_T>::type m_right; 
+    typename std::remove_reference<LBC_T>::type m_left; 
+    typename std::remove_reference<RBC_T>::type m_right; 
     
   public:
     // Constructors + Destructor =================================================

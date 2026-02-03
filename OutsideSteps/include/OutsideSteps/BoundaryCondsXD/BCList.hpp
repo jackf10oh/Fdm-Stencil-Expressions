@@ -46,7 +46,7 @@ class BCList // : public OStepBaseXD<BCList<BCPairs_Ts...>>
         >
       >
     >
-    BCList(BCPairs_Ts... args) : m_list(std::tie(args...)){}; 
+    BCList(BCPairs_Ts... args) : m_list(std::forward<BCPairs_Ts>(args)...){}; 
     BCList(const BCList& other)=default;
     // destructor 
     virtual ~BCList()=default; 

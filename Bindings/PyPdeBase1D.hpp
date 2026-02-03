@@ -8,7 +8,7 @@
 #define PYPDEBASE1D_H
 
 #include<LinOps/All.hpp>
-#include<FDStencils/All.hpp>
+#include<OutsideSteps/All.hpp> 
 #include<TExprs/GenInterp.hpp>
 
 template<typename Derived>

@@ -14,4 +14,6 @@
 #include "BoundaryConds1D/NeumannBC.hpp"
 #include "BoundaryConds1D/RobinBC.hpp"
 
+#include "BoundaryCondsXD/BCList.hpp"
+
 #endif 

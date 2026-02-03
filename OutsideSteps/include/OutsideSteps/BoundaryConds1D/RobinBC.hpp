@@ -53,7 +53,7 @@ class RobinBC
 
     void SetImpSolL(double t, const Mesh1D_SPtr_t& mesh, StridedRef_t Sol) const 
     {Sol[0] = boundary_target;};
-    void SetImpSolR(double t, const Mesh1D_SPtr_t& mesh, MatrixStorage_t& Mat, StridedRef_t Sol) const 
+    void SetImpSolR(double t, const Mesh1D_SPtr_t& mesh, StridedRef_t Sol) const 
     {Sol[Sol.size()-1] = boundary_target;};
     
     // change the first/last (left/right boundary) entry of a vector  
