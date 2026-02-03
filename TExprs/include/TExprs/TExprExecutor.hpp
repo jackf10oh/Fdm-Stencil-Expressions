@@ -92,6 +92,12 @@ struct TExprExecutor
   // forberg weights calculator 
   FornCalc m_weights_calc; 
 
+  // result of BuildRhs 
+  Eigen::VectorXd m_rhs_vec; 
+  
+  // result of build_inv_coeff 
+  std::variant<double, MatrixStorage_t> m_inv_coeff_variant; 
+
   // Constructors + Destructor =======================================
   TExprExecutor()=delete; 
   TExprExecutor(TEXPR_T& expr_init) 
@@ -169,100 +175,6 @@ struct TExprExecutor
     );
   }
 
-  // // Build RHS starting point from m_stored_sols[0, ..., N-2]
-  Eigen::VectorXd BuildRhs(double t)
-  {
-    // update m_weights_calc to new time step. 
-    SetWeightsFromTime(t);
-
-    // initialize RHS vector to all zeros 
-    Eigen::VectorXd result(m_stored_sols[0].size());
-    result.setZero(); 
-
-    // starting at oldest solution, first node's weight 
-    for(std::size_t ith_node = 0; ith_node<m_num_nodes-1; ith_node++)
-    {
-      // if there are any scalar coeffs start with those 
-      if constexpr(std::tuple_size<SCALAR_TUP_T>::value > 0)
-      {
-        double s = std::apply(
-          [&](auto&&... coeffs){
-            return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, ith_node) + ...); 
-          }, 
-          m_scalar_coeff_sum_partition
-        ); 
-        // std::cout << "BuildRhs: " << s << std::endl;
-        result += s * m_stored_sols[ith_node]; 
-      } 
-      if constexpr(std::tuple_size<MAT_TUP_T>::value > 0)
-      {
-        auto M = std::apply(
-          [&](auto&&... coeffs){
-            return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, ith_node) + ...); 
-          }, 
-          m_mat_coeff_sum_partition 
-        ); 
-        // std::cout << "BuildRhs Mat: " << M << std::endl;
-        result += M * m_stored_sols[ith_node]; 
-      }
-    } // end for() over ith_node 
-
-    // flip result by negative 1 
-    result *= (-1.0); 
-
-    // multiply by inv_coeff_util; 
-    result *= inv_coeff_util(); 
-
-    // Eigen::VectorXd 
-    return result; 
-  }
-
-  // gets 1 / c where c is coeff of U(n+1) in fdm equation 
-  auto inv_coeff_util()
-  {
-    // all CoeffAt's evaluate to scalar -> return 1 / sum(coeffs...)
-    if constexpr(std::tuple_size<MAT_TUP_T>::value == 0){
-      double s = std::apply(
-          [&](auto&&... coeffs){
-            return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-          }, 
-          m_scalar_coeff_sum_partition
-      );
-      return 1.0 / s;  
-    }
-    else if constexpr(std::tuple_size<SCALAR_TUP_T>::value == 0){ 
-      // all COeffAt's evaluate to matrix -> return (sum(coeffs)).cwiseInverse 
-      MatrixStorage_t A = std::apply(
-            [&](auto&&... coeffs){
-              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-            }, 
-            m_mat_coeff_sum_partition 
-      ); 
-      MatrixStorage_t B = A.cwiseInverse(); 
-      return B; 
-    }
-    else{ 
-      // throw std::runtime_error("This formula hasn't been implemented yet!"); 
-      // otherwise return product of 1/sum(scalar) + (sum(Mats)).cwiseInverse()
-      double s = std::apply(
-          [&](auto&&... coeffs){
-            return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-          }, 
-          m_scalar_coeff_sum_partition
-      );
-
-      MatrixStorage_t A = std::apply(
-            [&](auto&&... coeffs){
-              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
-            }, 
-            m_mat_coeff_sum_partition 
-      ); 
-
-      auto diag = (1.0/s) * Eigen::VectorXd::Ones(A.rows()); 
-      MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
-      return B; 
-    }
-  } // end inv_coeff_util() 
 
   template<typename ANYMESHPTR_T>
   void set_mesh(ANYMESHPTR_T m)
@@ -275,7 +187,7 @@ struct TExprExecutor
     std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
   }
 
-  void SetTime(double t)
+  void expr_SetTime(double t)
   {
     auto SetTime_lam = [&](auto&& elem){
       elem.SetTime(t); 
@@ -284,6 +196,117 @@ struct TExprExecutor
     // std::apply(set_mesh_for, m_scalar_coeff_sum_partition); // unnecessary.  
     std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
   }
+  
+  // Builds m_rhs_vector + m_inv_coeff_variant from the next time; 
+  void BuildNextTime(double next_t)
+  {
+    SetWeightsFromTime(next_t); 
+    m_inv_coeff_variant = build_inv_coeff(); 
+    m_rhs_vec = BuildRhs(next_t); 
+  }
+
+  // getters to m_inv_coeff_Variant + m_rhs_vec 
+  const std::variant<double, MatrixStorage_t>& inv_coeff() const { return m_inv_coeff_variant; }
+  Eigen::VectorXd& RhsVector(){ return m_rhs_vec; } 
+
+  private:
+    // Unreachable =========================================== 
+    // // Build RHS starting point from m_stored_sols[0, ..., N-2]
+    Eigen::VectorXd BuildRhs(double t)
+    {
+      // update m_weights_calc to new time step. 
+      SetWeightsFromTime(t);
+
+      // initialize RHS vector to all zeros 
+      Eigen::VectorXd result(m_stored_sols[0].size());
+      result.setZero(); 
+
+      // starting at oldest solution, first node's weight 
+      for(std::size_t ith_node = 0; ith_node<m_num_nodes-1; ith_node++)
+      {
+        // if there are any scalar coeffs start with those 
+        if constexpr(std::tuple_size<SCALAR_TUP_T>::value > 0)
+        {
+          double s = std::apply(
+            [&](auto&&... coeffs){
+              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, ith_node) + ...); 
+            }, 
+            m_scalar_coeff_sum_partition
+          ); 
+          // std::cout << "BuildRhs: " << s << std::endl;
+          result += s * m_stored_sols[ith_node]; 
+        } 
+        if constexpr(std::tuple_size<MAT_TUP_T>::value > 0)
+        {
+          auto M = std::apply(
+            [&](auto&&... coeffs){
+              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, ith_node) + ...); 
+            }, 
+            m_mat_coeff_sum_partition 
+          ); 
+          // std::cout << "BuildRhs Mat: " << M << std::endl;
+          result += M * m_stored_sols[ith_node]; 
+        }
+      } // end for() over ith_node 
+
+      // flip result by negative 1 
+      result *= (-1.0); 
+
+      // multiply by inv_coeff_util; 
+      // result *= inv_coeff_util(); 
+      std::visit([&](const auto& c){ result = c * result;},m_inv_coeff_variant); 
+
+      // Eigen::VectorXd 
+      return result; 
+    }
+
+    // gets 1 / c where c is coeff of U(n+1) in fdm equation 
+    auto build_inv_coeff()
+    {
+      // all CoeffAt's evaluate to scalar -> return 1 / sum(coeffs...)
+      if constexpr(std::tuple_size<MAT_TUP_T>::value == 0){
+        double s = std::apply(
+            [&](auto&&... coeffs){
+              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+            }, 
+            m_scalar_coeff_sum_partition
+        );
+        return 1.0 / s;  
+      }
+      else if constexpr(std::tuple_size<SCALAR_TUP_T>::value == 0){ 
+        // all COeffAt's evaluate to matrix -> return (sum(coeffs)).cwiseInverse 
+        MatrixStorage_t A = std::apply(
+              [&](auto&&... coeffs){
+                return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+              }, 
+              m_mat_coeff_sum_partition 
+        ); 
+        MatrixStorage_t B = A.cwiseInverse(); 
+        return B; 
+      }
+      else{ 
+        // throw std::runtime_error("This formula hasn't been implemented yet!"); 
+        // otherwise return product of 1/sum(scalar) + (sum(Mats)).cwiseInverse()
+        double s = std::apply(
+            [&](auto&&... coeffs){
+              return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+            }, 
+            m_scalar_coeff_sum_partition
+        );
+
+        MatrixStorage_t A = std::apply(
+              [&](auto&&... coeffs){
+                return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
+              }, 
+              m_mat_coeff_sum_partition 
+        ); 
+
+        auto diag = (1.0/s) * Eigen::VectorXd::Ones(A.rows()); 
+        MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
+        return B; 
+      }
+    } // end inv_coeff_util() 
+
 }; 
 
 } // end namespace internal

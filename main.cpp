@@ -60,12 +60,13 @@ int main()
     .ICs = std::vector<Eigen::VectorXd>(1, my_vals.values()), 
   }; 
 
-  // TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs), TExprs::PrintWrite{}); 
+  TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs), TExprs::PrintWrite{}); 
   // s.Calculate(args); 
+  s.CalculateImp(args); 
 
-  TExprs::GenInterp interp(time_expr, space_expr, std::tie(bcs), args); 
-  interp.FillVals(); 
-  print_mat(interp.StoredData(), "Solutions through time");
+  // TExprs::GenInterp interp(time_expr, space_expr, std::tie(bcs), args); 
+  // interp.FillVals(); 
+  // print_mat(interp.StoredData(), "Solutions through time");
 
   // std::cout << time_mesh->size() << std::endl; 
   // std::cout << interp.StoredData().size() << std::endl; 

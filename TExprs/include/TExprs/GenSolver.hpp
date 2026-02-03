@@ -125,21 +125,32 @@ class GenSolver
       double t = *it; 
       while(it!= end)
       {
-        m_rhs.SetTime(t);
-        exec.SetTime(t); 
+        // going to be made into an OutsideStep .... 
+        // signature will look like 
+        // template<FDStep_Type Step>
+        // ostep.BeforeLinAlgebra(double t, MeshPtr& mesh, LHS_Exec, RHS_expr);
+        // possibility of even passing the raw iterator? adaptive steps? 
+        // osteps can now use pointers to LHS_Executors member data  
+        // m_rhs.SetTime(t);
+        // exec.SetTime(t); 
 
         Mat = m_rhs.GetMat(); 
+
+        // working on right end of [t(n-1), t(n)]
+        ++it;
+        t = *it;  
+
+        exec.BuildNextTime(t); 
+
+        // scale Mat according to 1 / dt ... 
+        std::visit([&](const auto& inv){ Mat = inv * Mat; }, exec.inv_coeff()); 
         // outside steps matrix before step(Mat) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template MatBeforeStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, Mat)), ...); }, 
           m_ostep_tup
         ); 
 
-        // working on right end of [t(n-1), t(n)]
-        ++it;
-        t = *it;  
-
-        Eigen::VectorXd rhs = exec.BuildRhs(t); 
+        Eigen::VectorXd rhs = std::move(exec.RhsVector()); 
         // outside steps solution before step (rhs) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template SolBeforeStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, rhs)), ...); }, 
@@ -147,7 +158,7 @@ class GenSolver
         ); 
 
         // Explicit Step 
-        Eigen::VectorXd next_sol = exec.inv_coeff_util() * Mat * exec.MostRecentSol() + rhs; 
+        Eigen::VectorXd next_sol = Mat * exec.MostRecentSol() + rhs; 
         
         // ourside steps solution after step(next_sol) 
         std::apply(
@@ -178,7 +189,8 @@ class GenSolver
       EIGENSOLVER_T<MatrixStorage_t> iterative_solver; // Eigen sparse iterative solver
       iterative_solver.setMaxIterations(max_iters); 
       MatrixStorage_t Mat; 
-      MatrixStorage_t I = LinOps::IOp(args.domain_mesh_ptr).GetMat(); 
+      // // If I wanted a truly adaptive Domain Mesh, We need to move this elsewhere. i.e. iterate along diagonal....  
+      // MatrixStorage_t I = LinOps::IOp(args.domain_mesh_ptr).GetMat(); 
 
       exec.set_mesh(args.domain_mesh_ptr);
       m_rhs.set_mesh(args.domain_mesh_ptr); 
@@ -195,18 +207,25 @@ class GenSolver
         // working on right end of [t(n-1), t(n)]
         ++it;
         t = *it; 
-        
-        m_rhs.SetTime(t);
-        exec.SetTime(t); 
 
-        Mat = I - exec.inv_coeff_util() * m_rhs.GetMat(); 
+        // moved into an ostep that sets time + mesh of lhs executor / rhs expression 
+        // m_rhs.SetTime(t);
+        // exec.SetTime(t); 
+
+        exec.BuildNextTime(t); 
+        
+        // Mat = I - inv_coeff * FDStencil ; 
+        Mat = m_rhs.GetMat(); 
+        std::visit([&](const auto& inv){ Mat = -inv * Mat; }, exec.inv_coeff()); 
+        for(std::size_t i=0; i<Mat.rows(); ++i) Mat.coeffRef(i,i) += 1.0; 
+
         // outside steps matrix before step(Mat) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template MatBeforeStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, Mat)), ...); }, 
           m_ostep_tup
         ); 
 
-        Eigen::VectorXd rhs = exec.BuildRhs(t); 
+        Eigen::VectorXd rhs = std::move(exec.RhsVector()); 
         // outside steps solution before step (rhs) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template SolBeforeStep<OSteps::FDStep_Type::IMPLICIT>(t, args.domain_mesh_ptr, rhs)), ...); }, 
