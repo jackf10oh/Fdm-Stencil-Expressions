@@ -27,25 +27,30 @@ int main()
   std::cout << std::setprecision(4); 
 
   // defining Domain Mesh --------------------------------------
-  auto r = 3.14159; // pi 
-  int n_gridpoints = 21;
-  // mesh in space 
+  auto r = 10.0;
+  int n_gridpoints = 17;
+
+  // mesh in space [0, 10] 
   auto my_mesh = LinOps::make_mesh(0.0,r,n_gridpoints); 
-  // mesh in time 
-  auto time_mesh = LinOps::make_mesh(0.0, 2.0, 51); 
+  // mesh in time [0, 2]
+  auto time_mesh = LinOps::make_mesh(0.0, 2.0, 17); 
 
   // Initializing IC discretizations -------------------------------------------------------
-  LinOps::Discretization1D my_vals;
-  auto sin_lam = [](double x){return 2.0 * std::sin(x); }; 
-  my_vals.set_init(my_mesh, sin_lam); 
-  print_vec(my_vals.values(), "ICs"); 
+  // bump on [3,5] with maximum at (4, 3)
+  BumpFunc f{.L = 3.0, .R = 5.0, .c=4.0, .h=10};  
+
+  // solution U( t=0 ) 
+  auto U0 = LinOps::Discretization1D().set_init(my_mesh, f).values();
+  
+  // Solver Args expect std::vec of ICs for first N time steps 
+  std::vector<Eigen::VectorXd> ics = {std::move(U0)};  
 
   // LHS time derivs ----------------------------------------------------------------
   auto time_expr = TExprs::NthTimeDeriv(1); 
 
   // building RHS expression -----------------------------------------------------
   using D = LinOps::NthDerivOp;
-  auto space_expr = 0.2 * D(2) - 0.5 * D(1); 
+  auto space_expr = 0.2 * D(2) - 1.0 * D(1); 
 
   // Boundary Conditions + --------------------------------------------------------------------- 
   auto left = OSteps::DirichletBC(0.0); 
@@ -57,17 +62,19 @@ int main()
   TExprs::GenSolverArgs args{
     .domain_mesh_ptr = my_mesh,
     .time_mesh_ptr = time_mesh,
-    .ICs = std::vector<Eigen::VectorXd>(1, my_vals.values()), 
+    .ICs = ics, 
   }; 
 
-  TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs), TExprs::PrintWrite{}); 
+  // TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs)); // .Calcuate() returns only the last Eigen::VectorXd 
+  TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs), TExprs::PrintWrite{});  // prints the solution at every time step ...
+
+
   // s.Calculate(args); 
   s.CalculateImp(args); 
 
+  // Interpolating ---------------------------------------------------------
   // TExprs::GenInterp interp(time_expr, space_expr, std::tie(bcs), args); 
   // interp.FillVals(); 
   // print_mat(interp.StoredData(), "Solutions through time");
-
-  // std::cout << time_mesh->size() << std::endl; 
-  // std::cout << interp.StoredData().size() << std::endl; 
+  // std::cout << "solution at (t,x) :" << interp.SolAt(t,x) << std::endl; 
 };

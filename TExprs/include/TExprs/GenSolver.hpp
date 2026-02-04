@@ -119,20 +119,19 @@ class GenSolver
       auto it = args.time_mesh_ptr->cbegin() + args.ICs.size() - 1; 
       auto end = args.time_mesh_ptr->cend() - 1;
 
-      exec.ConsumeSolutionList(args.ICs.cbegin(), args.ICs.cend()); 
+      exec.ConsumeSolutionList(args.ICs.begin(), args.ICs.end()); // no more .cbegin() -> should use move semantics
       exec.ConsumeTimeList(args.time_mesh_ptr->cbegin(), std::next(it)); 
 
       double t = *it; 
       while(it!= end)
       {
-        // going to be made into an OutsideStep .... 
-        // signature will look like 
-        // template<FDStep_Type Step>
-        // ostep.BeforeLinAlgebra(double t, MeshPtr& mesh, LHS_Exec, RHS_expr);
-        // possibility of even passing the raw iterator? adaptive steps? 
-        // osteps can now use pointers to LHS_Executors member data  
-        // m_rhs.SetTime(t);
-        // exec.SetTime(t); 
+        // outside steps before any type of linear algebra is performed... 
+        std::apply(
+          [&](auto&... lam_args){ 
+            ((lam_args.template BeforeLinAlgebra<decltype(it),decltype(exec),decltype(m_rhs),OSteps::FDStep_Type::IMPLICIT>(it, args.domain_mesh_ptr, exec, m_rhs)), ...); 
+          }, 
+          m_ostep_tup
+        ); 
 
         Mat = m_rhs.GetMat(); 
 
@@ -204,6 +203,12 @@ class GenSolver
       double t = *it; 
       while(it!= end)
       {
+        // outside steps before any type of linear algebra is performed... 
+        std::apply(
+          [&](auto&... lam_args){ ((lam_args.template BeforeLinAlgebra<decltype(it),decltype(exec),decltype(m_rhs),OSteps::FDStep_Type::IMPLICIT>(it, args.domain_mesh_ptr, exec, m_rhs)), ...); }, 
+          m_ostep_tup
+        ); 
+
         // working on right end of [t(n-1), t(n)]
         ++it;
         t = *it; 

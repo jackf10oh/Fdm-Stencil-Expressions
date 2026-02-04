@@ -32,22 +32,26 @@ class OStepBase
   public:
     // Type Defs + Compile time flags -----------------
     constexpr static StepDims_Flag dims_flag = DIMS_FLAG;
-    constexpr static bool is_time_dep_flag = false; 
-    using MEST_T = std::conditional_t<DIMS_FLAG == StepDims_Flag::OneDim, Mesh1D_SPtr_t, MeshXD_SPtr_t>; 
+    // constexpr static bool is_time_dep_flag = false; // going to remove in favor of SetTime outside step ... 
+    using MESH_T = std::conditional_t<DIMS_FLAG == StepDims_Flag::OneDim, Mesh1D_SPtr_t, MeshXD_SPtr_t>; 
 
     // Member Funcs ------------------------------------------------
+    template<typename TIME_ITER, typename LHS_EXECUTOR, typename RHS_EXPR, FDStep_Type Step>
+    void BeforeLinAlgebra(TIME_ITER& time_iter, MESH_T& mesh, LHS_EXECUTOR& exec, RHS_EXPR& rhs_expr)
+    {/* this is defaulted to do nothing.*/}
+
     template<FDStep_Type STEP = FDStep_Type::IMPLICIT>
-    void MatBeforeStep(double t, const MEST_T& mesh, LinOps::MatrixStorage_t& Mat) const 
+    void MatBeforeStep(double t, const MESH_T& mesh, LinOps::MatrixStorage_t& Mat) const 
     {
       static_cast<const DERIVED*>(this)->template MatBeforeStep<STEP>(t,mesh, Mat); 
     }
     template<FDStep_Type STEP = FDStep_Type::IMPLICIT>
-    void SolBeforeStep(double t, const MEST_T& mesh, StridedRef_t Sol) const 
+    void SolBeforeStep(double t, const MESH_T& mesh, StridedRef_t Sol) const 
     {
       static_cast<const DERIVED*>(this)->template SolBeforeStep<STEP>(t,mesh, Sol); 
     }
     template<FDStep_Type STEP = FDStep_Type::EXPLICIT>
-    void SolAfterStep(double t, const MEST_T& mesh, StridedRef_t Sol) const 
+    void SolAfterStep(double t, const MESH_T& mesh, StridedRef_t Sol) const 
     {
       static_cast<const DERIVED*>(this)->template SolAfterStep<STEP>(t,mesh, Sol); 
     }

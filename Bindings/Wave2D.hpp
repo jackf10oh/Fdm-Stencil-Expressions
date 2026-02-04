@@ -9,39 +9,46 @@
 #ifndef WAVE2D_H
 #define WAVE2D_H
 
-#include<pybind11/pybind11.h> 
-#include<pybind11/stl.h>
-#include<pybind11/functional.h> 
-#include<pybind11/eigen.h>
-
 #include<LinOps/All.hpp>
 #include<OutsideSteps/All.hpp> 
 #include<TExprs/All.hpp>
 
-
 #include<Utilities/BumpFunc.hpp> // forcing term at origin 
 
-struct origin_bump : public OSteps::OStepBaseXD<origin_bump>
+class origin_bump : public OSteps::OStepBaseXD<origin_bump>
 {
-  BumpFunc bump_1d = BumpFunc{.L = -1.0, .R = 1.0, .c =0.0, .h = 1.0, .focus=15}; 
+  public:  
+    // Member Data ----------------------------
+    BumpFunc bump_1d = BumpFunc{.L = -1.0, .R = 1.0, .c =0.0, .h = 1.0, .focus=10}; 
+  private:
+    const std::variant<double, LinOps::MatrixStorage_t>* m_inv_coeff_ptr = nullptr; 
 
-  // Member Funcs ------------------------------------------------
-  template<OSteps::FDStep_Type STEP>
-  void MatBeforeStep(double t, const LinOps::MeshXD_SPtr_t& mesh, LinOps::MatrixStorage_t& Mat) const 
-  { /* do nothing to stencil...*/}
+  public:
+    // Member Funcs ------------------------------------------------
+    // Calls SetTime on any LinOps inside the expression
+    template<typename TIME_ITER, typename LHS_EXECUTOR, typename RHS_EXPR, OSteps::FDStep_Type Step>
+    void BeforeLinAlgebra(TIME_ITER& time_iter, LinOps::MeshXD_SPtr_t& mesh, LHS_EXECUTOR& exec, RHS_EXPR& rhs_expr)
+    { 
+      m_inv_coeff_ptr = &exec.inv_coeff(); 
+    }
 
-  // Adds a 2d bump at origin to solution before step. regardless of implicit or explicit
-  template<OSteps::FDStep_Type STEP>
-  void SolBeforeStep(double t, const LinOps::MeshXD_SPtr_t& mesh, OSteps::StridedRef_t Sol) const 
-  {
-    auto forcing = [&](double x, double y){ return bump_1d(x)*bump_1d(y)*std::sin(t); }; 
-    Eigen::VectorXd vals = LinOps::DiscretizationXD().set_init(mesh, forcing).values(); 
-    Sol += vals; 
-  }
+    template<OSteps::FDStep_Type STEP>
+    void MatBeforeStep(double t, const LinOps::MeshXD_SPtr_t& mesh, LinOps::MatrixStorage_t& Mat) const 
+    { /* do nothing to stencil...*/}
 
-  template<OSteps::FDStep_Type STEP>
-  void SolAfterStep(double t, const LinOps::MeshXD_SPtr_t& mesh, OSteps::StridedRef_t Sol) const 
-  { /* do nothing to solution after step...*/} 
+    // Adds a 2d bump at origin to solution before step. regardless of implicit or explicit -> IMEX scheme
+    template<OSteps::FDStep_Type STEP>
+    void SolBeforeStep(double t, const LinOps::MeshXD_SPtr_t& mesh, OSteps::StridedRef_t Sol) const 
+    {
+      auto forcing = [&](double x, double y){ return bump_1d(x)*bump_1d(y)*std::sin(t); }; 
+      Eigen::VectorXd disc_vals = LinOps::DiscretizationXD().set_init(mesh, forcing).values(); 
+      Eigen::VectorXd vals = std::visit([&](const auto& c) -> Eigen::VectorXd { return c * disc_vals; }, *m_inv_coeff_ptr); 
+      Sol += vals; 
+    }
+
+    template<OSteps::FDStep_Type STEP>
+    void SolAfterStep(double t, const LinOps::MeshXD_SPtr_t& mesh, OSteps::StridedRef_t Sol) const 
+    { /* do nothing to solution after step...*/} 
 }; 
 
 struct Wave2D_impl
@@ -64,11 +71,11 @@ struct Wave2D_impl
   using BC_t = OSteps::BCList< OSteps::BCPair<OSteps::RobinBC, OSteps::RobinBC>, OSteps::BCPair<OSteps::RobinBC,OSteps::RobinBC> >;
   BC_t boundary_condition = BC_t( 
     OSteps::BCPair(
-      OSteps::RobinBC(1.0,1.0,0.0), 
-      OSteps::RobinBC(1.0,1.0,0.0)
+      OSteps::RobinBC(1.0,-1.0,0.0), // left 
+      OSteps::RobinBC(1.0,1.0,0.0) // right 
     ), 
     OSteps::BCPair(
-      OSteps::RobinBC(1.0,1.0,0.0), 
+      OSteps::RobinBC(1.0,-1.0,0.0), //similar 
       OSteps::RobinBC(1.0,1.0,0.0)
     )
   ); 
@@ -84,7 +91,9 @@ struct Wave2D : public Wave2D_impl, public TExprs::GenInterp<Wave2D_impl::Lhs_t,
   Wave2D()
     :Wave2D_impl(), 
     Interp_t(this->Lhs, this->Rhs, this->osteps)
-  {};  
+  {
+    // std::get<0>(this->osteps).m_inv_coeff_ptr = &this->Lhs.inv_coeff();
+  };  
 
   void set_damping(double damping)
   {
