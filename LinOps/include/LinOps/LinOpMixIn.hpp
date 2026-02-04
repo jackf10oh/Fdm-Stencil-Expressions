@@ -13,15 +13,16 @@
 namespace LinOps{
 
 namespace internal{
+// Leafs of an expression hold double m_current_time
 template<typename T, typename = void>
-struct LinOpMixInData{};
-
-template<typename T>
-struct LinOpMixInData<T, std::enable_if_t< !LinOps::traits::is_expr_crtp<T>::value >>
-{
+struct LinOpMixInData{
   double m_current_time=0.0; 
 };
 
+// expression itself holds no data 
+template<typename T>
+struct LinOpMixInData<T, std::enable_if_t< LinOps::traits::is_expr_crtp<T>::value >>
+{};
 } // end namespace internal 
 
 template<typename DERIVED>
@@ -37,14 +38,12 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // Type Defs -------------------------------------
     // to tell if a class derived from LinOpMixIn<> 
     typedef struct{} is_linop_tag; 
-    // to tell if a class is time dependent. false by default 
-    constexpr static bool is_time_dep_flag = false; 
     // so LinOpMixIn can access most derived class 
     using DERIVED_T = DERIVED;
 
   private:
     // Member Data -------------------
-    // double m_current_time; 
+    // inherited in LinOpMixInData<>
 
   public:
 

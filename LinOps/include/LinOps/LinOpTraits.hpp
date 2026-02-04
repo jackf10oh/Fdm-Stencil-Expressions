@@ -149,34 +149,7 @@ struct is_coeffop_crtp_impl<T, std::void_t<typename T::is_coeff_flag>>: std::tru
 namespace traits{
 template<typename T>
 using is_coeffop_crtp = LinOps::internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
-} // end namespace Fds::traits
-
-// Given a type T, see if it is a time dependent operator - - - - - - - - - 
-namespace internal{
-template<typename T, typename = void>
-struct is_time_dep_impl : public std::false_type {}; 
-
-template<typename T>
-struct is_time_dep_impl<T,std::void_t<typename T::is_linop_tag>> : public std::conditional_t<
-    T::is_time_dep_flag, 
-    std::true_type,
-    std::false_type
-> {}; 
-
-template<typename L, typename R, typename OP>
-struct is_time_dep_impl<LinOpExpr<L,R,OP>> : public std::disjunction<
-  is_time_dep_impl<std::remove_reference_t<std::remove_cv_t<L>>>,
-  is_time_dep_impl<std::remove_reference_t<std::remove_cv_t<R>>>
-> {};
-
-} // end namespace internal 
-
-namespace traits{
-  
-template<typename T>
-using is_time_dep = LinOps::internal::is_time_dep_impl<T>; 
-
-} // end namespace traits 
+} // end namespace traits
 
 // given a type T see if it is an expression - - - - - - - - - - - - - - - - - - - - - - - - 
 namespace internal{

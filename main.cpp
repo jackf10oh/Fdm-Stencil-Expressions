@@ -55,7 +55,6 @@ int main()
   // Boundary Conditions + --------------------------------------------------------------------- 
   auto left = OSteps::DirichletBC(0.0); 
   auto right = OSteps::DirichletBC(0.0); 
-
   auto bcs = OSteps::BCPair(left,right); 
 
   // Solving --------------------------------------------------------------------- 

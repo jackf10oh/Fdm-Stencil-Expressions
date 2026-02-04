@@ -21,7 +21,7 @@ class origin_bump : public OSteps::OStepBaseXD<origin_bump>
     // Member Data ----------------------------
     BumpFunc bump_1d = BumpFunc{.L = -1.0, .R = 1.0, .c =0.0, .h = 1.0, .focus=10}; 
   private:
-    const std::variant<double, LinOps::MatrixStorage_t>* m_inv_coeff_ptr = nullptr; 
+    const double* m_inv_coeff_ptr = nullptr; 
 
   public:
     // Member Funcs ------------------------------------------------
@@ -42,8 +42,8 @@ class origin_bump : public OSteps::OStepBaseXD<origin_bump>
     {
       auto forcing = [&](double x, double y){ return bump_1d(x)*bump_1d(y)*std::sin(t); }; 
       Eigen::VectorXd disc_vals = LinOps::DiscretizationXD().set_init(mesh, forcing).values(); 
-      Eigen::VectorXd vals = std::visit([&](const auto& c) -> Eigen::VectorXd { return c * disc_vals; }, *m_inv_coeff_ptr); 
-      Sol += vals; 
+      disc_vals *=  (*m_inv_coeff_ptr); 
+      Sol += disc_vals; 
     }
 
     template<OSteps::FDStep_Type STEP>
