@@ -13,6 +13,7 @@
 #include<Utilities/SparseDiagExpr.hpp>
 #include<Utilities/FornbergCalc.hpp> 
 #include "TimeDerivBase.hpp" // MatrixStorage_t
+#include<Utilities/PrintVec.hpp>
 
 namespace TExprs{
 
@@ -116,7 +117,7 @@ struct TExprExecutor
   // Member Funcs =======================================
   // returns ref to newest solution 
   const auto& MostRecentSol() const { return m_stored_sols[m_stored_sols.size()-1]; }
-  // auto& MostRecentSol(){ return m_stored_sols[m_stored_sols.size()-1]; }
+  auto& MostRecentSol(){ return m_stored_sols[m_stored_sols.size()-1]; }
 
   // return ref to first elem in m_stored_sols. Gives an opportunity to move it elsewhere before overwritten in ConsumeSolution  
   Eigen::VectorXd& ExpiringSol(){ return m_stored_sols[0]; }
@@ -136,9 +137,11 @@ struct TExprExecutor
   // consume a time. push back all previous
   void ConsumeTime(double t)
   {
+    std::cout << "ConsumeTime " << t << " "; 
     // iterate from m_stored_times[0] ... [n-2]
     std::move(std::next(m_stored_times.begin()), m_stored_times.end(), m_stored_times.begin()); 
-    m_stored_times[m_stored_times.size()-1] = t; 
+    m_stored_times[m_num_nodes-2] = t; 
+    print_vec(m_stored_times, "Stored times"); 
     // all values in m_stored_time have been left shifted by 1
     // first value dropped.
     // second from right most value == t 
@@ -202,7 +205,10 @@ struct TExprExecutor
   // Builds m_rhs_vector + m_inv_coeff_variant from the next time; 
   void BuildNextTime(double next_t)
   {
+    std::cout << "BuildNextTime() t = " << next_t << " "; 
     SetWeightsFromTime(next_t); 
+    print_vec(m_stored_times, "times", false); 
+    print_vec(m_weights_calc.m_arr, "Weights"); 
     m_inv_coeff_variant = build_inv_coeff(); 
     m_rhs_vec = BuildRhs(next_t); 
   }

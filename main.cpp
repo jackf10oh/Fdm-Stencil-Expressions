@@ -29,15 +29,35 @@ int main()
 
   // defining Domain Mesh --------------------------------------
   auto r = 10.0;
-  int n_gridpoints = 11;
+  int n_gridpoints = 41;
 
   // mesh in space [0, 10] 
   auto my_mesh = LinOps::make_mesh(0.0,r,n_gridpoints); 
   // mesh in time [0, 2]
-  auto time_mesh = LinOps::make_mesh(0.0, 2.0, 17); 
+  auto time_mesh = LinOps::make_mesh(0.0, 2.0, 11); 
 
-  using LinOps::NthDerivOp;
-  NthDerivOp fdm_stencil; 
-  fdm_stencil.set_mesh(my_mesh); 
-  cout << fdm_stencil.GetMat() << endl; 
+  // Initial values 
+  BumpFunc f{.L = 4, .R = 6, .c = 5, .h = 3}; 
+  Eigen::VectorXd v = LinOps::Discretization1D().set_init(my_mesh, f).values(); 
+  std::vector<Eigen::VectorXd> ics = {v}; 
+
+  // defining LHS + RHS equations -------------------
+  using D = LinOps::NthDerivOp;
+  auto Rhs = 0.2 * D(2) + 0.5 * D(1); 
+  auto Lhs = TExprs::NthTimeDeriv(1); 
+
+  // defining Boundary Conditions 
+  auto bcs = OSteps::BCPair( OSteps::DirichletBC(), OSteps::DirichletBC()); 
+
+  // Solving -------------------------
+  TExprs::GenSolverArgs args{
+    .domain_mesh_ptr = my_mesh, 
+    .time_mesh_ptr = time_mesh, 
+    .ICs = ics 
+  }; 
+
+  TExprs::GenSolver solver(Lhs, Rhs, std::tie(bcs), TExprs::PrintWrite{}); 
+  
+  solver.Calculate(args); 
+
 };

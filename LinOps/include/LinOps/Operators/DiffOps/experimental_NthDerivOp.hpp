@@ -23,9 +23,7 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
     // Member Data --------------------------- 
     Mesh1D_WPtr_t m_mesh_ptr; 
     std::size_t m_order; 
-    std::vector<MatrixStorage_t::StorageIndex> m_inners; 
-    std::vector<MatrixStorage_t::StorageIndex> m_outers; 
-    std::vector<MatrixStorage_t::Scalar> m_vals; 
+    MatrixStorage_t m_Mat; 
 
   public:
     // Constructors + Destructor ===================================================
@@ -45,20 +43,8 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
     std::size_t Order() const {return m_order; };
 
     // Matrix Getters 
-    auto GetMat(){ 
-      return Eigen::Map<MatrixStorage_t>(
-        m_outers.size()-1, m_outers.size()-1, m_vals.size(), 
-        m_outers.data(), m_inners.data(), m_vals.data(), 
-        0 // 0 flags the sparse matrix as compressed 
-      ); 
-    }; 
-    auto GetMat() const { 
-      return Eigen::Map<const MatrixStorage_t>(
-        m_outers.size()-1, m_outers.size()-1, m_vals.size(), 
-        m_outers.data(), m_inners.data(), m_vals.data(), 
-        0 // 0 flags the sparse matrix as compressed 
-      );     
-    };     
+    auto& GetMat(){ return m_Mat; }
+    const auto& GetMat() const { return m_Mat; }     
 
     // mesh getters 
     Mesh1D_WPtr_t get_weak_mesh1d() const { return m_mesh_ptr; }
@@ -76,19 +62,23 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
 
       // calculate new matrix entries 
       const std::size_t mesh_size = m->size();
+      // resize Matrix
+      m_Mat.resize(mesh_size,mesh_size); 
 
       // skirts are # of nodes to side of x_bar that are used to calculate finite difference weights 
       std::size_t one_sided_skirt = m_order;  
       std::size_t centered_skirt = (m_order+1)/2;  
 
       // number of non zeros in the sparse matrix 
-      std::size_t nnz = 2*centered_skirt*(1+m_order) + (mesh_size-2*centered_skirt)*(1+2*centered_skirt);
-      // resize member data 
-      m_outers.resize(mesh_size+1);
-      m_vals.resize(nnz);
-      m_inners.resize(nnz);
+      std::size_t nnz = 2*centered_skirt*(1+one_sided_skirt) + (mesh_size-2*centered_skirt)*(1+2*centered_skirt);
+      // resize NNZ data in Matrix 
+      m_Mat.resizeNonZeros(nnz);
 
-      // begin OpenMP parallel section. **** COMMENTED OUT: std::vector writing is not thread safe ******
+      auto* outers_data = m_Mat.outerIndexPtr(); 
+      auto* vals_data = m_Mat.valuePtr();
+      auto* inners_data = m_Mat.innerIndexPtr();
+
+      // begin OpenMP parallel section. 
       #pragma omp parallel 
       {
         // instantiate stateful fornberg calculator. one per thread 
@@ -101,11 +91,11 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
           auto right = left+one_sided_skirt+1; 
           auto weights = weight_calc.GetWeights(*left, left,right, m_order); 
           std::size_t offset=i; 
-          m_outers[i] = i*(1+one_sided_skirt); 
+          outers_data[i] = i*(1+one_sided_skirt); 
           for(auto& w : weights){
-            m_inners[i*(1+one_sided_skirt)
+            inners_data[i*(1+one_sided_skirt)
                                       + offset] = offset;
-            m_vals[i*(1+one_sided_skirt)
+            vals_data[i*(1+one_sided_skirt)
                                       + offset] = w; 
             offset++; 
           }
@@ -118,14 +108,14 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
           auto right = left+(centered_skirt+1+centered_skirt);
           auto weights = weight_calc.GetWeights(m->at(i), left,right, m_order);
           int offset = -centered_skirt;
-          m_outers[i] = centered_skirt*(1+one_sided_skirt) 
+          outers_data[i] = centered_skirt*(1+one_sided_skirt) 
                         + (i-centered_skirt)*(1+2*centered_skirt)
                         +(centered_skirt+offset); 
           for(auto& w : weights){
-            m_inners[centered_skirt*(1+one_sided_skirt) 
+            inners_data[centered_skirt*(1+one_sided_skirt) 
                         + (i-centered_skirt)*(1+2*centered_skirt)
                         +(centered_skirt+offset)] = i+offset;
-            m_vals[centered_skirt*(1+one_sided_skirt) 
+            vals_data[centered_skirt*(1+one_sided_skirt) 
                         + (i-centered_skirt)*(1+2*centered_skirt)
                         +(centered_skirt+offset)] = w;
             offset++; 
@@ -139,16 +129,16 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
           auto left = right-(one_sided_skirt+1); 
           auto weights = weight_calc.GetWeights(*right, left,right, m_order); 
           int offset= -one_sided_skirt;
-          m_outers[i] = centered_skirt*(1+one_sided_skirt)
+          outers_data[i] = centered_skirt*(1+one_sided_skirt)
                         + (mesh_size-2*centered_skirt)*(1+2*centered_skirt) 
                         + (i-(mesh_size-centered_skirt))*(1+one_sided_skirt)
                         + (one_sided_skirt+offset); 
           for(auto& w : weights){
-            m_inners[centered_skirt*(1+one_sided_skirt)
+            inners_data[centered_skirt*(1+one_sided_skirt)
                         + (mesh_size-2*centered_skirt)*(1+2*centered_skirt) 
                         + (i-(mesh_size-centered_skirt))*(1+one_sided_skirt)
                         + (one_sided_skirt+offset)] = i+offset;  
-            m_vals[centered_skirt*(1+one_sided_skirt)
+            vals_data[centered_skirt*(1+one_sided_skirt)
                         + (mesh_size-2*centered_skirt)*(1+2*centered_skirt) 
                         + (i-(mesh_size-centered_skirt))*(1+one_sided_skirt)
                         + (one_sided_skirt+offset)] = w;  
@@ -161,7 +151,7 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
         // }
       } 
       // End OpenMP parallel section. implicit barrier 
-      m_outers[m_outers.size()-1] = m_inners.size(); 
+      outers_data[mesh_size] = nnz; 
     } 
 }; 
 
