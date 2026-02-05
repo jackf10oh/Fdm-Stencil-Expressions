@@ -11,6 +11,7 @@
 #include<tuple>
 #include<Eigen/Dense>
 
+#include<LinOps/Operators/DiffOps/experimental_NthDerivOp.hpp> 
 #include<LinOps/All.hpp> 
 #include<OutsideSteps/All.hpp> 
 #include<OutsideSteps/BoundaryCondsXD/BCList.hpp> 
@@ -28,53 +29,15 @@ int main()
 
   // defining Domain Mesh --------------------------------------
   auto r = 10.0;
-  int n_gridpoints = 17;
+  int n_gridpoints = 11;
 
   // mesh in space [0, 10] 
   auto my_mesh = LinOps::make_mesh(0.0,r,n_gridpoints); 
   // mesh in time [0, 2]
   auto time_mesh = LinOps::make_mesh(0.0, 2.0, 17); 
 
-  // Initializing IC discretizations -------------------------------------------------------
-  // bump on [3,5] with maximum at (4, 3)
-  BumpFunc f{.L = 3.0, .R = 5.0, .c=4.0, .h=10};  
-
-  // solution U( t=0 ) 
-  auto U0 = LinOps::Discretization1D().set_init(my_mesh, f).values();
-  
-  // Solver Args expect std::vec of ICs for first N time steps 
-  std::vector<Eigen::VectorXd> ics = {std::move(U0)};  
-
-  // LHS time derivs ----------------------------------------------------------------
-  auto time_expr = TExprs::NthTimeDeriv(1); 
-
-  // building RHS expression -----------------------------------------------------
-  using D = LinOps::NthDerivOp;
-  auto space_expr = 0.2 * D(2) - 1.0 * D(1); 
-
-  // Boundary Conditions + --------------------------------------------------------------------- 
-  auto left = OSteps::DirichletBC(0.0); 
-  auto right = OSteps::DirichletBC(0.0); 
-
-  auto bcs = OSteps::BCPair(left,right); 
-
-  // Solving --------------------------------------------------------------------- 
-  TExprs::GenSolverArgs args{
-    .domain_mesh_ptr = my_mesh,
-    .time_mesh_ptr = time_mesh,
-    .ICs = ics, 
-  }; 
-
-  // TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs)); // .Calcuate() returns only the last Eigen::VectorXd 
-  TExprs::GenSolver s(time_expr, space_expr, std::tie(bcs), TExprs::PrintWrite{});  // prints the solution at every time step ...
-
-
-  // s.Calculate(args); 
-  s.CalculateImp(args); 
-
-  // Interpolating ---------------------------------------------------------
-  // TExprs::GenInterp interp(time_expr, space_expr, std::tie(bcs), args); 
-  // interp.FillVals(); 
-  // print_mat(interp.StoredData(), "Solutions through time");
-  // std::cout << "solution at (t,x) :" << interp.SolAt(t,x) << std::endl; 
+  using LinOps::NthDerivOp;
+  NthDerivOp fdm_stencil; 
+  fdm_stencil.set_mesh(my_mesh); 
+  cout << fdm_stencil.GetMat() << endl; 
 };
