@@ -66,12 +66,19 @@ target_link_libraries(TExprs
   INTERFACE Utilities
 )
 
+# DiffOps (Experimental) ----------------------- 
+add_library(DiffOps INTERFACE)
+target_include_directories(DiffOps
+  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/DiffOps/include 
+)
+
 # Tie all sub directories into main library ============================================== 
 target_link_libraries(FdmStencilExprs
   INTERFACE LinOps 
   INTERFACE OutsideSteps
   INTERFACE TExprs 
   INTERFACE Utilities
+  INTERFACE DiffOps # experimental 
 )
 
 # adding google test

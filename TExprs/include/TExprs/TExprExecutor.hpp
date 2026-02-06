@@ -137,11 +137,9 @@ struct TExprExecutor
   // consume a time. push back all previous
   void ConsumeTime(double t)
   {
-    std::cout << "ConsumeTime " << t << " "; 
     // iterate from m_stored_times[0] ... [n-2]
     std::move(std::next(m_stored_times.begin()), m_stored_times.end(), m_stored_times.begin()); 
     m_stored_times[m_num_nodes-2] = t; 
-    print_vec(m_stored_times, "Stored times"); 
     // all values in m_stored_time have been left shifted by 1
     // first value dropped.
     // second from right most value == t 
@@ -205,10 +203,7 @@ struct TExprExecutor
   // Builds m_rhs_vector + m_inv_coeff_variant from the next time; 
   void BuildNextTime(double next_t)
   {
-    std::cout << "BuildNextTime() t = " << next_t << " "; 
     SetWeightsFromTime(next_t); 
-    print_vec(m_stored_times, "times", false); 
-    print_vec(m_weights_calc.m_arr, "Weights"); 
     m_inv_coeff_variant = build_inv_coeff(); 
     m_rhs_vec = BuildRhs(next_t); 
   }
@@ -241,7 +236,6 @@ struct TExprExecutor
             }, 
             m_scalar_coeff_sum_partition
           ); 
-          // std::cout << "BuildRhs: " << s << std::endl;
           result += s * m_stored_sols[ith_node]; 
         } 
         if constexpr(std::tuple_size<MAT_TUP_T>::value > 0)
@@ -252,7 +246,6 @@ struct TExprExecutor
             }, 
             m_mat_coeff_sum_partition 
           ); 
-          // std::cout << "BuildRhs Mat: " << M << std::endl;
           result += M * m_stored_sols[ith_node]; 
         }
       } // end for() over ith_node 

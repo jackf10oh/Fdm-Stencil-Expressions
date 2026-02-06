@@ -46,7 +46,7 @@ class LinOpBase1D
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        auto& expr = static_cast<const DERIVED&>(*this);  
+        const auto& expr = static_cast<const DERIVED&>(*this);  
         if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_weak_mesh1d(); 
         else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_weak_mesh1d(); 
         else static_assert(false, "cannot call get_weak_mesh1d() on expr with no LinOpBase1D's in it!"); 
@@ -84,7 +84,7 @@ class LinOpBase1D
     {
       // if DERIVED is an expression 
       if constexpr(traits::is_expr_crtp<DERIVED>::value){
-        auto& expr = static_cast<const DERIVED&>(*this);  
+        const auto& expr = static_cast<const DERIVED&>(*this);  
         if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_mesh1d(); 
         else if constexpr(traits::is_1dim_linop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_mesh1d(); 
         else static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 

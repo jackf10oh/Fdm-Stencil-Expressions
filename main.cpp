@@ -4,6 +4,9 @@
 //
 // JAF 12/8/2025
 
+// #include "DiffOps/DiffOpTraits.hpp"
+// #include "DiffOps/NthDerivOp.hpp"
+
 #include<cstdint>
 #include<iostream>
 #include<iomanip>
@@ -20,44 +23,55 @@
 #include<Utilities/PrintVec.hpp>
 #include<Utilities/BumpFunc.hpp>
 
-using std::cout, std::endl;
+#include<DiffOps/DiffOpTraits.hpp>
+#include<DiffOps/DiffOpBase.hpp>
+#include<DiffOps/NthDerivOp.hpp>
+
+using std::cout, std::endl, std::cin;
+
+template<std::size_t N>
+using D = DiffOps::NthDerivOp<N>;
 
 int main()
 {
   // iomanip 
-  std::cout << std::setprecision(4); 
+  std::cout << std::setprecision(3); 
 
-  // defining Domain Mesh --------------------------------------
-  auto r = 10.0;
-  int n_gridpoints = 41;
+  double diffusion, convection; 
 
-  // mesh in space [0, 10] 
-  auto my_mesh = LinOps::make_mesh(0.0,r,n_gridpoints); 
-  // mesh in time [0, 2]
-  auto time_mesh = LinOps::make_mesh(0.0, 2.0, 11); 
+  cout << "Enter Diffusion: ";
+  cin >> diffusion; 
+  cout << "Enter Convection: "; 
+  cin >> convection; 
 
-  // Initial values 
-  BumpFunc f{.L = 4, .R = 6, .c = 5, .h = 3}; 
-  Eigen::VectorXd v = LinOps::Discretization1D().set_init(my_mesh, f).values(); 
-  std::vector<Eigen::VectorXd> ics = {v}; 
-
-  // defining LHS + RHS equations -------------------
-  using D = LinOps::NthDerivOp;
-  auto Rhs = 0.2 * D(2) + 0.5 * D(1); 
+  // Defining LHS Expression in time + RHS expression in space 
   auto Lhs = TExprs::NthTimeDeriv(1); 
+  auto Rhs = diffusion * D<2>{} + convection * D<1>{}; 
 
-  // defining Boundary Conditions 
-  auto bcs = OSteps::BCPair( OSteps::DirichletBC(), OSteps::DirichletBC()); 
+  // defining boundary conditions 
+  auto bcs = OSteps::BCPair(OSteps::DirichletBC(0.0), OSteps::DirichletBC(0.0)); 
 
-  // Solving -------------------------
+  // defining Args Mesh --------------------------------------
+
+  // mesh in space [0, 10]
+  auto r = 10.0;
+  int n_gridpoints = 21; 
+  auto domain = LinOps::make_mesh(0.0,r,n_gridpoints); 
+
+  BumpFunc f{.L = 4, .R = 6, .c = 5, .h = 3}; 
+  Eigen::VectorXd v = LinOps::Discretization1D().set_init(domain, f).values(); 
+  
   TExprs::GenSolverArgs args{
-    .domain_mesh_ptr = my_mesh, 
-    .time_mesh_ptr = time_mesh, 
-    .ICs = ics 
+    .domain_mesh_ptr = domain, 
+    .time_mesh_ptr = LinOps::make_mesh(0.0,4.0, 30),
+    .ICs = {std::move(v)}
   }; 
 
+  // Solving 
   TExprs::GenSolver solver(Lhs, Rhs, std::tie(bcs), TExprs::PrintWrite{}); 
-  
+
   solver.Calculate(args); 
 
-};
+
+
+}

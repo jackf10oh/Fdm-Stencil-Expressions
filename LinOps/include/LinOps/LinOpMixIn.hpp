@@ -114,7 +114,13 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     auto compose(DerivedInner&& InnerOp) &
     {
       static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-      return compose_impl<DerivedInner,typename DERIVED::DERIVED_T&>(std::forward<DerivedInner>(InnerOp)); 
+      using Lhs_t = typename DERIVED::DERIVED_T&;  
+      using Rhs_t = std::remove_reference_t<DerivedInner>;
+      return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
+      std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
+      std::forward<DerivedInner>(InnerOp), // rhs 
+      internal::linopXlinop_mult_op{} // bin_op
+      ); 
     }; // end .compose(other) & lvalue overload 
 
     // // composition of linear of L1(L2( . )) (rval)
@@ -122,38 +128,17 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     auto compose(DerivedInner&& InnerOp) && 
     {
       static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-      return compose_impl<DerivedInner,typename DERIVED::DERIVED_T&&>(std::forward<DerivedInner>(InnerOp)); 
+      using Lhs_t = typename DERIVED::DERIVED_T&&;  
+      using Rhs_t = std::remove_reference_t<DerivedInner>;
+      return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
+      std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
+      std::forward<DerivedInner>(InnerOp), // rhs 
+      internal::linopXlinop_mult_op{} // bin_op
+      ); 
     }; // end .compose(other) && rvalue overload  
 
   private:
-    // not accessibles ==============================================================================
-    // composition of linear Ops L1(L2( . )) --------------------------------------------------------
-    template<typename DerivedInner, typename Lhs_t> 
-    auto compose_impl(DerivedInner&& InnerOp)
-    {
-      static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-      if constexpr(traits::is_add_expr<std::remove_reference_t<DerivedInner>>::value){
-        return compose(InnerOp.Lhs())+compose(InnerOp.Rhs());
-      }
-      else if constexpr(traits::is_subtraction_expr<std::remove_reference_t<DerivedInner>>::value){
-        return compose(InnerOp.Lhs())-compose(InnerOp.Rhs());
-      }
-      else if constexpr(traits::is_negation_expr<std::remove_reference_t<DerivedInner>>::value){
-        return -compose(InnerOp.Lhs());
-      }
-      else if constexpr(traits::is_scalar_multiply_expr<std::remove_reference_t<DerivedInner>>::value){
-        return InnerOp.Lhs() * compose(InnerOp.Rhs()); 
-      }
-      else{
-        using Rhs_t = std::remove_reference_t<DerivedInner>;
-        return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
-        std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
-        std::forward<DerivedInner>(InnerOp), // rhs 
-        internal::linopXlinop_mult_op{} // bin_op
-        ); 
-      } // end else 
-    }; // end .compose_impl(other) 
-    
+    // not accessibles ==============================================================================    
     // Left multiply by a scalar: i.e. c*L (lval)------------------------------------------------------------------------- 
     template<typename SCALAR_T>
     auto left_scalar_mult_impl(SCALAR_T&& c) & {

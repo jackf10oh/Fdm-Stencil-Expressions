@@ -29,49 +29,34 @@ class LinOpExpr;
 
 // (Binary Operator Function Objects) ==================================================
 namespace internal{
-// Flags for binary + unary ops - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// flag for composition. i.e. L1( L2( . ) )
-struct OperatorComposition_t{}; 
-
-// flag type for composition. i.e. L1 + L2 
-struct OperatorAddition_t{}; 
-
-// flag type for composition. i.e. L1 - L2 
-struct OperatorSubtraction_t{}; 
-
-// flag for scalar multiplication. i.e c*L
-struct ScalarMultiply_t{}; 
-
-// flag type for negation. i.e. -L1
-struct OperatorNegation_t{}; 
 
 // Structs for binary operations f(L1,L2) to get matrix of expression - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // L1 + L2 
-struct linop_bin_add_op : public internal::OperatorAddition_t
+struct linop_bin_add_op
 {
   template<typename L1, typename L2>
   auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) + (B.GetMat()); }
 }; 
 // L1 - L2 
-struct linop_bin_subtract_op : public internal::OperatorSubtraction_t
+struct linop_bin_subtract_op
 {
   template<typename L1, typename L2>
   auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
 }; 
 // c * L
-struct scalar_left_mult_op : public internal::ScalarMultiply_t
+struct scalar_left_mult_op
 {
   template<typename L2>
   auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
 }; 
 // -L 
-struct unary_negate_op : public internal::OperatorNegation_t
+struct unary_negate_op
 {
   template<typename L1>
   auto operator()(const L1& B) const { return  -(B.GetMat()); }
 }; 
 // composition: L1( L2( . ) )
-struct linopXlinop_mult_op : public internal::OperatorComposition_t
+struct linopXlinop_mult_op
 {
   template<typename L1, typename L2>
   auto operator()(const L1& A, const L2& B) const { return  (A.GetMat())*(B.GetMat()); }
@@ -146,37 +131,9 @@ template<typename T>
 struct is_coeffop_crtp_impl<T, std::void_t<typename T::is_coeff_flag>>: std::true_type{}; 
 }
 
-namespace traits{
-template<typename T>
+namespace traits{template<typename T>
 using is_coeffop_crtp = LinOps::internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
 } // end namespace Fds::traits
-
-// Given a type T, see if it is a time dependent operator - - - - - - - - - 
-namespace internal{
-template<typename T, typename = void>
-struct is_time_dep_impl : public std::false_type {}; 
-
-template<typename T>
-struct is_time_dep_impl<T,std::void_t<typename T::is_linop_tag>> : public std::conditional_t<
-    T::is_time_dep_flag, 
-    std::true_type,
-    std::false_type
-> {}; 
-
-template<typename L, typename R, typename OP>
-struct is_time_dep_impl<LinOpExpr<L,R,OP>> : public std::disjunction<
-  is_time_dep_impl<std::remove_reference_t<std::remove_cv_t<L>>>,
-  is_time_dep_impl<std::remove_reference_t<std::remove_cv_t<R>>>
-> {};
-
-} // end namespace internal 
-
-namespace traits{
-  
-template<typename T>
-using is_time_dep = LinOps::internal::is_time_dep_impl<T>; 
-
-} // end namespace traits 
 
 // given a type T see if it is an expression - - - - - - - - - - - - - - - - - - - - - - - - 
 namespace internal{
@@ -192,55 +149,6 @@ struct is_expr_crtp_impl<LinOpExpr<L,R,OP>>: public std::true_type
 namespace traits{
 template<typename T>
 using is_expr_crtp = internal::is_expr_crtp_impl<std::remove_cv_t<std::remove_reference_t<T>>>;
-} // end namespace traits
-
-// (Different Binary Operator Detections) ===================================================
-namespace traits{
-// given a linop expression. detect if it is a composition L1( L2( . )) - - - - - - - - - - - - - 
-template<typename T>
-struct is_compose_expr: public std::false_type
-{};
-
-template<typename L, typename R, typename OP>
-struct is_compose_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorComposition_t, std::remove_reference_t<OP>>
-{};
-
-// given a linop expression. detect if it is a binary addition L1+L2 - - - - - - - - - - - - - 
-template<typename T>
-struct is_add_expr: public std::false_type
-{};
-
-template<typename L, typename R, typename OP>
-struct is_add_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorAddition_t, std::remove_reference_t<OP>>
-{};
-
-// given a linop expression. detect if it is a scalar multiply c*L ---------------------
-template<typename T>
-struct is_scalar_multiply_expr: public std::false_type
-{};
-
-template<typename L, typename R, typename OP>
-struct is_scalar_multiply_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::ScalarMultiply_t, std::remove_reference_t<OP>>
-{};
-
-// given a linop expression. detect if it is unary negation  -L ---------------------
-template<typename T>
-struct is_negation_expr: public std::false_type
-{};
-
-template<typename L, typename R, typename OP>
-struct is_negation_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorNegation_t, std::remove_reference_t<OP>>
-{};
-
-// given a linop expression. detect if it is binary subtraction L1-L2 ---------------------
-template<typename T>
-struct is_subtraction_expr: public std::false_type
-{};
-
-template<typename L, typename R, typename OP>
-struct is_subtraction_expr<LinOpExpr<L,R,OP>>: public std::is_base_of<internal::OperatorSubtraction_t, std::remove_reference_t<OP>>
-{};
-
 } // end namespace traits
 
 // given a type T we may need to store it  - - - - - - - - - - - - - - - - - - - - - - - - - 

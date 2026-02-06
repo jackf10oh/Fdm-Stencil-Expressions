@@ -23,6 +23,7 @@ class LinOpExpr : public LinOpMixIn< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >, publ
     // Type Defs --------------------------------------
     using LStorage_t = typename traits::Storage_t<Lhs_t>::type;
     using RStorage_t = typename traits::Storage_t<Rhs_t>::type;
+    using Operator_t = BinaryOp_t;
 
   private:
     // Member Data ---------------------------------------------
@@ -88,6 +89,7 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpMixIn< LinOpExpr<Lhs_t, vo
     // Type Defs ------------------------------------------------------------------
     using LStorage_t = typename traits::Storage_t<Lhs_t>::type;
     using RStorage_t = void; // not storing a second argument anymore 
+    using Operator_t = UnaryOp_t;
 
   private:
     // Member Data -------------------------------------------------------------
