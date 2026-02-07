@@ -142,7 +142,16 @@ class GenSolver
         exec.BuildNextTime(t); 
 
         // scale Mat according to 1 / dt ... 
-        std::visit([&](const auto& inv){ Mat = inv * Mat; }, exec.inv_coeff()); 
+        if constexpr(std::is_same<decltype(exec.inv_coeff()), const double&>::value){
+          // INV_COEFF_T is a scalar
+          Mat  *= exec.inv_coeff(); 
+        }
+        else{
+          // INV_COEFF_T is a Matrix 
+          MatrixStorage_t temp = exec.inv_coeff() * Mat; 
+          Mat = std::move(temp); 
+        }
+
         // outside steps matrix before step(Mat) 
         std::apply(
           [&](const auto&... lam_args){ ((lam_args.template MatBeforeStep<OSteps::FDStep_Type::EXPLICIT>(t, args.domain_mesh_ptr, Mat)), ...); }, 
@@ -221,7 +230,16 @@ class GenSolver
         
         // Mat = I - inv_coeff * FDStencil ; 
         Mat = m_rhs.GetMat(); 
-        std::visit([&](const auto& inv){ Mat = -inv * Mat; }, exec.inv_coeff()); 
+        // scale Mat according to 1 / dt ... 
+        if constexpr(std::is_same<decltype(exec.inv_coeff()), const double&>::value){
+          // INV_COEFF_T is a scalar
+          Mat  *= -exec.inv_coeff(); 
+        }
+        else{
+          // INV_COEFF_T is a Matrix 
+          MatrixStorage_t temp = -exec.inv_coeff() * Mat; 
+          Mat = std::move(temp); 
+        }
         for(std::size_t i=0; i<Mat.rows(); ++i) Mat.coeffRef(i,i) += 1.0; 
 
         // outside steps matrix before step(Mat) 

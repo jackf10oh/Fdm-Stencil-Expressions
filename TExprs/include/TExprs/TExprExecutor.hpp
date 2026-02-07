@@ -68,63 +68,49 @@ auto filter_tup(TUP_T tup)
 
 // ===============================================================================
 template<typename TEXPR_T>
-struct TExprExecutor
+class TExprExecutor
 {
-  // Type Defs ------------------------------------------- 
-  using TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(std::declval<TEXPR_T>().toTuple())>>;
-  using SCALAR_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<TExprs::traits::coeffat_returns_double>(std::declval<TUP_T&>()))>>;
-  using MAT_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<TExprs::traits::coeffat_returns_other>(std::declval<TUP_T&>()))>>;
-  // Member Data ---------------------------------
-  // tuple that stores all entries in expr_init.toTuple() such that .coeffAt(...) returns a double  
-  SCALAR_TUP_T m_scalar_coeff_sum_partition; 
-  // .....  such that .coeffAt(...) returns a Matrix  
-  MAT_TUP_T m_mat_coeff_sum_partition; 
-
-  // Highest order weights will be calculated to
-  std::size_t m_order; 
-  // number of nodes used in Fornberg algorithm 
-  std::size_t m_num_nodes; 
-
-  // list of t0, t1, ..., tn 
-  std::vector<double> m_stored_times; 
-  // list of solutions u0, u1, ..., un-1 at times t0, t1, ..., tn-1 
-  std::vector<Eigen::VectorXd> m_stored_sols; 
-
-  // forberg weights calculator 
-  FornCalc m_weights_calc; 
-
-  // result of BuildRhs 
-  Eigen::VectorXd m_rhs_vec; 
+  public:
+    // Type Defs ------------------------------------------- 
+    using TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(std::declval<TEXPR_T>().toTuple())>>;
+    using SCALAR_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<TExprs::traits::coeffat_returns_double>(std::declval<TUP_T&>()))>>;
+    using MAT_TUP_T = std::remove_cv_t<std::remove_reference_t<decltype(filter_tup<TExprs::traits::coeffat_returns_other>(std::declval<TUP_T&>()))>>;
+    using INV_COEFF_T = std::conditional_t<std::tuple_size<MAT_TUP_T>::value==0, double, MatrixStorage_t>; 
   
-  // result of build_inv_coeff 
-  std::variant<double, MatrixStorage_t> m_inv_coeff_variant; 
+  private:
+    // Member Data ---------------------------------
+    // tuple that stores all entries in expr_init.toTuple() such that .coeffAt(...) returns a double  
+    SCALAR_TUP_T m_scalar_coeff_sum_partition; 
+    // .....  such that .coeffAt(...) returns a Matrix  
+    MAT_TUP_T m_mat_coeff_sum_partition; 
 
-  // Constructors + Destructor =======================================
-  TExprExecutor()=delete; 
-  TExprExecutor(TEXPR_T& expr_init) 
-    :m_order(expr_init.Order()), 
-    m_num_nodes(expr_init.Order()+1),  
-    m_weights_calc(m_num_nodes, m_order), 
-    m_stored_times(m_num_nodes), 
-    m_stored_sols(m_order),
-    m_scalar_coeff_sum_partition(filter_tup<TExprs::traits::coeffat_returns_double>(expr_init.toTuple())), 
-    m_mat_coeff_sum_partition(filter_tup<TExprs::traits::coeffat_returns_other>(expr_init.toTuple()))
-  {}
-  TExprExecutor(const TExprExecutor& other)=delete; 
-  // destructor 
-  ~TExprExecutor()=default; 
+    // Highest order weights will be calculated to
+    std::size_t m_order; 
+    // number of nodes used in Fornberg algorithm 
+    std::size_t m_num_nodes; 
 
+<<<<<<< HEAD
   // Member Funcs =======================================
   // returns ref to newest solution 
   const auto& MostRecentSol() const { return m_stored_sols[m_stored_sols.size()-1]; }
   auto& MostRecentSol(){ return m_stored_sols[m_stored_sols.size()-1]; }
+=======
+    // list of t0, t1, ..., tn 
+    std::vector<double> m_stored_times; 
+    // list of solutions u0, u1, ..., un-1 at times t0, t1, ..., tn-1 
+    std::vector<Eigen::VectorXd> m_stored_sols; 
+>>>>>>> main
 
-  // return ref to first elem in m_stored_sols. Gives an opportunity to move it elsewhere before overwritten in ConsumeSolution  
-  Eigen::VectorXd& ExpiringSol(){ return m_stored_sols[0]; }
+    // forberg weights calculator 
+    FornCalc m_weights_calc; 
 
-  // return full vector of StoredSols. 
-  auto& StoredSols(){ return m_stored_sols; }
+    // result of BuildRhs 
+    Eigen::VectorXd m_rhs_vec; 
+    
+    // result of build_inv_coeff 
+    INV_COEFF_T m_inv_coeff; 
 
+<<<<<<< HEAD
   // from a time. set weights
   void SetWeightsFromTime(double t)
   {
@@ -145,81 +131,133 @@ struct TExprExecutor
     // second from right most value == t 
     // right most value unassigned 
   }
+=======
+  public:
+    // Constructors + Destructor =======================================
+    // default 
+    TExprExecutor()=delete; 
+    // from expressions of Time derivatives
+    TExprExecutor(TEXPR_T& expr_init) 
+      :m_order(expr_init.Order()), 
+      m_num_nodes(expr_init.Order()+1),  
+      m_weights_calc(m_num_nodes, m_order), 
+      m_stored_times(m_num_nodes), 
+      m_stored_sols(m_order),
+      m_scalar_coeff_sum_partition(filter_tup<TExprs::traits::coeffat_returns_double>(expr_init.toTuple())), 
+      m_mat_coeff_sum_partition(filter_tup<TExprs::traits::coeffat_returns_other>(expr_init.toTuple()))
+    {}
+    // copy 
+    TExprExecutor(const TExprExecutor& other)=delete; 
+    // destructor 
+    ~TExprExecutor()=default; 
+>>>>>>> main
 
-  // ConsumeTime but copies full list into m_stored_times
-  template<typename INPUT_IT>
-  void ConsumeTimeList(INPUT_IT start, INPUT_IT end)
-  {
-    if(std::distance(start,end)!=m_stored_times.size()-1) throw std::runtime_error("Error: distance(start,end) must == size of m_stored_times - 1"); 
-    std::move(
-      std::move_iterator(start),
-      std::move_iterator(end),
-      m_stored_times.begin() 
-    );
-  }
+    // Member Funcs =======================================
+    // returns ref to newest solution 
+    const auto& MostRecentSol() const { return m_stored_sols[m_stored_sols.size()-1]; }
+    auto& MostRecentSol(){ return m_stored_sols[m_stored_sols.size()-1]; }
 
-  // consume a solution. push back all previous 
-  void ConsumeSolution(Eigen::VectorXd sol)
-  { 
-    /* same idea as ConsumeTime(). with move semantics*/
-    std::move(std::next(m_stored_sols.begin()), m_stored_sols.end(), m_stored_sols.begin()); 
-    m_stored_sols[m_stored_sols.size()-1] = std::move(sol); 
-  }
+    // return ref to first elem in m_stored_sols. Gives an opportunity to move it elsewhere before overwritten in ConsumeSolution  
+    Eigen::VectorXd& ExpiringSol(){ return m_stored_sols[0]; }
 
-  // ConsumeSolution but copies full list into m_stored_sols
-  template<typename INPUT_IT>
-  void ConsumeSolutionList(INPUT_IT start, INPUT_IT end)
-  {
-    if(std::distance(start,end)!=m_stored_sols.size()) throw std::runtime_error("Error: distance(start,end) must == size of m_stored_sols"); 
-    std::move(
-      std::move_iterator(start),
-      std::move_iterator(end),
-      m_stored_sols.begin() 
-    );
-  }
+    // return full vector of StoredSols. 
+    auto& StoredSols(){ return m_stored_sols; }
+    
+    // consume a time. push back all previous
+    void ConsumeTime(double t)
+    {
+      // iterate from m_stored_times[0] ... [n-2]
+      std::move(std::next(m_stored_times.begin()), m_stored_times.end(), m_stored_times.begin()); 
+      m_stored_times[m_num_nodes-2] = t;
+      // all values in m_stored_time have been left shifted by 1
+      // first value dropped.
+      // second from right most value == t 
+      // right most value unassigned 
+    }
+
+    // ConsumeTime but copies full list into m_stored_times
+    template<typename INPUT_IT>
+    void ConsumeTimeList(INPUT_IT start, INPUT_IT end)
+    {
+      if(std::distance(start,end)!=m_num_nodes-1) throw std::runtime_error("Error: distance(start,end) must == size of m_stored_times - 1"); 
+      std::move(
+        std::move_iterator(start),
+        std::move_iterator(end),
+        m_stored_times.begin() 
+      );
+    }
+
+    // consume a solution. push back all previous 
+    void ConsumeSolution(Eigen::VectorXd sol)
+    { 
+      /* same idea as ConsumeTime(). with move semantics*/
+      std::move(std::next(m_stored_sols.begin()), m_stored_sols.end(), m_stored_sols.begin()); 
+      m_stored_sols[m_stored_sols.size()-1] = std::move(sol); 
+    }
+
+    // ConsumeSolution but copies full list into m_stored_sols
+    template<typename INPUT_IT>
+    void ConsumeSolutionList(INPUT_IT start, INPUT_IT end)
+    {
+      if(std::distance(start,end)!=m_stored_sols.size()) throw std::runtime_error("Error: distance(start,end) must == size of m_stored_sols"); 
+      std::move(
+        std::move_iterator(start),
+        std::move_iterator(end),
+        m_stored_sols.begin() 
+      );
+    }
 
 
-  template<typename ANYMESHPTR_T>
-  void set_mesh(ANYMESHPTR_T m)
-  {
-    auto set_mesh_lam = [&](auto&& elem){
-      elem.set_mesh(m); 
-    };
-    auto set_mesh_for = [&](auto&&... elems){(set_mesh_lam(std::forward<decltype(elems)>(elems)),...);}; 
-    // std::apply(set_mesh_for, m_scalar_coeff_sum_partition); // unnecessary. 
-    std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
-  }
+    template<typename ANYMESHPTR_T>
+    void set_mesh(ANYMESHPTR_T m)
+    {
+      auto set_mesh_lam = [&](auto&& elem){
+        elem.set_mesh(m); 
+      };
+      auto set_mesh_for = [&](auto&&... elems){(set_mesh_lam(std::forward<decltype(elems)>(elems)),...);}; 
+      // std::apply(set_mesh_for, m_scalar_coeff_sum_partition); // unnecessary. 
+      std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
+    }
 
-  void expr_SetTime(double t)
-  {
-    auto SetTime_lam = [&](auto&& elem){
-      elem.SetTime(t); 
-    };
-    auto set_mesh_for = [&](auto&&... elems){(SetTime_lam(std::forward<decltype(elems)>(elems)),...);}; 
-    // std::apply(set_mesh_for, m_scalar_coeff_sum_partition); // unnecessary.  
-    std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
-  }
-  
-  // Builds m_rhs_vector + m_inv_coeff_variant from the next time; 
-  void BuildNextTime(double next_t)
-  {
-    SetWeightsFromTime(next_t); 
-    m_inv_coeff_variant = build_inv_coeff(); 
-    m_rhs_vec = BuildRhs(next_t); 
-  }
+    void expr_SetTime(double t)
+    {
+      auto SetTime_lam = [&](auto&& elem){
+        elem.SetTime(t); 
+      };
+      auto set_mesh_for = [&](auto&&... elems){(SetTime_lam(std::forward<decltype(elems)>(elems)),...);}; 
+      // std::apply(set_mesh_for, m_scalar_coeff_sum_partition); // unnecessary.  
+      std::apply(set_mesh_for, m_mat_coeff_sum_partition); 
+    }
+    
+    // Builds m_rhs_vector + m_inv_coeff from the next time; 
+    void BuildNextTime(double next_t)
+    {
+      // update m_weights_calc to new time step.
+      SetWeightsFromTime(next_t); 
+      // ... assemble m_inv_coeff 
+      m_inv_coeff = build_inv_coeff();
+      // use m_weights_calc to assemble RHS
+      m_rhs_vec = BuildRhs(); 
+    }
 
-  // getters to m_inv_coeff_Variant + m_rhs_vec 
-  const std::variant<double, MatrixStorage_t>& inv_coeff() const { return m_inv_coeff_variant; }
-  Eigen::VectorXd& RhsVector(){ return m_rhs_vec; } 
+    // getters to m_inv_coeff + m_rhs_vec 
+    const INV_COEFF_T& inv_coeff() const { return m_inv_coeff; }
+    Eigen::VectorXd& RhsVector(){ return m_rhs_vec; } 
 
   private:
     // Unreachable =========================================== 
-    // // Build RHS starting point from m_stored_sols[0, ..., N-2]
-    Eigen::VectorXd BuildRhs(double t)
+    // from a time. set weights
+    void SetWeightsFromTime(double t)
     {
-      // update m_weights_calc to new time step. 
-      SetWeightsFromTime(t);
+      // set last entry in m_stored_times
+      m_stored_times[m_num_nodes-1] = t; 
+      // recalculate m_weights_calc 
+      m_weights_calc.Calculate(t, m_stored_times.cbegin(), m_stored_times.cend(), m_order);     
+    } // end SetWeightsFromTime 
 
+    // // Build RHS starting point from m_stored_sols[0, ..., N-2]
+    Eigen::VectorXd BuildRhs()
+    {
       // initialize RHS vector to all zeros 
       Eigen::VectorXd result(m_stored_sols[0].size());
       result.setZero(); 
@@ -254,9 +292,15 @@ struct TExprExecutor
       result *= (-1.0); 
 
       // multiply by inv_coeff_util; 
-      // result *= inv_coeff_util(); 
-      std::visit([&](const auto& c){ result = c * result;},m_inv_coeff_variant); 
-
+      if constexpr(std::tuple_size<MAT_TUP_T>::value == 0){
+        // INV_COEFF_T is a scalar
+        result *= m_inv_coeff; 
+      }
+      else{
+        // INV_COEFF_T is a Matrix 
+        Eigen::VectorXd temp = m_inv_coeff * result; 
+        result = std::move(temp); 
+      }
       // Eigen::VectorXd 
       return result; 
     }
@@ -294,7 +338,6 @@ struct TExprExecutor
             }, 
             m_scalar_coeff_sum_partition
         );
-
         MatrixStorage_t A = std::apply(
               [&](auto&&... coeffs){
                 return (coeffs.CoeffAt(m_weights_calc.m_arr, m_num_nodes, m_num_nodes-1) + ...); 
@@ -302,9 +345,11 @@ struct TExprExecutor
               m_mat_coeff_sum_partition 
         ); 
 
-        auto diag = (1.0/s) * Eigen::VectorXd::Ones(A.rows()); 
-        MatrixStorage_t B = SparseDiag(diag) + A.cwiseInverse(); 
-        return B; 
+        // combine s, A along diagonal 
+        A = A.cwiseInverse(); 
+        s = (1.0) / s; 
+        for(std::size_t i=0; i<A.rows(); ++i) A.coeffRef(i,i) += s; 
+        return A; 
       }
     } // end inv_coeff_util() 
 

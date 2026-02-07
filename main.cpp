@@ -61,6 +61,22 @@ int main()
   BumpFunc f{.L = 4, .R = 6, .c = 5, .h = 3}; 
   Eigen::VectorXd v = LinOps::Discretization1D().set_init(domain, f).values(); 
   
+  // Solver Args expect std::vec of ICs for first N time steps 
+  std::vector<Eigen::VectorXd> ics = {std::move(U0)};  
+
+  // LHS time derivs ----------------------------------------------------------------
+  auto time_expr = TExprs::NthTimeDeriv(1); 
+
+  // building RHS expression -----------------------------------------------------
+  using D = LinOps::NthDerivOp;
+  auto space_expr = 0.2 * D(2) - 1.0 * D(1); 
+
+  // Boundary Conditions + --------------------------------------------------------------------- 
+  auto left = OSteps::DirichletBC(0.0); 
+  auto right = OSteps::DirichletBC(0.0); 
+  auto bcs = OSteps::BCPair(left,right); 
+
+  // Solving --------------------------------------------------------------------- 
   TExprs::GenSolverArgs args{
     .domain_mesh_ptr = domain, 
     .time_mesh_ptr = LinOps::make_mesh(0.0,4.0, 30),
