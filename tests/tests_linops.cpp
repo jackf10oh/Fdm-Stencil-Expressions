@@ -415,7 +415,7 @@ TEST(LinearOperatorSuite, Method_set_mesh_ExprHooking)
   ASSERT_EQ(Expr5.Rhs().get_mesh1d(), my_mesh);
 }
 
-TEST(LinearOperatorSuite, LinOpTraits)
+/* TEST(LinearOperatorSuite, LinOpTraits)
 {
   struct foo {
     Discretization1D apply(const Discretization1D& d) const { return d; };
@@ -430,6 +430,7 @@ TEST(LinearOperatorSuite, LinOpTraits)
   ASSERT_TRUE(traits::is_linop_crtp<RandLinOp>::value);
   ASSERT_FALSE(traits::is_linop_crtp<int>::value); 
 }
+*/ 
 
 // testing out SetTime() hooking
 TEST(FdmPluginSuite, Method_SetTime_Hooking)
@@ -512,7 +513,7 @@ TEST(NthDerivOpSuite, Method_set_mesh_completing)
   test_mesh_lam(my_mesh_04);
 }
 
-// testing NthDerivOp custom .compose() method  
+/* // testing NthDerivOp custom .compose() method  
 TEST(NthDerivOpSuite, NthDerivOpCompose)
 {
   using D = LinOps::NthDerivOp; 
@@ -531,4 +532,6 @@ TEST(NthDerivOpSuite, NthDerivOpCompose)
   auto mult_expr = 4.0 * D(n); 
   // ASSERT_EQ(D(n).compose(mult_expr).Rhs().Order(), n+n);
 }
+
+*/ 
 

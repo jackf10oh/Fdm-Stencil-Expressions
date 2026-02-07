@@ -23,20 +23,21 @@ class LinOpExpr : public LinOpMixIn< LinOpExpr<Lhs_t, Rhs_t, BinaryOp_t> >, publ
     // Type Defs --------------------------------------
     using LStorage_t = typename traits::Storage_t<Lhs_t>::type;
     using RStorage_t = typename traits::Storage_t<Rhs_t>::type;
+    using Operator_t = BinaryOp_t; 
 
   private:
     // Member Data ---------------------------------------------
     LStorage_t m_Lhs;
     RStorage_t m_Rhs;
-    BinaryOp_t m_BinOp; 
+    const BinaryOp_t m_BinOp; 
     
   public:
     // Constructors + Destructor =============================================================
     // default 
     LinOpExpr()=delete; 
     // from Lhs, Rhs, BinOp, + Mesh 
-    LinOpExpr(LStorage_t A, RStorage_t B, BinaryOp_t bin_op)
-      : m_Lhs(A), m_Rhs(B), m_BinOp(bin_op)
+    LinOpExpr(LStorage_t A, RStorage_t B)
+      : m_Lhs(A), m_Rhs(B), m_BinOp()
     {
       constexpr bool both_linop = traits::is_linop_crtp<Lhs_t>::value && traits::is_linop_crtp<Rhs_t>::value;
       constexpr bool both_1d = traits::is_1dim_linop_crtp<Lhs_t>::value && traits::is_1dim_linop_crtp<Rhs_t>::value;
@@ -88,20 +89,22 @@ class LinOpExpr<Lhs_t, void, UnaryOp_t> : public LinOpMixIn< LinOpExpr<Lhs_t, vo
     // Type Defs ------------------------------------------------------------------
     using LStorage_t = typename traits::Storage_t<Lhs_t>::type;
     using RStorage_t = void; // not storing a second argument anymore 
+    using Operator_t = UnaryOp_t; 
+
 
   private:
     // Member Data -------------------------------------------------------------
     LStorage_t m_Lhs;
     // RStorage_t m_Rhs; // not storing a second argument anymore 
-    UnaryOp_t m_UnarOp; 
+    const UnaryOp_t m_UnarOp; 
     
   public:
     // Constructors / Destructors ===============================================
     // default 
     LinOpExpr()=delete; 
     // from lhs, unar_op, + mesh
-    LinOpExpr(LStorage_t A, UnaryOp_t unar_op)
-      : m_Lhs(A), m_UnarOp(unar_op)
+    LinOpExpr(LStorage_t A)
+      : m_Lhs(A), m_UnarOp()
     {
       constexpr bool A_is_linop = traits::is_linop_crtp<Lhs_t>::value;
       static_assert(A_is_linop, "Error constructing Unary LinOpExpr: single linop A is not linop!"); 
