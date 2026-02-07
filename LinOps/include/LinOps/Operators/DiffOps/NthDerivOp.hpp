@@ -129,37 +129,6 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
       m_stencil.setFromTriplets(tripletList.begin(), tripletList.end()); 
     }
 
-    // "Operators" (overrides LinOpBase)
-    // composition of linear of L1(L2( . ))
-    template<typename DerivedInner> 
-    auto compose(DerivedInner&& InnerOp)
-    {
-      // derivative of a scalar multiple 
-      using cleaned_rhs_t = std::remove_cv_t<std::remove_reference_t<DerivedInner>>; 
-      if constexpr(LinOps::traits::is_scalar_multiply_expr<cleaned_rhs_t>::value){
-        double c = InnerOp.Lhs(); 
-        return c * compose(InnerOp.Rhs()); 
-      }
-      else if constexpr(LinOps::traits::is_add_expr<cleaned_rhs_t>::value){
-        return compose(InnerOp.Lhs()) + compose(InnerOp.Rhs()); 
-      }
-      else if constexpr(LinOps::traits::is_subtraction_expr<cleaned_rhs_t>::value){
-        return compose(InnerOp.Lhs()) - compose(InnerOp.Rhs()); 
-      }
-      else if constexpr(LinOps::traits::is_negation_expr<cleaned_rhs_t>::value){
-        return - compose(InnerOp.Lhs()); 
-      }
-      // if taking derivative of another derivative 
-      else if constexpr(std::is_same<cleaned_rhs_t,NthDerivOp>::value){
-        // specialize composing to Derivatives to add order
-        return NthDerivOp(m_order+InnerOp.Order()); 
-      }
-      // all other cases fail 
-      else{
-        static_assert(false, "Derivative only meant to be composed with other derivatives!"); 
-      }
-    }; 
-
 }; 
 
 } // end namespace LinOps 
