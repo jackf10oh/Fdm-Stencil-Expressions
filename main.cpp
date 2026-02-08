@@ -14,10 +14,9 @@
 #include<tuple>
 #include<Eigen/Dense>
 
-#include<LinOps/Operators/DiffOps/experimental_NthDerivOp.hpp> 
+// #include<LinOps/Operators/DiffOps/experimental_NthDerivOp.hpp>
 #include<LinOps/All.hpp> 
 #include<OutsideSteps/All.hpp> 
-#include<OutsideSteps/BoundaryCondsXD/BCList.hpp> 
 #include<TExprs/All.hpp> 
 
 #include<Utilities/PrintVec.hpp>
@@ -26,6 +25,8 @@
 #include<DiffOps/DiffOpTraits.hpp>
 #include<DiffOps/DiffOpBase.hpp>
 #include<DiffOps/NthDerivOp.hpp>
+
+#include<Utilities/BlockDiagExpr.hpp>
 
 using std::cout, std::endl, std::cin;
 
@@ -37,57 +38,12 @@ int main()
   // iomanip 
   std::cout << std::setprecision(3); 
 
-  double diffusion, convection; 
-
-  cout << "Enter Diffusion: ";
-  cin >> diffusion; 
-  cout << "Enter Convection: "; 
-  cin >> convection; 
-
-  // Defining LHS Expression in time + RHS expression in space 
-  auto Lhs = TExprs::NthTimeDeriv(1); 
-  auto Rhs = diffusion * D<2>{} + convection * D<1>{}; 
-
-  // defining boundary conditions 
-  auto bcs = OSteps::BCPair(OSteps::DirichletBC(0.0), OSteps::DirichletBC(0.0)); 
-
-  // defining Args Mesh --------------------------------------
-
   // mesh in space [0, 10]
-  auto r = 10.0;
-  int n_gridpoints = 21; 
-  auto domain = LinOps::make_mesh(0.0,r,n_gridpoints); 
+  auto r = 5.0;
+  int n_gridpoints = 6; 
+  auto domain = LinOps::make_meshXD(0.0,r,n_gridpoints, 2); 
 
-  BumpFunc f{.L = 4, .R = 6, .c = 5, .h = 3}; 
-  Eigen::VectorXd v = LinOps::Discretization1D().set_init(domain, f).values(); 
-  
-  // Solver Args expect std::vec of ICs for first N time steps 
-  std::vector<Eigen::VectorXd> ics = {std::move(U0)};  
-
-  // LHS time derivs ----------------------------------------------------------------
-  auto time_expr = TExprs::NthTimeDeriv(1); 
-
-  // building RHS expression -----------------------------------------------------
-  using D = LinOps::NthDerivOp;
-  auto space_expr = 0.2 * D(2) - 1.0 * D(1); 
-
-  // Boundary Conditions + --------------------------------------------------------------------- 
-  auto left = OSteps::DirichletBC(0.0); 
-  auto right = OSteps::DirichletBC(0.0); 
-  auto bcs = OSteps::BCPair(left,right); 
-
-  // Solving --------------------------------------------------------------------- 
-  TExprs::GenSolverArgs args{
-    .domain_mesh_ptr = domain, 
-    .time_mesh_ptr = LinOps::make_mesh(0.0,4.0, 30),
-    .ICs = {std::move(v)}
-  }; 
-
-  // Solving 
-  TExprs::GenSolver solver(Lhs, Rhs, std::tie(bcs), TExprs::PrintWrite{}); 
-
-  solver.Calculate(args); 
-
-
-
+  // defining matrices 
+  auto A = LinOps::DirectionalNthDerivOp(domain, 1,1).GetMat(); 
+  cout << A << endl; 
 }

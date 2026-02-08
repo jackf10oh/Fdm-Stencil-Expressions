@@ -46,7 +46,6 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // inherited in LinOpMixInData<>
 
   public:
-
     // Member Funcs ==========================================================
 
     // Get Current Time 
@@ -54,7 +53,7 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     {
       // if we are an expression 
       if constexpr(traits::is_expr_crtp<typename DERIVED::DERIVED_T>::value){
-        auto& expr = static_cast<const typename DERIVED::DERIVED_T&>(*this);
+        const auto& expr = static_cast<const typename DERIVED::DERIVED_T&>(*this);
         if constexpr(LinOps::traits::is_linop_crtp<typename DERIVED::DERIVED_T::LStorage_t>::value){
           return expr.Lhs().Time();
         }
@@ -112,44 +111,27 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     template<typename DerivedInner> 
     auto compose(DerivedInner&& InnerOp) &
     {
+      std::cout << "Compose() & called by LinOpMixIn. " << std::endl; 
       static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-<<<<<<< HEAD
-      using Lhs_t = typename DERIVED::DERIVED_T&;  
-      using Rhs_t = std::remove_reference_t<DerivedInner>;
-      return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
-      std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
-      std::forward<DerivedInner>(InnerOp), // rhs 
-      internal::linopXlinop_mult_op{} // bin_op
-      ); 
-=======
       using Lhs_t = DERIVED_T&; 
       using Rhs_t = std::remove_reference_t<DerivedInner>;
       return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
       std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
       std::forward<DerivedInner>(InnerOp) // rhs 
       );
->>>>>>> main
     }; // end .compose(other) & lvalue overload 
 
     // // composition of linear of L1(L2( . )) (rval)
     template<typename DerivedInner>
     auto compose(DerivedInner&& InnerOp) && 
     {
+      std::cout << "Compose() && called by LinOpMixIn. " << std::endl; 
       static_assert(traits::is_linop_crtp<DerivedInner>::value, "compose only works on other linear operators!"); 
-<<<<<<< HEAD
-      using Lhs_t = typename DERIVED::DERIVED_T&&;  
-      using Rhs_t = std::remove_reference_t<DerivedInner>;
-      return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
-      std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
-      std::forward<DerivedInner>(InnerOp), // rhs 
-      internal::linopXlinop_mult_op{} // bin_op
-=======
       using Lhs_t = DERIVED_T&&; 
       using Rhs_t = std::remove_reference_t<DerivedInner>;
       return LinOpExpr<Lhs_t, Rhs_t, internal::linopXlinop_mult_op>(
       std::forward<Lhs_t>(static_cast<Lhs_t>(*this)), // lhs
       std::forward<DerivedInner>(InnerOp) // rhs 
->>>>>>> main
       ); 
     }; // end .compose(other) && rvalue overload  
 
@@ -158,6 +140,7 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // Left multiply by a scalar: i.e. c*L (lval)------------------------------------------------------------------------- 
     template<typename SCALAR_T>
     auto left_scalar_mult_impl(SCALAR_T&& c) & {
+      std::cout << "left_scalar_mult(c) & called by LinOpMixIn. " << std::endl; 
       return LinOpExpr<SCALAR_T, typename DERIVED::DERIVED_T&, internal::scalar_left_mult_op>(
         std::forward<SCALAR_T>(c), // lhs scalar
         static_cast<typename DERIVED::DERIVED_T&>(*this) // rhs 
@@ -167,6 +150,7 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // Left multiply by a scalar: i.e. c*L (rval)
     template<typename SCALAR_T>
     auto left_scalar_mult_impl(SCALAR_T&& c) && {
+      std::cout << "left_scalar_mult(c) && called by LinOpMixIn. " << std::endl; 
       return LinOpExpr<SCALAR_T, typename DERIVED::DERIVED_T&&, internal::scalar_left_mult_op>(
         std::forward<SCALAR_T>(c), // lhs scalar
         static_cast<typename DERIVED::DERIVED_T&&>(*this) // rhs 
@@ -178,6 +162,7 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // L1 + L2 (lval) ---------------------------------------------- 
     template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) & {
+        std::cout << "operator+() & called by LinOpMixIn. " << std::endl; 
         return LinOpExpr<typename DERIVED::DERIVED_T&, LINOP_T, internal::linop_bin_add_op>(
         static_cast<typename DERIVED::DERIVED_T&>(*this),  // lhs
         std::forward<LINOP_T>(rhs) // rhs 
@@ -187,6 +172,7 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // L1 + L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator+(LINOP_T&& rhs) && {
+        std::cout << "operator+() && called by LinOpMixIn. " << std::endl; 
         return LinOpExpr<typename DERIVED::DERIVED_T&&, LINOP_T, internal::linop_bin_add_op>(
         static_cast<typename DERIVED::DERIVED_T&&>(*this), // lhs 
         std::forward<LINOP_T>(rhs) // rhs
@@ -196,6 +182,7 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // L1 - L2 (lval) ---------------------------------------------- 
     template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) & {
+        std::cout << "operator-() & called by LinOpMixIn. " << std::endl; 
         return LinOpExpr<typename DERIVED::DERIVED_T&, LINOP_T, internal::linop_bin_subtract_op>(
         static_cast<typename DERIVED::DERIVED_T&>(*this), //lhs
         std::forward<LINOP_T>(rhs) //rhs
@@ -205,6 +192,7 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
     // L1 - L2 (rval)  
     template<typename LINOP_T, typename = std::enable_if_t<traits::is_linop_crtp<LINOP_T>::value>>
     auto operator-(LINOP_T&& rhs) && {
+        std::cout << "operator-() && called by LinOpMixIn. " << std::endl; 
         return LinOpExpr<typename DERIVED::DERIVED_T&&, LINOP_T, internal::linop_bin_subtract_op>(
         static_cast<typename DERIVED::DERIVED_T&&>(*this), // lhs
         std::forward<LINOP_T>(rhs) // rhs 
@@ -219,12 +207,14 @@ class LinOpMixIn : private internal::LinOpMixInData<DERIVED>
 
     // unary operator-() (lval) ---------------------------------------------- 
     auto operator-() & {
+        std::cout << "unary operator-() & called by LinOpMixIn. " << std::endl; 
         return LinOpExpr<typename DERIVED::DERIVED_T&, void, internal::unary_negate_op>(
         static_cast<typename DERIVED::DERIVED_T&>(*this) // lhs 
       );
     }
     // unary operator-() (rval) 
     auto operator-() && {
+        std::cout << "unary operator-() && called by LinOpMixIn. " << std::endl; 
         return LinOpExpr<typename DERIVED::DERIVED_T&&, void, internal::unary_negate_op>(
         static_cast<typename DERIVED::DERIVED_T&&>(*this) // lhs
       );
@@ -245,6 +235,7 @@ template<
   > // end enable_if
 >
 auto operator*(SCALAR_T&& c, LINOP_T&& rhs){
+  std::cout << "operator*(c, rhs) called from outside linopmixin" << std::endl; 
   return std::forward<LINOP_T>(rhs).left_scalar_mult_impl( std::forward<SCALAR_T>(c) ); 
 }
 

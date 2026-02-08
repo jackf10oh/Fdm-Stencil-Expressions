@@ -27,12 +27,6 @@ class LinOpBaseXD;
 template<typename Lhs_t, typename Rhs_t, typename BinaryOp_t>
 class LinOpExpr; 
 
-<<<<<<< HEAD
-// (Binary Operator Function Objects) ==================================================
-namespace internal{
-
-=======
->>>>>>> main
 // Structs for binary operations f(L1,L2) to get matrix of expression - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 namespace internal{ 
 // L1 + L2 
@@ -48,11 +42,7 @@ struct linop_bin_subtract_op
   auto operator()(const L1& A, const L2& B) const { return (A.GetMat()) - (B.GetMat()); }
 }; 
 // c * L
-<<<<<<< HEAD
-struct scalar_left_mult_op
-=======
 struct scalar_left_mult_op 
->>>>>>> main
 {
   template<typename L2>
   auto operator()(const double& c, const L2& B) const { return  c*(B.GetMat()); }
@@ -141,11 +131,7 @@ struct is_coeffop_crtp_impl<T, std::void_t<typename T::is_coeff_flag>>: std::tru
 
 namespace traits{template<typename T>
 using is_coeffop_crtp = LinOps::internal::is_coeffop_crtp_impl<typename std::remove_cv_t<std::remove_reference_t<T>> >; 
-<<<<<<< HEAD
-} // end namespace Fds::traits
-=======
 } // end namespace traits
->>>>>>> main
 
 // given a type T see if it is an expression - - - - - - - - - - - - - - - - - - - - - - - - 
 namespace internal{

@@ -89,17 +89,10 @@ class TExprExecutor
     // number of nodes used in Fornberg algorithm 
     std::size_t m_num_nodes; 
 
-<<<<<<< HEAD
-  // Member Funcs =======================================
-  // returns ref to newest solution 
-  const auto& MostRecentSol() const { return m_stored_sols[m_stored_sols.size()-1]; }
-  auto& MostRecentSol(){ return m_stored_sols[m_stored_sols.size()-1]; }
-=======
     // list of t0, t1, ..., tn 
     std::vector<double> m_stored_times; 
     // list of solutions u0, u1, ..., un-1 at times t0, t1, ..., tn-1 
     std::vector<Eigen::VectorXd> m_stored_sols; 
->>>>>>> main
 
     // forberg weights calculator 
     FornCalc m_weights_calc; 
@@ -110,28 +103,6 @@ class TExprExecutor
     // result of build_inv_coeff 
     INV_COEFF_T m_inv_coeff; 
 
-<<<<<<< HEAD
-  // from a time. set weights
-  void SetWeightsFromTime(double t)
-  {
-    // set last entry in m_stored_times
-    m_stored_times[m_num_nodes-1] = t; 
-    // recalculate m_weights_calc 
-    m_weights_calc.Calculate(t, m_stored_times.cbegin(), m_stored_times.cend(), m_order);     
-  } // end SetWeightsFromTime 
-  
-  // consume a time. push back all previous
-  void ConsumeTime(double t)
-  {
-    // iterate from m_stored_times[0] ... [n-2]
-    std::move(std::next(m_stored_times.begin()), m_stored_times.end(), m_stored_times.begin()); 
-    m_stored_times[m_num_nodes-2] = t; 
-    // all values in m_stored_time have been left shifted by 1
-    // first value dropped.
-    // second from right most value == t 
-    // right most value unassigned 
-  }
-=======
   public:
     // Constructors + Destructor =======================================
     // default 
@@ -150,7 +121,6 @@ class TExprExecutor
     TExprExecutor(const TExprExecutor& other)=delete; 
     // destructor 
     ~TExprExecutor()=default; 
->>>>>>> main
 
     // Member Funcs =======================================
     // returns ref to newest solution 

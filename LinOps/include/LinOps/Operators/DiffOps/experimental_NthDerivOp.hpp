@@ -94,7 +94,7 @@ class NthDerivOp : public LinOpMixIn<NthDerivOp>, public LinOpBase1D<NthDerivOp>
           outers_data[i] = i*(1+one_sided_skirt); 
           for(auto& w : weights){
             inners_data[i*(1+one_sided_skirt)
-                                      + offset] = offset;
+                                      + offset] = i + offset;
             vals_data[i*(1+one_sided_skirt)
                                       + offset] = w; 
             offset++; 

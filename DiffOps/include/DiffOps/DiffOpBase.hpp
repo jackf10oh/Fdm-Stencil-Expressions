@@ -9,38 +9,28 @@
 
 #include <LinOps/LinearOpBase.hpp>
 #include "DiffOpTraits.hpp"
+#include "DiffOpExpr.hpp"
 
 namespace DiffOps{
 
 using LinOps::MatrixStorage_t; 
 
-namespace internal{
-
-// leafs of an expression hold weak_ptr + Sparse Matrix
-template<typename BASE_T, typename = void>
-struct DiffOpBaseData
-{
-  LinOps::Mesh1D_WPtr_t m_mesh_ptr; 
-  MatrixStorage_t m_Mat; 
-}; 
-
-// template have no member data ... 
-template<typename EXPR_T>
-struct DiffOpBaseData<EXPR_T, std::enable_if_t<DiffOps::traits::is_diffop_expr_crtp<EXPR_T>::value>>
-{/* empty struct */}; 
-
-} // end namespace DiffOps::internal 
-
 template<typename DERIVED, std::size_t ORDER>
-class DiffOpBase : public LinOps::LinOpMixIn<DiffOpBase<DERIVED,ORDER>>, public LinOps::LinOpBase1D<DiffOpBase<DERIVED,ORDER>>, private internal::DiffOpBaseData<DiffOpBase<DERIVED,ORDER>>
+class DiffOpBase : public LinOps::LinOpMixIn<DiffOpBase<DERIVED,ORDER>>, public LinOps::LinOpBase1D<DiffOpBase<DERIVED,ORDER>>
 {
   public:
     // Type Defs ------------------------- 
     using DERIVED_T = DERIVED; // LinOpMixin / Base can still access grand children 
     using is_diffop_tag = void; 
+    constexpr static std::size_t ORDER_N = ORDER; 
+  
+  private:
+    // Member Data ------------------------------------ 
+    LinOps::Mesh1D_WPtr_t m_mesh_ptr; 
+    MatrixStorage_t m_Mat; 
 
+  public:
     // Member Funcs =====================================================
-
     // Derived classes must implement ... 
     template<typename Cont>
     double CoeffAt(const Cont& weights, std::size_t n_nodes_per_row, std::size_t ith_node) const 
@@ -49,103 +39,29 @@ class DiffOpBase : public LinOps::LinOpMixIn<DiffOpBase<DERIVED,ORDER>>, public 
     } 
 
     // Defaults Implemented ----------------------------------------------------- 
-    // current maximum order or Derivative expression  
-    constexpr std::size_t Order() const {return ORDER; };
 
     // Matrix Getters 
-    MatrixStorage_t& GetMat()
-    {
-      // if DERIVED is an expression 
-      if constexpr(traits::is_diffop_expr_crtp<DERIVED>::value){
-        auto& expr = static_cast<DERIVED&>(*this);  
-        if constexpr(traits::is_diffop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_mesh1d(); 
-        else if constexpr(traits::is_diffop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_mesh1d(); 
-        else static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
-      }
-      // Non Expression case ... 
-      else{
-        return this->m_Mat;
-      } 
-    }; 
-    const MatrixStorage_t& GetMat() const 
-    {
-      // if DERIVED is an expression 
-      if constexpr(traits::is_diffop_expr_crtp<DERIVED>::value){
-        const auto& expr = static_cast<const DERIVED&>(*this);  
-        if constexpr(traits::is_diffop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_mesh1d(); 
-        else if constexpr(traits::is_diffop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_mesh1d(); 
-        else static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
-      }
-      // Non Expression case ... 
-      else{
-        return this->m_Mat;
-      } 
-    };  
+    MatrixStorage_t& GetMat(){ return m_Mat; }; 
+    
+    const MatrixStorage_t& GetMat() const { return m_Mat; };  
     
     // mesh getters 
-    LinOps::Mesh1D_WPtr_t get_weak_mesh1d() const
-    {
-      // if DERIVED is an expression 
-      if constexpr(traits::is_diffop_expr_crtp<DERIVED>::value){
-        const auto& expr = static_cast<const DERIVED&>(*this);  
-        if constexpr(traits::is_diffop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_mesh1d(); 
-        else if constexpr(traits::is_diffop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_mesh1d(); 
-        else static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
-      }
-      // Non Expression case ... 
-      else{
-        return this->m_mesh_ptr;
-      } 
-    }
+    LinOps::Mesh1D_WPtr_t get_weak_mesh1d() const {return m_mesh_ptr; }
 
-    // return Mesh1D pointed to
-    LinOps::Mesh1D_SPtr_t get_mesh1d() const 
-    {
-      // if DERIVED is an expression 
-      if constexpr(traits::is_diffop_expr_crtp<DERIVED>::value){
-        const auto& expr = static_cast<const DERIVED&>(*this);  
-        if constexpr(traits::is_diffop_crtp<typename DERIVED::LStorage_t>::value) return expr.Lhs().get_mesh1d(); 
-        else if constexpr(traits::is_diffop_crtp<typename DERIVED::RStorage_t>::value) return expr.Rhs().get_mesh1d(); 
-        else static_assert(false, "cannot call get_mesh1d() on expr with no LinOpBase1D's in it!"); 
-      }
-      // Non Expression case ... 
-      else{
-        return this->m_mesh_ptr.lock();
-      }
-    } 
-
-    void assign_to_weak_ptr(const LinOps::Mesh1D_SPtr_t& m)
-    {
-      // if DERIVED is an expression 
-      if constexpr(traits::is_diffop_expr_crtp<DERIVED>::value){
-        auto& expr = static_cast<DERIVED&>(*this);  
-        if constexpr(traits::is_diffop_crtp<typename DERIVED::LStorage_t>::value){
-          expr.Lhs().assign_to_weak_ptr(m); 
-          return; 
-        }
-        else if constexpr(traits::is_diffop_crtp<typename DERIVED::RStorage_t>::value){
-          expr.Rhs().assign_to_weak_ptr(m); 
-          return; 
-        }
-        else static_assert(false, "cannot call assign_to_weak_ptr() on expr with no LinOpBase1D's in it!"); 
-      }
-      // Non Expression case ... 
-      else{
-        this->m_mesh_ptr = m;
-        return; 
-      } 
-    }; 
+    LinOps::Mesh1D_SPtr_t get_mesh1d() const { return m_mesh_ptr.lock(); }
 
     // set the mesh domain the derivative operator works on 
     void set_mesh(const LinOps::Mesh1D_SPtr_t& m)
     {
       // ensure we aren't resetting the mesh again
-      auto my_m = this->get_weak_mesh1d(); 
-      if(!my_m.owner_before(m) && !m.owner_before(my_m)) return;
+      if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)){
+        /* if any leaf of the expression is time dependent this needs to be disabled...*/
+        return;
+      }
       // throw error on nullptr 
       if(!m) throw std::runtime_error("NthDerivOp .set_mesh(Mesh1D_SPtr_t) error: Mesh1D_SPtr_t is expired!"); 
       // point to new mesh 
-      assign_to_weak_ptr(m); 
+      m_mesh_ptr = m; 
 
       // calculate new matrix entries 
       const std::size_t mesh_size = m->size();
@@ -177,14 +93,11 @@ class DiffOpBase : public LinOps::LinOpMixIn<DiffOpBase<DERIVED,ORDER>>, public 
           auto left = m->cbegin()+i;
           auto right = left+one_sided_skirt+1; 
           weight_calc.Calculate(*left, left,right, ORDER); 
-          std::size_t offset=i; 
-          outers_data[i] = i*(1+one_sided_skirt); 
-          for(int j=0; j<1+one_sided_skirt; ++j){
-            inners_data[i*(1+one_sided_skirt)
-                                      + offset] = offset;
-            vals_data[i*(1+one_sided_skirt)
-                                      + offset] = CoeffAt(weight_calc.m_arr, 1 + one_sided_skirt, j); 
-            offset += 1; 
+          std::size_t row_start = i*(1+one_sided_skirt); 
+          outers_data[i] = row_start; 
+          for(int offset=0; offset<1+one_sided_skirt; ++offset){
+            inners_data[row_start+offset] = i+offset;
+            vals_data[row_start+offset] = CoeffAt(weight_calc.m_arr, 1 + one_sided_skirt, offset); 
           }
         }
         // middle rows with centered centered stencil  
@@ -240,6 +153,77 @@ class DiffOpBase : public LinOps::LinOpMixIn<DiffOpBase<DERIVED,ORDER>>, public 
       // End OpenMP parallel section. implicit barrier 
       outers_data[mesh_size] = nnz; 
     } 
+
+    
+    // Operators ===================================================
+    // L1 + L2 (lval) ---------------------------------------------- 
+    template<typename DIFFOP_T, typename = std::enable_if_t<traits::is_diffop_crtp<DIFFOP_T>::value>>
+    auto operator+(DIFFOP_T&& rhs) & {
+        std::cout << "operator+() & called by DiffOpBase. " << std::endl; 
+        constexpr std::size_t MAX = std::max(ORDER, DIFFOP_T::ORDER_N); // constexpr since C++14 
+        return DiffOpExpr<typename DERIVED::DERIVED_T&, DIFFOP_T, internal::diffop_bin_add_op, MAX>(
+        static_cast<typename DERIVED::DERIVED_T&>(*this),  // lhs
+        std::forward<DIFFOP_T>(rhs) // rhs 
+      );
+    }
+    
+    // L1 + L2 (rval)  
+    template<typename DIFFOP_T, typename = std::enable_if_t<traits::is_diffop_crtp<DIFFOP_T>::value>>
+    auto operator+(DIFFOP_T&& rhs) && {
+        std::cout << "operator+() && called by DiffOpBase. " << std::endl; 
+        constexpr std::size_t MAX = std::max(ORDER, DIFFOP_T::ORDER_N); // constexpr since C++14 
+        return DiffOpExpr<typename DERIVED::DERIVED_T&&, DIFFOP_T, internal::diffop_bin_add_op, MAX>(
+        static_cast<typename DERIVED::DERIVED_T&&>(*this), // lhs 
+        std::forward<DIFFOP_T>(rhs) // rhs
+      );
+    }
+
+    // L1 - L2 (lval) ---------------------------------------------- 
+    template<typename DIFFOP_T, typename = std::enable_if_t<traits::is_diffop_crtp<DIFFOP_T>::value>>
+    auto operator-(DIFFOP_T&& rhs) & {
+        std::cout << "operator-() & called by DiffOpBase. " << std::endl; 
+        constexpr std::size_t MAX = std::max(ORDER, DIFFOP_T::ORDER_N); // constexpr since C++14 
+        return DiffOpExpr<typename DERIVED::DERIVED_T&, DIFFOP_T, internal::diffop_bin_subtract_op, MAX>(
+        static_cast<typename DERIVED::DERIVED_T&>(*this),  // lhs
+        std::forward<DIFFOP_T>(rhs) // rhs 
+      );
+    }
+    
+    // L1 - L2 (rval)  
+    template<typename DIFFOP_T, typename = std::enable_if_t<traits::is_diffop_crtp<DIFFOP_T>::value>>
+    auto operator-(DIFFOP_T&& rhs) && {
+        std::cout << "operator-() && called by DiffOpBase. " << std::endl; 
+        constexpr std::size_t MAX = std::max(ORDER, DIFFOP_T::ORDER_N); // constexpr since C++14 
+        return DiffOpExpr<typename DERIVED::DERIVED_T&&, DIFFOP_T, internal::diffop_bin_subtract_op, MAX>(
+        static_cast<typename DERIVED::DERIVED_T&&>(*this), // lhs 
+        std::forward<DIFFOP_T>(rhs) // rhs
+      );
+    }
+
+    // Left multiply by a scalar: i.e. c*L (lval)------------------------------------------------------------------------- 
+    template<typename SCALAR_T>
+    auto left_scalar_mult_impl(SCALAR_T&& c) & {
+      std::cout << "left_scalar_mult(c) & called by DiffOpBase." << std::endl; 
+      return DiffOpExpr<SCALAR_T, typename DERIVED::DERIVED_T&, internal::diffop_left_mult_op, ORDER>(
+        std::forward<SCALAR_T>(c), // lhs scalar
+        static_cast<typename DERIVED::DERIVED_T&>(*this) // rhs 
+      );
+    }
+    
+    // Left multiply by a scalar: i.e. c*L (rval)
+    template<typename SCALAR_T>
+    auto left_scalar_mult_impl(SCALAR_T&& c) && {
+      std::cout << "left_scalar_mult(c) && called by DiffOpBase." << std::endl; 
+      return DiffOpExpr<SCALAR_T, typename DERIVED::DERIVED_T&&, internal::diffop_left_mult_op, ORDER>(
+        std::forward<SCALAR_T>(c), // lhs scalar
+        static_cast<typename DERIVED::DERIVED_T&>(*this) // rhs 
+      );
+    }
+
+    // Unary negation (Lval) ---------------------------------------
+
+    // Unary negation (rval) 
+        
 }; 
 
 } // end namespace DiffOps 
