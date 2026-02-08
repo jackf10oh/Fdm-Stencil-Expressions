@@ -27,6 +27,7 @@
 #include<DiffOps/NthDerivOp.hpp>
 
 #include<Utilities/BlockDiagExpr.hpp>
+#include<Utilities/HighDimExpr.hpp> 
 
 using std::cout, std::endl, std::cin;
 
@@ -38,12 +39,14 @@ int main()
   // iomanip 
   std::cout << std::setprecision(3); 
 
-  // mesh in space [0, 10]
-  auto r = 5.0;
-  int n_gridpoints = 6; 
-  auto domain = LinOps::make_meshXD(0.0,r,n_gridpoints, 2); 
+  auto domain = LinOps::make_meshXD(0.0,3.0,4,3); 
 
-  // defining matrices 
-  auto A = LinOps::DirectionalNthDerivOp(domain, 1,1).GetMat(); 
-  cout << A << endl; 
+  auto R = LinOps::DirectionalRandOp(domain, 1).GetMat(); 
+
+  cout << R << endl; 
+
+  cout << endl << "==========================" << endl; 
+
+  LinOps::MatrixStorage_t Rsmall = LinOps::RandLinOp(domain->GetMesh(0)).GetMat().sparseView();
+  cout << make_BlockDiag(make_HighDim(Rsmall, 4), 4);  
 }
