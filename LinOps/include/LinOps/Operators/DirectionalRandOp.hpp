@@ -7,9 +7,8 @@
 #ifndef DIRECTIONALRANDOP_H
 #define DIRECTIONALRANDOP_H
 
-#include<iostream>
-#include<Eigen/Sparse> 
-#include<unsupported/Eigen/KroneckerProduct> 
+#include<Utilities/BlockDiagExpr.hpp> 
+#include<Utilities/HighDimExpr.hpp> 
 
 #include "../LinearOpBase.hpp" 
 
@@ -23,6 +22,8 @@ class DirectionalRandOp: public LinOpMixIn<DirectionalRandOp>, public LinOpBaseX
       MeshXD_WPtr_t m_mesh_ptr; 
       MatrixStorage_t m_mat; 
       std::size_t m_direction; // which Mesh1D the operator acts on. 
+      std::size_t m_prod_before; // which Mesh1D the operator acts on. 
+      std::size_t m_prod_after; // which Mesh1D the operator acts on. 
   public:
     // Constructors + Destructo =====================================
     // direction only 
@@ -39,8 +40,8 @@ class DirectionalRandOp: public LinOpMixIn<DirectionalRandOp>, public LinOpBaseX
     // Member Funcs ============================================== 
     
     // matrix getters
-    auto& GetMat(){ return m_mat; }; 
-    const auto& GetMat() const { return m_mat; }; 
+    auto GetMat(){ return make_HighDim(make_BlockDiag( m_mat,m_prod_before),m_prod_after); }; 
+    auto GetMat() const { return make_HighDim(make_BlockDiag( m_mat,m_prod_before),m_prod_after); }; 
 
     // return weak_ptr of MeshXD pointed to
     MeshXD_WPtr_t get_weak_meshxd() const { return m_mesh_ptr; }
@@ -57,42 +58,10 @@ class DirectionalRandOp: public LinOpMixIn<DirectionalRandOp>, public LinOpBaseX
       m_mesh_ptr = m; // store the mesh  
 
       // perform work on m ...
-      
-      // check this->direction < mesh-> # dims 
-      if(m_direction >= m->dims())
-      {
-        // dont allow direction >= dims ...
-        // throw std::runtime_error("DirectionalNthDerivOp.set_mesh() error: direction >= MeshXD.dims()");
-        // just set m_mat to identity ...  
-        std::size_t s = m->sizes_product(); 
-        m_mat.resize(s,s); 
-        m_mat.setIdentity();  
-        return; 
-      }
-
-      // get a random matrix R that matches specific direction 
       std::size_t s = m->dim_size(m_direction); 
-      MatrixStorage_t R = Eigen::MatrixXd::Random(s,s).sparseView();      
-      // identity matrix for calculations later 
-      MatrixStorage_t I;  
-
-      std::size_t prod_before = m->sizes_middle_product(0,m_direction); 
-      std::size_t prod_after = (m->dims() > m_direction) ? m->sizes_middle_product(m_direction+1, m->dims()) : 1; 
-
-      if(prod_before>1){
-        I.resize(prod_before, prod_before); 
-        I.setIdentity(); 
-        m_mat = Eigen::KroneckerProductSparse(R, I); 
-      }
-      else{
-        m_mat = std::move(R); 
-      }; 
-      if(prod_after>1){
-        I.resize(prod_after, prod_after); 
-        I.setIdentity(); 
-        MatrixStorage_t temp = Eigen::KroneckerProductSparse(I, m_mat);  
-        m_mat = std::move(temp); 
-      }; 
+      m_mat = Eigen::MatrixXd::Random(s,s).sparseView(); 
+      m_prod_before = m->sizes_middle_product(m_direction+1,m->dims()); 
+      m_prod_after = m->sizes_middle_product(0,m_direction); 
     } // end set_mesh(MeshXD_SPtr_t)  
 }; 
 
