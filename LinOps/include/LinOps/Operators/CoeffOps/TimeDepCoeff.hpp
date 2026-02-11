@@ -13,8 +13,8 @@
 #include "../../CoeffOpMixIn.hpp"
 #include "../../LinOpExpr.hpp" 
 #include "../../LinOpTraits.hpp" // callable_traits<F>
-#include "../../Discretization.hpp"
-#include "../../DiscretizationXD.hpp"
+#include "../../Vector.hpp"
+#include "../../VectorXD.hpp"
 
 namespace LinOps{
 
@@ -174,7 +174,7 @@ class TimeDepCoeff :
       else if constexpr(N > 1){
         using Bind_t = typename traits::callable_traits<FUNC_STORAGE_T>::BindFirst_t; 
         Bind_t binded(m_function, t); 
-        this->m_diag_vals = LinOps::DiscretizationXD().set_init(m_owned_subdim_mesh_ptr,binded).values(); 
+        this->m_diag_vals = LinOps::make_Discretization(m_owned_subdim_mesh_ptr,binded).values(); 
       }
       else{
         static_assert(false, "must use # of args >= 1 in Func for TimeDepCoeff"); 

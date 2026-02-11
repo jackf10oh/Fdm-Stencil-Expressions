@@ -13,8 +13,6 @@ namespace LinOps{
 
 // Forward Declarations - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-class Discretization1D;
-
 template<typename Derived>
 class LinOpMixIn;
 

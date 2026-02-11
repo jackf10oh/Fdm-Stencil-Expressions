@@ -10,8 +10,8 @@
 #include<Eigen/Core> // VectorXd
 #include<Utilities/SparseDiagExpr.hpp>
 #include "../../CoeffOpMixIn.hpp" 
-#include "../../Discretization.hpp" 
-#include "../../DiscretizationXD.hpp" 
+#include "../../Vector.hpp"
+#include "../../VectorXD.hpp"
 #include "../../LinOpTraits.hpp" // callable_traits<F>  
 
 namespace LinOps{
@@ -109,7 +109,7 @@ class AutonomousCoeff : public CoeffOpMixIn<AutonomousCoeff<FUNC_STORAGE_T>>, pu
       if(N > 1) throw std::runtime_error("AutonomousCoeff.set_mesh(m) error: # of args in F > 1 (# of dims in Mesh1D)"); 
 
       // pack first N dimensions into small MeshXD
-      m_diag_vals = Discretization1D().set_init(m, m_function).values(); 
+      m_diag_vals = LinOps::make_Discretization(m, m_function).values(); 
       m_prod_after = 1; 
     }
 
@@ -135,7 +135,7 @@ class AutonomousCoeff : public CoeffOpMixIn<AutonomousCoeff<FUNC_STORAGE_T>>, pu
       auto sub_dims = std::make_shared<const LinOps::MeshXD>(std::move(s)); 
       
       // recalculate + store # of cycles 
-      m_diag_vals = DiscretizationXD().set_init(sub_dims, m_function).values(); 
+      m_diag_vals = LinOps::make_Discretization(sub_dims, m_function).values(); 
       m_prod_after = m->sizes_product() / m_diag_vals.size(); 
     }
 }; 

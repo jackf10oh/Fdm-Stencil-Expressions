@@ -103,31 +103,31 @@ TEST(MeshXDSuite, MeshXDSizesGetters){
   EXPECT_ANY_THROW(from_ends_list_steps_list02.sizes_middle_product(4,0)); // start > end  
 }; 
 
-// Discretization Suite ============================================= 
+// VectorXD Suite ============================================= 
 // Test all constructors 
-TEST(DiscretizationXDSuite, DiscretizationXDConstructible){
+TEST(VectorXDSuite, VectorXDConstructible){
   // default constructor leaves m_vals, m_dims, m_mesh_ptr all empty 
-  DiscretizationXD empty_disc; 
+  LinOps::VectorXD empty_disc; 
 
   // 1 dim from single size
   std::size_t N=67; 
-  DiscretizationXD from_size_1d(N); 
+  LinOps::VectorXD from_size_1d(N); 
 
   // from X dimensional MeshXDPtr_t
   auto meshes_1d = std::make_shared<MeshXD>(std::size_t{1}); 
   auto meshes_3d = std::make_shared<MeshXD>(std::size_t{3}); 
-  DiscretizationXD from_meshes_1d(meshes_1d); 
-  DiscretizationXD from_meshes_3d(meshes_3d); 
+  LinOps::VectorXD from_meshes_1d(meshes_1d); 
+  LinOps::VectorXD from_meshes_3d(meshes_3d); 
 
   // copy 
-  DiscretizationXD from_other(from_meshes_1d); 
+  LinOps::VectorXD from_other(from_meshes_1d); 
 
 }
 
 // testing move constructors ???????????????
 
 // Testing all method that return sizes. should match original MeshXDPtr_t 
-TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
+TEST(VectorXDSuite, VectorXDSizesGetters){
   // simply make a mesh and do nothing with it
   auto my_mesh = make_meshXD(); 
   // make a unit mesh, 5 steps per dim, X dimensions 
@@ -146,49 +146,48 @@ TEST(DiscretizationXDSuite, DiscretizationXDSizesGetters){
   auto from_ends_list_steps_list01 = make_meshXD(bound_vals01, nsteps01); 
   auto from_ends_list_steps_list02 = make_meshXD(bound_vals02, nsteps02); 
 
-  // size getters should give same result across DiscretizationXD / MeshXDPtr_t 
+  // size getters should give same result across VectorXD / MeshXDPtr_t 
   // returns # of dimensions 
   ASSERT_EQ(from_dims_only->dims(), \
-            DiscretizationXD(from_dims_only).dims()); 
+            VectorXD(from_dims_only).dims()); 
   
   // returns # of steps in a specific dimension 
   ASSERT_EQ(from_ends_steps_dims->dim_size(0), \
-            DiscretizationXD(from_ends_steps_dims).dim_size(0)); 
+            LinOps::VectorXD(from_ends_steps_dims).dim_size(0)); 
             
   ASSERT_EQ(from_ends_steps_dims->dim_size(1), \
-            DiscretizationXD(from_ends_steps_dims).dim_size(1));  
+            LinOps::VectorXD(from_ends_steps_dims).dim_size(1));  
 
-  EXPECT_ANY_THROW(DiscretizationXD(from_ends_steps_dims).dim_size(10)); // 10 > # of dims 
+  EXPECT_ANY_THROW(LinOps::VectorXD(from_ends_steps_dims).dim_size(10)); // 10 > # of dims 
 
   // // returns product of (# of steps per dim)
   ASSERT_EQ(from_ends_list_steps_list01->sizes_product(), \
-            DiscretizationXD(from_ends_list_steps_list01).sizes_product());  
+            LinOps::VectorXD(from_ends_list_steps_list01).sizes_product());  
 
   ASSERT_EQ(from_ends_list_steps_list02->sizes_product(), \
-            DiscretizationXD(from_ends_list_steps_list02).sizes_product());  
+            LinOps::VectorXD(from_ends_list_steps_list02).sizes_product());  
   
   // returns product of (# of steps per dim) for dim [start,end)
   ASSERT_EQ(from_ends_list_steps_list02->sizes_middle_product(0,3), \
-            DiscretizationXD(from_ends_list_steps_list02).sizes_middle_product(0,3));  
+            LinOps::VectorXD(from_ends_list_steps_list02).sizes_middle_product(0,3));  
 
   ASSERT_EQ(from_ends_list_steps_list02->sizes_middle_product(0,2), \
-            DiscretizationXD(from_ends_list_steps_list02).sizes_middle_product(0,2));
+            LinOps::VectorXD(from_ends_list_steps_list02).sizes_middle_product(0,2));
 
   ASSERT_EQ(from_ends_list_steps_list02->sizes_middle_product(1,3), \
-            DiscretizationXD(from_ends_list_steps_list02).sizes_middle_product(1,3));
+            LinOps::VectorXD(from_ends_list_steps_list02).sizes_middle_product(1,3));
  
-  EXPECT_ANY_THROW(DiscretizationXD(from_ends_list_steps_list02).sizes_middle_product(0,10)); // 10 > # of dims 
-  EXPECT_ANY_THROW(DiscretizationXD(from_ends_list_steps_list02).sizes_middle_product(4,0)); // start > end 
+  EXPECT_ANY_THROW(LinOps::VectorXD(from_ends_list_steps_list02).sizes_middle_product(0,10)); // 10 > # of dims 
+  EXPECT_ANY_THROW(LinOps::VectorXD(from_ends_list_steps_list02).sizes_middle_product(4,0)); // start > end 
 }
 
 // Testing set_init() for constant
-TEST(DiscretizationXDSuite, DiscretizationXDSetByConstant){
+TEST(VectorXDSuite, VectorXDSetByConstant){
 
   auto my_meshes = make_meshXD(); 
-  DiscretizationXD my_disc(my_meshes); 
   
   double val_init = 6.7; 
-  my_disc.set_init(val_init); 
+  auto my_disc = LinOps::make_Discretization(my_meshes, val_init); 
 
   for(auto& val : my_disc.values()){
     ASSERT_EQ(val, val_init); 
@@ -196,7 +195,7 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByConstant){
 }; 
 
 // Testing set_init() for callable  
-TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
+TEST(VectorXDSuite, VectorXDSetByCallable){
   auto lam00 = [](){return 67.0;}; 
   // Euclidean norms in 1D, 2D, 3D 
   auto lam01 = [](double x){return std::sqrt(x*x);}; 
@@ -207,10 +206,10 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
   auto my_mesh_2d = make_meshXD(0.0,10.0,21, 2); 
   auto my_mesh_3d = make_meshXD(0.0,10.0,21, 3); 
 
-  DiscretizationXD my_disc; 
+  LinOps::VectorXD my_disc; 
 
   // set init 1D case 
-  my_disc.set_init(my_mesh_1d, lam01); 
+  my_disc = LinOps::make_Discretization(my_mesh_1d, lam01); 
   for(std::size_t i=0; i<my_disc.dim_size(0); i++){
     double x = my_mesh_1d->GetMeshAt(0)->at(i); 
     double lam_val = lam01(x); 
@@ -220,7 +219,7 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
   }
 
   // set init 2D case 
-  my_disc.set_init(my_mesh_2d, lam02); 
+  my_disc = LinOps::make_Discretization(my_mesh_2d, lam02); 
   for(std::size_t i=0; i<my_disc.dim_size(0); i++){
 
     double x = my_mesh_2d->GetMeshAt(0)->at(i); 
@@ -240,7 +239,7 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
   }
 
   // set init 3D case 
-  my_disc.set_init(my_mesh_3d, lam03); 
+  my_disc = LinOps::make_Discretization(my_mesh_3d, lam03); 
   for(std::size_t i=0; i<my_disc.dim_size(0); i++){
 
     double x = my_mesh_3d->GetMeshAt(0)->at(i); 
@@ -265,7 +264,7 @@ TEST(DiscretizationXDSuite, DiscretizationXDSetByCallable){
 
   // last case: we can use lower dimensional function on higher dimension mesh
   // i.e. lam02 takes 2 dims but my_mesh3d has 3 dims
-  my_disc.set_init(my_mesh_3d, lam02); 
+  my_disc = LinOps::make_Discretization(my_mesh_3d, lam02); 
   for(std::size_t i=0; i<my_disc.dim_size(0); i++){
 
     double x = my_mesh_3d->GetMeshAt(0)->at(i); 
