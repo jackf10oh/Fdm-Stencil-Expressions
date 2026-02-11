@@ -74,46 +74,45 @@ TEST(MeshSuite1D, Mesh1DIterators){
 
 
 
-// Discretization Suite ---------------------------------------- 
-TEST(DiscretizationSuite1d, Disc1DConstructible)
+// Vector Suite ---------------------------------------- 
+TEST(VectorSuite1d, Disc1DConstructible)
 {
-  Discretization1D my_vals; 
+  LinOps::Vector1D my_vals; 
 }
 
-TEST(DiscretizationSuite1d, Disc1DMovable)
+TEST(VectorSuite1d, Disc1DMovable)
 {
   int n_steps=11; 
   auto my_mesh = make_mesh(0.0,10.0,n_steps); 
-  Discretization1D moved_from(my_mesh);
-  Discretization1D moved_to(std::move(moved_from));  
+  LinOps::Vector1D moved_from(my_mesh);
+  LinOps::Vector1D moved_to(std::move(moved_from));  
   // ASSERT_TRUE(moved_from.get_mesh1d().expired()); // no longer altering mesh in moved_from 
   ASSERT_EQ(moved_from.values().data(),nullptr); // moved from now has invalid eigen::vectorxd 
   ASSERT_EQ(moved_to.size(), n_steps); 
   ASSERT_EQ(moved_to.get_mesh1d(), my_mesh); 
 }
 
-TEST(DiscretizationSuite1d, Disc1DSetMesh)
+TEST(VectorSuite1d, Disc1DSetMesh)
 {
   auto my_mesh = make_mesh(); 
-  Discretization1D my_vals; 
+  LinOps::Vector1D my_vals; 
   ASSERT_FALSE(my_vals.get_mesh1d()); 
-  Discretization1D discretization_w_stored_mesh(my_mesh); 
+  LinOps::Vector1D discretization_w_stored_mesh(my_mesh); 
   ASSERT_TRUE(discretization_w_stored_mesh.get_mesh1d());
 }
 
-TEST(DiscretizationSuite1d, Disc1DSetCosntant)
+TEST(VectorSuite1d, Disc1DSetCosntant)
 {
   auto my_mesh = make_mesh(); 
-  Discretization1D my_vals(my_mesh); 
-
   double val_set = 0.0; 
-  my_vals.set_init(val_set);
+
+  LinOps::Vector1D my_vals = LinOps::make_Discretization(my_mesh, val_set); 
   
   ASSERT_EQ(my_vals.at(0), val_set); 
   ASSERT_EQ(my_vals.at(my_vals.size()-1), val_set); 
 }
 
-TEST(DiscretizationSuite1d, Disc1DSetByCallable)
+TEST(VectorSuite1d, Disc1DSetByCallable)
 {
   auto my_lambda = [](const double& x){return x*x;}; 
   struct Callable_t 
@@ -125,16 +124,15 @@ TEST(DiscretizationSuite1d, Disc1DSetByCallable)
   int n_steps = 101; 
   double left=0, right=100; 
   auto my_mesh = make_mesh(left,right,n_steps); 
-  Discretization1D my_vals; 
 
   // with lambda 
-  my_vals.set_init(my_mesh, my_lambda); 
+  LinOps::Vector1D my_vals = LinOps::make_Discretization(my_mesh,my_lambda); 
 
   ASSERT_EQ(my_vals.at(0), my_lambda(my_mesh->at(0))); 
   ASSERT_EQ(my_vals.at(n_steps/2), my_lambda(my_mesh->at(n_steps/2))); 
   ASSERT_EQ(my_vals.at(n_steps-1), my_lambda(my_mesh->at(n_steps-1))); 
 
-  my_vals.set_init(my_callable);
+  my_vals = LinOps::make_Discretization(my_mesh,my_callable);
 
   ASSERT_EQ(my_vals.at(0), my_callable(my_mesh->at(0))); 
   ASSERT_EQ(my_vals.at(n_steps/2), my_callable(my_mesh->at(n_steps/2))); 
@@ -142,13 +140,13 @@ TEST(DiscretizationSuite1d, Disc1DSetByCallable)
 
 }
 
-TEST(DiscretizationSuite1d, Disc1DIterators)
+TEST(VectorSuite1d, Disc1DIterators)
 {
     // simply make a mesh and do nothing with it
   int n_steps = 11;
   auto my_mesh = make_mesh(0.0,10.0,n_steps);
 
-  Discretization1D my_vals(my_mesh); 
+  LinOps::Vector1D my_vals(my_mesh); 
 
   // give all iterators as std::vec 
   my_vals.begin(); 
@@ -220,10 +218,9 @@ TEST(LinearOperatorSuite, RandLinOpApply)
 {
   // setup mesh + discretization 
   auto my_mesh = make_mesh(); 
-
-  Discretization1D my_vals;
   auto func = [](double x){return x*x;}; // x^2 
-  my_vals.set_init(my_mesh, func); 
+
+  LinOps::Vector1D my_vals = LinOps::make_Discretization(my_mesh, func);
 
   // get a random linear operator 
   RandLinOp Rand01(my_mesh);
@@ -231,7 +228,7 @@ TEST(LinearOperatorSuite, RandLinOpApply)
   Eigen::MatrixXd matrix_rep = Rand01.GetMat(); 
 
   // make sure .apply() gives the same as A*v 
-  Discretization1D apply_method_result = Rand01.apply(my_vals); 
+  LinOps::Vector1D apply_method_result = Rand01.apply(my_vals); 
   Eigen::VectorXd manual_linalg_result = matrix_rep * my_vals.values(); 
   for(std::size_t i=0; i<apply_method_result.size(); i++){
     ASSERT_EQ(apply_method_result[i], manual_linalg_result[i]); 
@@ -312,8 +309,7 @@ TEST(LinearOperatorSuite, Composition)
   auto my_mesh = make_mesh(); 
 
   // vector of [1,1,...,1]
-  Discretization1D my_vals(my_mesh); 
-  my_vals.set_init(1.0);
+  LinOps::Vector1D my_vals = LinOps::make_Discretization(my_mesh, 1.0); 
 
   // construct without ptr arg
   RandLinOp L1(my_mesh), L2(my_mesh);
@@ -365,11 +361,10 @@ TEST(LinearOperatorSuite, ExpressionChaining)
   auto my_expr2 = tmp4.compose(rhs4); // all temporaries still alive
 
   // test the expression still has a .apply() method 
-  Discretization1D disc; 
-  disc.set_init(my_mesh, 1.0); 
+  LinOps::Vector1D disc = LinOps::make_Discretization(my_mesh, 1.0); 
 
   my_expr2.set_mesh(my_mesh); 
-  Discretization1D result = my_expr2.apply(disc); 
+  LinOps::Vector1D result = my_expr2.apply(disc); 
   
 }
 

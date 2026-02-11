@@ -8,7 +8,9 @@
 #define LINOP_ALL_H
 
 #include "Mesh.hpp"
-#include "Discretization.hpp"
+#include "Vector.hpp"
+#include "VectorXD.hpp"
+#include "MeshXD.hpp"
 
 #include "LinOpTraits.hpp"
 #include "LinearOpBase.hpp"

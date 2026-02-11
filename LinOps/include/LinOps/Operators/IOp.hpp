@@ -42,8 +42,8 @@ class IOp : public LinOpMixIn<IOp>, public LinOpBase1D<IOp>, public LinOpBaseXD<
     const MatrixStorage_t& GetMat() const { return m_Mat; };
 
     // Identity just returns inputs as outputs
-    Discretization1D apply(const Discretization1D& d_arr) const { return d_arr; } 
-    DiscretizationXD apply(const DiscretizationXD& d_arr) const { return d_arr; } 
+    LinOps::Vector1D apply(const LinOps::Vector1D& d_arr) const { return d_arr; } 
+    LinOps::VectorXD apply(const LinOps::VectorXD& d_arr) const { return d_arr; } 
 
     // return weak_ptr of Mesh1D pointed to
     Mesh1D_WPtr_t get_weak_mesh1d() const { 

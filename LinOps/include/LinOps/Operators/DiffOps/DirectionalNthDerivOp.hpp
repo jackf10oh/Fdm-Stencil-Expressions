@@ -7,9 +7,9 @@
 #ifndef DIRECTIONALNTHDERIVOP_H
 #define DIRECTIONALNTHDERIVOP_H 
 
-#include<cstdint>
-#include<Eigen/Sparse> 
-#include<unsupported/Eigen/KroneckerProduct> 
+#include<Utilities/BlockDiagExpr.hpp> 
+#include<Utilities/HighDimExpr.hpp> 
+
 #include "../../LinearOpBase.hpp" 
 #include "NthDerivOp.hpp" 
 
@@ -20,7 +20,6 @@ class DirectionalNthDerivOp : public LinOpMixIn<DirectionalNthDerivOp>, public L
   private:
     // Member Data ----------------------------------------------
     MeshXD_WPtr_t m_mesh_ptr; 
-    MatrixStorage_t m_mat; 
     std::size_t m_dir; 
     std::size_t m_order; 
     std::size_t m_prod_before; 
@@ -48,8 +47,8 @@ class DirectionalNthDerivOp : public LinOpMixIn<DirectionalNthDerivOp>, public L
     std::size_t Order() const {return m_order; }
 
     // Getters to Matrix 
-    auto& GetMat(){ return m_mat; } 
-    const auto& GetMat() const{return m_mat;} 
+    auto GetMat(){ return make_HighDim(make_BlockDiag( m_onedim_stencil.GetMat(),m_prod_before),m_prod_after); }; 
+    auto GetMat() const { return make_HighDim(make_BlockDiag(  m_onedim_stencil.GetMat(),m_prod_before),m_prod_after); }; 
 
     // getters to mesh 
     MeshXD_WPtr_t get_weak_meshxd() const { return m_mesh_ptr; }
@@ -60,44 +59,14 @@ class DirectionalNthDerivOp : public LinOpMixIn<DirectionalNthDerivOp>, public L
     {
       // ensure we aren't resetting the mesh again
       if(!m_mesh_ptr.owner_before(m) && !m.owner_before(m_mesh_ptr)) return;
-
+      if(!m) throw std::runtime_error("DirectionalNthDerivOp::set_mesh() error: shared_ptr<> expired!"); 
       // store the mesh   
       m_mesh_ptr = m; 
 
       // perform work on m ... 
-
-      // check this->direction < mesh-> # dims 
-      if(m_dir >= m->dims())
-      {
-        // throw an error ...
-        // throw std::runtime_error("DirectionalNthDerivOp.set_mesh() error: direction >= MeshXD.dims()"); 
-        // or just resize to identity 
-        std::size_t s = m->sizes_product(); 
-        m_mat.resize(s, s); 
-        m_mat.setIdentity(); 
-        return; 
-      }
-      m_onedim_stencil.set_mesh(m->GetMeshAt(m_dir)); 
-      // std::cout << m_onedim_stencil.GetMat() << std::endl;
-
-      m_prod_before = m->sizes_middle_product(0,m_dir); 
-      m_prod_after = (m->dims() > m_dir) ? m->sizes_middle_product(m_dir+1, m->dims()) : 1; 
-
-      MatrixStorage_t I; 
-      if(m_prod_before>1){
-        I.resize(m_prod_before, m_prod_before); 
-        I.setIdentity(); 
-        m_mat = Eigen::KroneckerProductSparse(m_onedim_stencil.GetMat(), I); 
-      }
-      else{
-        m_mat = m_onedim_stencil.GetMat(); 
-      }; 
-      if(m_prod_after>1){
-        I.resize(m_prod_after, m_prod_after); 
-        I.setIdentity(); 
-        MatrixStorage_t temp = Eigen::KroneckerProductSparse(I, m_mat);  
-        m_mat = std::move(temp); 
-      }; 
+      m_prod_before = m->sizes_middle_product(m_dir+1,m->dims()); // checks that m_dir < m->dims()
+      m_prod_after = m->sizes_middle_product(0,m_dir); 
+      m_onedim_stencil.set_mesh(m->GetMesh(m_dir)); // no need for range safe ->GetMeshAt()  
     }
     
 }; // end class DirectionalNthDerivOp

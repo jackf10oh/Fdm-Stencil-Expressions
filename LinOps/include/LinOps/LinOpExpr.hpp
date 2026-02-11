@@ -8,8 +8,6 @@
 #define LINOPEXPR_H
 
 #include<type_traits>
-#include "Mesh.hpp"
-#include "Discretization.hpp" 
 #include "LinearOpBase.hpp"
 #include "LinOpTraits.hpp"
 

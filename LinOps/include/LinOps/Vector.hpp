@@ -1,11 +1,11 @@
-// Discretization.hpp
+// Vector.hpp
 //
 // Discretization of a function F(x0), ..., F(xN) on a mesh x0, ..., xN
 //
 // JAF 12/5/2025
 
-#ifndef DISCRETIZATION_H
-#define DISCRETIZATION_H
+#ifndef VECTOR1D_H
+#define VECTOR1D_H
 
 #include<memory>
 #include<cstdint>
@@ -18,7 +18,7 @@
 
 namespace LinOps{
 
-class Discretization1D
+class Vector1D
 {
   private:
     // Member Data --------------------------------------------------------------------
@@ -28,32 +28,32 @@ class Discretization1D
     // Constructors / Destructors ==============================================================
     // Args -------------------------------
     // from size 
-    Discretization1D(std::size_t size_init=0): m_mesh_ptr(), m_vals(size_init){};
+    Vector1D(std::size_t size_init=0): m_mesh_ptr(), m_vals(size_init){};
     // from mesh
     // from const shared_ptr<Mesh1D>
-    Discretization1D(const Mesh1D_SPtr_t& mesh_init) : m_mesh_ptr(mesh_init){resize(mesh_init);}
+    Vector1D(const Mesh1D_SPtr_t& mesh_init) : m_mesh_ptr(mesh_init), m_vals(mesh_init->size()){}
     
     // Copy -----------------------------
-    Discretization1D(const Discretization1D& other)
+    Vector1D(const Vector1D& other)
       : m_mesh_ptr(other.m_mesh_ptr), m_vals(other.m_vals)
     {};
     
     // copy from Eigen::VectorXd
-    Discretization1D(const Eigen::VectorXd& other, Mesh1D_WPtr_t mesh_init = Mesh1D_WPtr_t{})
+    Vector1D(const Eigen::VectorXd& other, Mesh1D_WPtr_t mesh_init = Mesh1D_WPtr_t{})
       : m_mesh_ptr(mesh_init), m_vals(other)
     {}; 
     
     // Move ---------------------------
-    Discretization1D(Discretization1D&& other)
+    Vector1D(Vector1D&& other)
       : m_mesh_ptr(std::move(other.m_mesh_ptr)), m_vals(std::move(other.m_vals))
     {}; 
     
     // move from Eigen::VectorXD
-    Discretization1D(Eigen::VectorXd&& other, Mesh1D_WPtr_t mesh_init = Mesh1D_WPtr_t{})
+    Vector1D(Eigen::VectorXd&& other, Mesh1D_WPtr_t mesh_init = Mesh1D_WPtr_t{})
       : m_mesh_ptr(mesh_init), m_vals(std::move(other))
     {}; 
     // destructors ----------------------------------
-    ~Discretization1D()=default; 
+    ~Vector1D()=default; 
 
     // Member Functions ==============================================================
     // return the size of the underlying vector ------------------------
@@ -79,53 +79,9 @@ class Discretization1D
       return *this; 
     }
     // set vector to same size as mesh -----------------
-    Discretization1D& resize(const Mesh1D_SPtr_t& m){
+    Vector1D& resize(const Mesh1D_SPtr_t& m){
       m_mesh_ptr=m;
       m_vals.conservativeResize(m->size()); 
-      return *this; 
-    }
-
-    // set vector to a constant -------------------------------------------------------------
-    auto& set_init(double val){ m_vals.setConstant(val); return *this; }
-    
-    // resize + set constant 
-    auto& set_init(const Mesh1D_SPtr_t& m, double val){ resize(m); set_init(val); return *this; }
-
-    // set_init() TEMPLATE ----------------------------------------------------------------- 
-    // set vector F(x0),...,F(xN) for x0,...,xN in stored mesh 
-    template<
-    typename F,
-    typename = std::enable_if_t<
-      std::is_same<typename traits::callable_traits<F>::result_type, double>::value && 
-      std::bool_constant<traits::callable_traits<F>::num_args == 1>::value
-      >
-    >
-    auto& set_init(F func)
-    {
-      auto locked = m_mesh_ptr.lock(); 
-      set_init(locked, std::move(func));
-      return *this; 
-    }
-    // resize + set vector F(x0),...,F(xN) for x0,...,xN in stored mesh 
-    template<
-    typename F,
-    typename = std::enable_if_t<
-      std::negation<std::is_arithmetic<F>>::value // placed first to short circuit? why doesn't enable_if_t< 1 && 2 && 3 > work here?  
-    >, 
-    typename = std::enable_if_t<
-      std::is_same<typename traits::callable_traits<F>::result_type, double>::value &&
-      std::bool_constant<traits::callable_traits<F>::num_args == 1>::value
-      >
-    >
-    auto& set_init(const Mesh1D_SPtr_t& m, F func)
-    {
-      m_mesh_ptr = m; 
-
-      std::size_t s1 = m->size();
-      auto data = m->cbegin(); 
-
-      m_vals.resize(s1); 
-      for(auto i=0; i<s1; i++) m_vals[i] = func(data[i]); 
       return *this; 
     }
     
@@ -140,15 +96,49 @@ class Discretization1D
     // no reverse citerators in eigen 
 
     // Operators ================================================================
-    // Assignment from Discretization1D --------------------------------
-    Discretization1D& operator=(const Discretization1D& other) = default;
-    Discretization1D& operator=(Discretization1D&& other){
+    // Assignment from Vector1D --------------------------------
+    Vector1D& operator=(const Vector1D& other) = default;
+    Vector1D& operator=(Vector1D&& other){
       m_mesh_ptr = std::move(other.m_mesh_ptr); 
       m_vals=std::move(other.m_vals); 
       return *this;
     }; 
-}; // end Discretization1D 
+}; // end Vector1D 
+
+// set vector to a constant -------------------------------------------------------------
+LinOps::Vector1D make_Discretization(const Mesh1D_SPtr_t& m, double val){
+  LinOps::Vector1D result(m);
+  result.values().setConstant(val); 
+  return result; 
+}
+
+// resize + set vector F(x0),...,F(xN) for x0,...,xN in stored mesh 
+template<
+typename F,
+typename = std::enable_if_t<
+  !std::is_arithmetic_v<std::remove_reference_t<std::remove_cv_t<F>>>
+  >
+>
+LinOps::Vector1D make_Discretization(const Mesh1D_SPtr_t& m, F func)
+{
+  static_assert(std::is_same<typename traits::callable_traits<F>::result_type, double>::value, "static assert error: callable type F must return a double"); 
+  static_assert(traits::callable_traits<F>::num_args <= 1, "static assert error: callable type F must take <= args for Mesh1D"); 
+
+  LinOps::Vector1D result(m); 
+
+  std::size_t s1 = m->size();
+  auto data = m->cbegin(); 
+
+  constexpr std::size_t N = traits::callable_traits<F>::num_args; 
+  if constexpr(N == 1){
+    for(auto i=0; i<s1; i++) result.values()[i] = func(data[i]); 
+  }
+  else if constexpr(N == 0){
+    result.values().setConstant( func() ); 
+  }
+  return result; 
+}
 
 } // end namespace LinOps 
 
-#endif // Discretization.hpp
+#endif // Vector.hpp

@@ -14,8 +14,8 @@
 #include<Eigen/Sparse>
 #include "Mesh.hpp"
 #include "MeshXD.hpp"
-#include "Discretization.hpp" 
-#include "DiscretizationXD.hpp" 
+#include "Vector.hpp" 
+#include "VectorXD.hpp" 
 #include "LinOpMixIn.hpp" 
 
 namespace LinOps{
@@ -33,11 +33,11 @@ class LinOpBase1D
 
     // defaults given. can be overriden -------------------------------------
 
-    // multiply the underlying expression with Discretization's underlying vecXd
-    Discretization1D apply(const Discretization1D& d) const 
+    // multiply the underlying expression with LinOps::Vector1D's underlying Eigen::VectorXd
+    LinOps::Vector1D apply(const LinOps::Vector1D& d) const 
     {
       Eigen::VectorXd v = static_cast<const DERIVED*>(this)->GetMat() * d.values();  // calculate A*b
-      Discretization1D result(std::move(v), get_weak_mesh1d()); // move A*b into result's values
+      LinOps::Vector1D result(std::move(v), get_weak_mesh1d()); // move A*b into result's values
       return result;
     };
 
@@ -108,11 +108,11 @@ class LinOpBaseXD
 
     // defaults given. can be overriden -------------------------------------
 
-    // multiply the underlying expression with Discretization's underlying vecXd
-    DiscretizationXD apply(const DiscretizationXD& d) const 
+    // multiply the underlying expression with LinOps::VectorXD's underlying Eigen::VectorXd
+    LinOps::VectorXD apply(const LinOps::VectorXD& d) const 
     {
       Eigen::VectorXd v = static_cast<const DERIVED*>(this)->GetMat() * d.values();  // calculate A*b
-      DiscretizationXD result(std::move(v), get_weak_meshxd()); // move A*b into result's values
+      LinOps::VectorXD result(std::move(v), get_weak_meshxd()); // move A*b into result's values
       return result;
     };
 
