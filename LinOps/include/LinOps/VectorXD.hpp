@@ -118,52 +118,45 @@ typename = std::enable_if_t<
 >
 LinOps::VectorXD make_Discretization(const MeshXD_SPtr_t& m, F func)
 {
+  // assert func returns double 
   static_assert(std::is_same<typename traits::callable_traits<F>::result_type, double>::value, "static assert error: callable type F must return a double"); 
-
-  // stores mesh, resizes dims + vals 
-  LinOps::VectorXD result(m); 
-
-  // set all values according to func(x0, x1, ... , xn) 
-
+  
   // check there are enough dimensions to use callable type F
   static constexpr std::size_t num_args = traits::callable_traits<F>::num_args; 
-  if(m->dims() < num_args) throw std::invalid_argument("# dims of MeshXD_SPtr_t must be >= # args in callable F"); 
-
-  // some initializations before looping ------------------------------------------
-  // how many values are in flattened array 
-  std::size_t flat_end = m->sizes_middle_product(0,num_args);   
-  // # of times to copy/paste first [0,flat_end) vales 
-  std::size_t n_layers = m->sizes_product() / flat_end; 
+  if(m->dims() < num_args) 
+    throw std::invalid_argument(
+      "# dims of MeshXD_SPtr_t must be >= # args in callable F"); 
   
-  // stores n args for std::apply(func,args_arr) later
-  std::array<double, num_args> args_arr;  
+  // result returns by make_Discretization() 
+  LinOps::VectorXD result(m); 
 
-  // holds .begin() iterators for each Mesh1D inside m_mesh_vec 
-  std::array<std::vector<double>::const_iterator, num_args> domain_arr;
-  for(std::size_t dim=0; dim<num_args; dim++) domain_arr[dim] = m->GetMesh(dim)->cbegin(); 
+  if constexpr(num_args == 0){
+    result.values().setConstant( func() );
+    return result; 
+  }
 
-  // holds sizes_middle_product(i) for i=0,...,num_args // calculate all of cumulative_prod_arr
+  // stores sizes_middle_product(0,i) for i=0,...,num_args
   std::array<std::size_t, num_args> cumulative_prod_arr; 
-  for(std::size_t dim=0; dim<num_args; dim++) cumulative_prod_arr[dim] = m->sizes_middle_product(0, dim); 
-
+  for(std::size_t d=0; d<num_args; d++) cumulative_prod_arr[d] = m->sizes_middle_product(0, d); 
+  
   // iterate through flattened first layer 
+  std::array<double, num_args> args_arr; // stores n args for std::apply(func,args_arr) later
+  std::size_t flat_end = m->sizes_middle_product(0,num_args);   
   for(std::size_t flat_i=0; flat_i<flat_end; flat_i++){
     // fill args_arr 
-    for(std::size_t dim=0; dim < num_args; dim++){
-      std::size_t dim_i = flat_i;
-      dim_i /= cumulative_prod_arr[dim]; 
-      dim_i %= m->dim_size(dim); 
-      args_arr[dim] = domain_arr[dim][dim_i]; 
+    for(std::size_t d=0; d < num_args; d++){
+      std::size_t stride = cumulative_prod_arr[d]; 
+      std::size_t index = (flat_i / stride) % m->dim_size(d); 
+      args_arr[d] = (*m->GetMesh(d))[index]; 
     }
-
-    // write func(arg_arr) to result.values() 
+    // set all values according to func(x0, x1, ... , xn) 
     result.values()[flat_i] = std::apply(func, args_arr);  
-
   } // end first layer 
 
   // if we need to copy into more layers 
   if(flat_end != result.values().size()){
     // ither through views
+    std::size_t n_layers = m->sizes_product() / flat_end; // # of times to copy/paste first [0,flat_end) vales
     for(std::size_t ith_view=0; ith_view<flat_end; ith_view++){
       // fill in all layers with first layers value 
       for(std::size_t layer=1; layer<n_layers; layer++){
@@ -172,7 +165,7 @@ LinOps::VectorXD make_Discretization(const MeshXD_SPtr_t& m, F func)
     } // end for loop through layers  
   } // end if 
 
-  // end of function
+  // all values filled 
   return result;
 }
 

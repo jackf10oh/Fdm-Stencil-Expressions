@@ -126,12 +126,9 @@ LinOps::Vector1D make_Discretization(const Mesh1D_SPtr_t& m, F func)
 
   LinOps::Vector1D result(m); 
 
-  std::size_t s1 = m->size();
-  auto data = m->cbegin(); 
-
   constexpr std::size_t N = traits::callable_traits<F>::num_args; 
   if constexpr(N == 1){
-    for(auto i=0; i<s1; i++) result.values()[i] = func(data[i]); 
+    std::transform(m->cbegin(), m->cend(), result.begin(), func); 
   }
   else if constexpr(N == 0){
     result.values().setConstant( func() ); 
